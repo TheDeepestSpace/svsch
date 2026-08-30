@@ -15,12 +15,10 @@ import { ExpandGrabBands } from '../shared/ExpandGrabBands';
 import { handleNodeDoubleClick, navigateToSource } from '../shared/navigation';
 import type { HdlNodeData } from '../types';
 import { InstanceNodeSvg } from './InstanceNodeSvg';
-import { InteractionContext } from '../shared/context';
 
 /** Catch-all: instance nodes and any unrecognized kind. */
 export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): React.ReactElement {
   const node = data.node as PositionedNode;
-  const { expandFunctionCall } = React.useContext(InteractionContext);
   const arrayConnections = data.arrayConnections ?? [];
   const isArray = nodeIsArrayNode(node);
   // Instance blocks can render larger than their canonical auto-fit box when
@@ -56,9 +54,16 @@ export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): R
           ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
           : node.kind
       }
-      onDoubleClick={() =>
-        node.kind === 'funcCall' ? expandFunctionCall(id) : handleNodeDoubleClick(node)
-      }
+      // A function/task call's own body has no standalone module to navigate
+      // to (issue #335) — until it does, double-click is a no-op for these
+      // kinds; Expand (toolbar button, see NodeSelectionToolbar) is the only
+      // way to unfold its logic in place, same trigger an instance's Expand
+      // uses (an instance's own double-click still navigates, via
+      // handleNodeDoubleClick below).
+      onDoubleClick={() => {
+        if (node.kind === 'funcCall' || node.kind === 'taskCall') return;
+        handleNodeDoubleClick(node);
+      }}
       svg={
         <InstanceNodeSvg
           node={node}

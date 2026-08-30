@@ -436,6 +436,12 @@ export interface GenerateRegion {
     functionId: string;
     parentModuleName: string;
   };
+  /** Client-only expansion region for one source-stable task call-site. */
+  expandedTaskCall?: {
+    callId: string;
+    taskId: string;
+    parentModuleName: string;
+  };
 }
 
 export interface PositionedGenerateRegion extends GenerateRegion {

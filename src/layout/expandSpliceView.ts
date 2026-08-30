@@ -71,9 +71,10 @@ export async function applyExpandedInstances(input: {
   const moduleLayout = layout.modules[view.moduleName];
   const expandedInstances = moduleLayout?.expanded ?? {};
   const expandedFunctionCalls = moduleLayout?.expandedFunctionCalls ?? {};
+  const expandedTaskCalls = moduleLayout?.expandedTaskCalls ?? {};
   const expansionRequests: Array<{
     nodeId: string;
-    expansionKind: 'instance' | 'funcCall';
+    expansionKind: 'instance' | 'funcCall' | 'taskCall';
   }> = [
     ...Object.keys(expandedInstances)
       .filter((id) => expandedInstances[id])
@@ -81,6 +82,9 @@ export async function applyExpandedInstances(input: {
     ...Object.keys(expandedFunctionCalls)
       .filter((id) => expandedFunctionCalls[id])
       .map((nodeId) => ({ nodeId, expansionKind: 'funcCall' as const })),
+    ...Object.keys(expandedTaskCalls)
+      .filter((id) => expandedTaskCalls[id])
+      .map((nodeId) => ({ nodeId, expansionKind: 'taskCall' as const })),
   ];
   if (expansionRequests.length === 0) {
     return view;
@@ -89,7 +93,7 @@ export async function applyExpandedInstances(input: {
   const grid = diagramSizing.gridSize;
   const prepared: Array<{
     nodeId: string;
-    expansionKind: 'instance' | 'funcCall';
+    expansionKind: 'instance' | 'funcCall' | 'taskCall';
     anchor: { x: number; y: number };
     result: SpliceResult;
   }> = [];
@@ -105,7 +109,11 @@ export async function applyExpandedInstances(input: {
       continue;
     }
     const childModuleName =
-      expansionKind === 'funcCall' ? hostNode.functionId : hostNode.moduleName;
+      expansionKind === 'funcCall'
+        ? hostNode.functionId
+        : expansionKind === 'taskCall'
+          ? hostNode.taskId
+          : hostNode.moduleName;
     if (!childModuleName) {
       continue;
     }
@@ -117,7 +125,9 @@ export async function applyExpandedInstances(input: {
     const childModule =
       expansionKind === 'funcCall'
         ? graph.functions?.[childModuleName]
-        : graph.modules[childModuleName];
+        : expansionKind === 'taskCall'
+          ? graph.tasks?.[childModuleName]
+          : graph.modules[childModuleName];
     if (!childModule) {
       continue;
     }
@@ -136,7 +146,7 @@ export async function applyExpandedInstances(input: {
         instanceSize,
         instanceParamRows,
         ancestorModules: input.ancestorModules,
-        childModule: expansionKind === 'funcCall' ? childModule : undefined,
+        childModule: expansionKind !== 'instance' ? childModule : undefined,
       });
     } catch {
       hostLayout = undefined;

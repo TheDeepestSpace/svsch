@@ -83,6 +83,7 @@ interface GraphMessage {
   modules: string[];
   expandedInstanceIds?: string[];
   expandedFunctionCallIds?: string[];
+  expandedTaskCallIds?: string[];
 }
 
 interface StatusMessage {
@@ -120,8 +121,21 @@ interface ExpandFunctionCallDataMessage {
   payload: ExpandFunctionCallPayload;
 }
 
+interface ExpandTaskCallPayload {
+  callId: string;
+  taskId: string;
+  module: DesignModule;
+  spliceLayout?: ExpandSpliceLayout;
+}
+
+interface ExpandTaskCallDataMessage {
+  type: 'expandTaskCallData';
+  moduleName: string;
+  payload: ExpandTaskCallPayload;
+}
+
 interface PendingExpandRequest {
-  expansionKind: 'instance' | 'funcCall';
+  expansionKind: 'instance' | 'funcCall' | 'taskCall';
   namespace: string;
   parentRegionId?: string;
   parentModuleName: string;
@@ -645,11 +659,16 @@ function DiagramApp(): React.ReactElement {
 
   const [expandedInstanceIds, setExpandedInstanceIds] = useState<string[]>([]);
   const [expandedFunctionCallIds, setExpandedFunctionCallIds] = useState<string[]>([]);
+  const [expandedTaskCallIds, setExpandedTaskCallIds] = useState<string[]>([]);
 
   useEffect(() => {
     const listener = (
       event: MessageEvent<
-        GraphMessage | StatusMessage | ExpandInstanceDataMessage | ExpandFunctionCallDataMessage
+        | GraphMessage
+        | StatusMessage
+        | ExpandInstanceDataMessage
+        | ExpandFunctionCallDataMessage
+        | ExpandTaskCallDataMessage
       >,
     ) => {
       if (event.data.type === 'graph') {
@@ -681,28 +700,34 @@ function DiagramApp(): React.ReactElement {
         setModules(event.data.modules);
         setExpandedInstanceIds(event.data.expandedInstanceIds ?? []);
         setExpandedFunctionCallIds(event.data.expandedFunctionCallIds ?? []);
+        setExpandedTaskCallIds(event.data.expandedTaskCallIds ?? []);
         setHovered(undefined, true);
         setHoveredEdgeId(undefined);
       } else if (event.data.type === 'status') {
         setStatus(event.data.status);
       } else if (
         event.data.type === 'expandInstanceData' ||
-        event.data.type === 'expandFunctionCallData'
+        event.data.type === 'expandFunctionCallData' ||
+        event.data.type === 'expandTaskCallData'
       ) {
         const { moduleName } = event.data;
         const payload = event.data.payload;
         const expansionKind =
           event.data.type === 'expandFunctionCallData'
             ? ('funcCall' as const)
-            : ('instance' as const);
+            : event.data.type === 'expandTaskCallData'
+              ? ('taskCall' as const)
+              : ('instance' as const);
         const localId =
-          event.data.type === 'expandFunctionCallData'
+          event.data.type === 'expandFunctionCallData' || event.data.type === 'expandTaskCallData'
             ? event.data.payload.callId
             : event.data.payload.instanceId;
         const childModuleName =
           event.data.type === 'expandFunctionCallData'
             ? event.data.payload.functionId
-            : event.data.payload.childModuleName;
+            : event.data.type === 'expandTaskCallData'
+              ? event.data.payload.taskId
+              : event.data.payload.childModuleName;
         // Keyed by namespace (globally unique — see requestExpand), not by
         // (moduleName, instanceId): two different sibling instances of the
         // *same* child module type share that pair (moduleName here is the
@@ -773,7 +798,13 @@ function DiagramApp(): React.ReactElement {
     (instanceNode: HdlFlowNode) => {
       if (!view) return;
       const expansionKind = instanceNode.data.node.kind;
-      if (expansionKind !== 'instance' && expansionKind !== 'funcCall') return;
+      if (
+        expansionKind !== 'instance' &&
+        expansionKind !== 'funcCall' &&
+        expansionKind !== 'taskCall'
+      ) {
+        return;
+      }
       let parentNamespace: string | undefined;
       let enclosing: ActiveSplice | undefined;
       for (const splice of spliceMapRef.current.values()) {
@@ -818,6 +849,14 @@ function DiagramApp(): React.ReactElement {
       if (expansionKind === 'funcCall') {
         vscode.postMessage({
           type: 'requestExpandFunctionCall',
+          moduleName: parentModuleName,
+          callId: localInstanceId,
+          topLevel,
+          callSize: resolvedNodeDimensions(node),
+        });
+      } else if (expansionKind === 'taskCall') {
+        vscode.postMessage({
+          type: 'requestExpandTaskCall',
           moduleName: parentModuleName,
           callId: localInstanceId,
           topLevel,
@@ -868,6 +907,16 @@ function DiagramApp(): React.ReactElement {
     }
   }, [view, expandedFunctionCallIds, nodes, requestExpand]);
 
+  useEffect(() => {
+    if (!view) return;
+    for (const callId of expandedTaskCallIds) {
+      if (spliceMapRef.current.has(callId)) continue;
+      const callNode = nodes.find((node) => node.id === callId);
+      if (!callNode || callNode.data.node.kind !== 'taskCall') continue;
+      requestExpand(callNode);
+    }
+  }, [view, expandedTaskCallIds, nodes, requestExpand]);
+
   // Keeps the host's DiagramPanel.expandedFrameSizesByModule in sync with
   // every top-level "Expand instance in place" frame's real on-screen size
   // — otherwise the host's own libavoid routing pass (which runs on *every*
@@ -910,6 +959,14 @@ function DiagramApp(): React.ReactElement {
         setExpandedFunctionCallIds((ids) => ids.filter((id) => id !== splice.instanceId));
         vscode.postMessage({
           type: 'collapseFunctionCall',
+          moduleName: splice.parentModuleName,
+          callId: splice.instanceId,
+          topLevel: true,
+        });
+      } else if (splice.expansionKind === 'taskCall') {
+        setExpandedTaskCallIds((ids) => ids.filter((id) => id !== splice.instanceId));
+        vscode.postMessage({
+          type: 'collapseTaskCall',
           moduleName: splice.parentModuleName,
           callId: splice.instanceId,
           topLevel: true,
@@ -1568,10 +1625,6 @@ function DiagramApp(): React.ReactElement {
       setPendingSelectionAction,
       overlayPortalNode,
       startNodeResize,
-      expandFunctionCall: (nodeId: string) => {
-        const callNode = nodes.find((node) => node.id === nodeId);
-        if (callNode?.data.node.kind === 'funcCall') requestExpand(callNode);
-      },
     }),
     [
       hoveredNetKey,
@@ -1581,8 +1634,6 @@ function DiagramApp(): React.ReactElement {
       pendingSelectionAction,
       overlayPortalNode,
       startNodeResize,
-      nodes,
-      requestExpand,
     ],
   );
 
@@ -2241,7 +2292,8 @@ function NodeSelectionToolbar({
     selectedBlocks.length === 1 &&
     ((selectedBlocks[0].data.node.kind === 'instance' &&
       !nodeIsArrayNode(selectedBlocks[0].data.node)) ||
-      selectedBlocks[0].data.node.kind === 'funcCall') &&
+      selectedBlocks[0].data.node.kind === 'funcCall' ||
+      selectedBlocks[0].data.node.kind === 'taskCall') &&
     !isExpandNamespacedId(selectedBlocks[0].id)
       ? selectedBlocks[0]
       : undefined;
@@ -2448,7 +2500,9 @@ function NodeSelectionToolbar({
               title={
                 expandableInstance.data.node.kind === 'funcCall'
                   ? "Unfold this function's logic in place"
-                  : "Unfold this instance's diagram in place"
+                  : expandableInstance.data.node.kind === 'taskCall'
+                    ? "Unfold this task's logic in place"
+                    : "Unfold this instance's diagram in place"
               }
               onClick={(event) => {
                 event.stopPropagation();
@@ -2468,7 +2522,9 @@ function NodeSelectionToolbar({
               title={
                 activeSplice.expansionKind === 'funcCall'
                   ? "Collapse this function's unfolded logic"
-                  : "Collapse this instance's unfolded diagram"
+                  : activeSplice.expansionKind === 'taskCall'
+                    ? "Collapse this task's unfolded logic"
+                    : "Collapse this instance's unfolded diagram"
               }
               onClick={(event) => {
                 event.stopPropagation();

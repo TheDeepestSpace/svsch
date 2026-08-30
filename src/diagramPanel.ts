@@ -71,6 +71,14 @@ export interface ExpandFunctionCallPayload {
   spliceLayout?: ExpandSpliceLayout;
 }
 
+/** Task counterpart to ExpandFunctionCallPayload. */
+export interface ExpandTaskCallPayload {
+  callId: string;
+  taskId: string;
+  module: DesignModule;
+  spliceLayout?: ExpandSpliceLayout;
+}
+
 type WebviewMessage =
   | { type: 'ready' }
   | {
@@ -163,6 +171,14 @@ type WebviewMessage =
       callSize?: { width: number; height: number };
     }
   | { type: 'collapseFunctionCall'; moduleName: string; callId: string; topLevel: boolean }
+  | {
+      type: 'requestExpandTaskCall';
+      moduleName: string;
+      callId: string;
+      topLevel: boolean;
+      callSize?: { width: number; height: number };
+    }
+  | { type: 'collapseTaskCall'; moduleName: string; callId: string; topLevel: boolean }
   | { type: 'navigateToSource'; source: SourceRange }
   | {
       type: 'navigateToRegion';
@@ -516,6 +532,19 @@ export class DiagramPanel {
     }
     if (message.type === 'collapseFunctionCall') {
       await this.collapseFunctionCall(message.moduleName, message.callId, message.topLevel);
+      return;
+    }
+    if (message.type === 'requestExpandTaskCall') {
+      await this.requestExpandTaskCall(
+        message.moduleName,
+        message.callId,
+        message.topLevel,
+        message.callSize,
+      );
+      return;
+    }
+    if (message.type === 'collapseTaskCall') {
+      await this.collapseTaskCall(message.moduleName, message.callId, message.topLevel);
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -1240,6 +1269,72 @@ export class DiagramPanel {
     await this.persistModuleLayout(store, moduleName);
   }
 
+  private async requestExpandTaskCall(
+    moduleName: string,
+    callId: string,
+    topLevel: boolean,
+    callSize?: { width: number; height: number },
+  ): Promise<void> {
+    const store = this.getStore();
+    const designModule = this.graph?.modules[moduleName];
+    if (!store || !designModule || !this.panel) return;
+
+    const callNode = designModule.nodes.find((node) => node.id === callId);
+    if (!callNode || callNode.kind !== 'taskCall' || !callNode.taskId) return;
+    const taskId = callNode.taskId;
+    const callable = this.graph?.tasks?.[taskId];
+    if (!callable) return;
+
+    if (topLevel) {
+      await this.ensureModuleLayout(store, moduleName);
+      this.layout = setTaskCallExpanded(this.layout, moduleName, callId, true);
+      await this.persistModuleLayout(store, moduleName);
+    }
+
+    let spliceLayout: ExpandSpliceLayout | undefined;
+    try {
+      spliceLayout = this.graph
+        ? await buildExpandSpliceLayout({
+            graph: this.graph,
+            layout: this.layout,
+            childModuleName: taskId,
+            instanceId: callId,
+            instancePorts: callNode.ports,
+            instanceSize: callSize ?? resolvedNodeDimensions(callNode),
+            instanceParamRows: 0,
+            childModule: callable,
+          })
+        : undefined;
+    } catch (error) {
+      logger.warn(`task-call splice layout failed for ${taskId}: ${String(error)}`);
+    }
+
+    const payload: ExpandTaskCallPayload = {
+      callId,
+      taskId,
+      module: callable,
+      spliceLayout,
+    };
+    await this.panel.webview.postMessage({
+      type: 'expandTaskCallData',
+      moduleName,
+      payload,
+    });
+  }
+
+  private async collapseTaskCall(
+    moduleName: string,
+    callId: string,
+    topLevel: boolean,
+  ): Promise<void> {
+    if (!topLevel) return;
+    const store = this.getStore();
+    if (!store) return;
+    await this.ensureModuleLayout(store, moduleName);
+    this.layout = setTaskCallExpanded(this.layout, moduleName, callId, false);
+    await this.persistModuleLayout(store, moduleName);
+  }
+
   private postView(): Promise<void> {
     const pending = this.postViewQueue.then(() => this.postViewNow());
     this.postViewQueue = pending.catch(() => {});
@@ -1302,12 +1397,17 @@ export class DiagramPanel {
     const expandedFunctionCallIds = expandedFunctionCalls
       ? Object.keys(expandedFunctionCalls).filter((id) => expandedFunctionCalls[id])
       : [];
+    const expandedTaskCalls = this.layout.modules[moduleName]?.expandedTaskCalls;
+    const expandedTaskCallIds = expandedTaskCalls
+      ? Object.keys(expandedTaskCalls).filter((id) => expandedTaskCalls[id])
+      : [];
     await panel.webview.postMessage({
       type: 'graph',
       view,
       modules: Object.keys(graph.modules),
       expandedInstanceIds,
       expandedFunctionCallIds,
+      expandedTaskCallIds,
     });
   }
 
@@ -1398,6 +1498,28 @@ function setFunctionCallExpanded(
     modules: {
       ...layout.modules,
       [moduleName]: { ...moduleLayout, expandedFunctionCalls },
+    },
+  };
+}
+
+function setTaskCallExpanded(
+  layout: SavedLayout,
+  moduleName: string,
+  callId: string,
+  isExpanded: boolean,
+): SavedLayout {
+  const moduleLayout = layout.modules[moduleName] ?? { nodes: {} };
+  const expandedTaskCalls = { ...(moduleLayout.expandedTaskCalls ?? {}) };
+  if (isExpanded) {
+    expandedTaskCalls[callId] = true;
+  } else {
+    delete expandedTaskCalls[callId];
+  }
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: { ...moduleLayout, expandedTaskCalls },
     },
   };
 }

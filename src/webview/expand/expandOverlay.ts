@@ -42,7 +42,7 @@ export const EXPAND_GHOST_CLASS = 'hdl-node-expand-ghost';
  */
 export interface ActiveSplice extends SpliceResult {
   /** Absent on legacy/test fixtures and treated as an instance expansion. */
-  expansionKind?: 'instance' | 'funcCall';
+  expansionKind?: 'instance' | 'funcCall' | 'taskCall';
   namespace: string;
   /**
    * Id this splice's instance node has *in the current flow `nodes` array* —

@@ -18,15 +18,16 @@ import {
   waitForViewportTransformToSettle,
 } from './helper';
 
-// "Support expandable function call diagrams" (issue #335): a function call
-// site renders as its own FUNCTION block (InstanceNodeSvg's funcCall
-// kindLabel), and double-clicking it splices the function's own
-// combinational body in place — the callable counterpart to
-// expand_instance.visual.spec.ts's "Expand instance in place" coverage.
-// There's no live extension host in this browser-only harness, so the
-// host's expandFunctionCallData reply is simulated from the same
-// DesignGraph the fixture's own view was built from, mirroring
-// diagramPanel.ts's requestExpandFunctionCall handler.
+// "Support expandable function/task call diagrams" (issue #335, revised in
+// PR #336 review): a function/task call site renders as its own FUNCTION/
+// TASK block (InstanceNodeSvg's kindLabel), and selecting it then clicking
+// the toolbar "Expand" button splices its own body in place — the same
+// select-then-click-Expand round trip an instance uses (double-click is a
+// no-op for these kinds; see InstanceNode.tsx). There's no live extension
+// host in this browser-only harness, so the host's expandFunctionCallData/
+// expandTaskCallData reply is simulated from the same DesignGraph the
+// fixture's own view was built from, mirroring diagramPanel.ts's
+// requestExpandFunctionCall/requestExpandTaskCall handlers.
 async function installMessageCapture(page: Page): Promise<void> {
   await page.addInitScript(() => {
     (window as any).__svschMessages = [];
@@ -65,62 +66,72 @@ async function buildFixtureGraph(fixtureName: string): Promise<DesignGraph> {
   }
 }
 
-// Mirrors diagramPanel.ts's requestExpandFunctionCall response: the callable
-// body from graph.functions plus the host-computed splice layout.
-async function expandFunctionCallPayloadFor(
+// Mirrors diagramPanel.ts's requestExpandFunctionCall/requestExpandTaskCall
+// response: the callable body from graph.functions/graph.tasks plus the
+// host-computed splice layout.
+async function expandCallPayloadFor(
   graph: DesignGraph,
   layout: SavedLayout,
   request: any,
-): Promise<Record<string, unknown>> {
+): Promise<{ messageType: string; payload: Record<string, unknown> }> {
   const parentModule = graph.modules[request.moduleName];
   const callNode = parentModule?.nodes.find((node: any) => node.id === request.callId);
-  if (!callNode || callNode.kind !== 'funcCall' || !callNode.functionId) {
-    throw new Error(`No function call ${request.callId} in ${request.moduleName}`);
+  if (!callNode || (callNode.kind !== 'funcCall' && callNode.kind !== 'taskCall')) {
+    throw new Error(`No function/task call ${request.callId} in ${request.moduleName}`);
   }
-  const functionId = callNode.functionId;
-  const callable = graph.functions?.[functionId];
-  if (!callable) throw new Error(`No function body for ${functionId}`);
+  const isFunc = callNode.kind === 'funcCall';
+  const callableId = isFunc ? callNode.functionId : callNode.taskId;
+  if (!callableId) throw new Error(`Call node ${request.callId} has no callable id`);
+  const callable = (isFunc ? graph.functions : graph.tasks)?.[callableId];
+  if (!callable) throw new Error(`No callable body for ${callableId}`);
   const spliceLayout = await buildExpandSpliceLayout({
     graph,
     layout,
-    childModuleName: functionId,
+    childModuleName: callableId,
     instanceId: request.callId,
     instancePorts: callNode.ports,
     instanceSize: request.callSize,
     instanceParamRows: 0,
     childModule: callable,
   });
-  return { callId: request.callId, functionId, module: callable, spliceLayout };
+  return {
+    messageType: isFunc ? 'expandFunctionCallData' : 'expandTaskCallData',
+    payload: isFunc
+      ? { callId: request.callId, functionId: callableId, module: callable, spliceLayout }
+      : { callId: request.callId, taskId: callableId, module: callable, spliceLayout },
+  };
 }
 
-// Double-clicks the given funcCall node — its own double-click handler
-// unfolds it directly (see InstanceNode.tsx), unlike an instance node, which
-// needs the select-then-click-Expand round trip.
-async function expandFunctionCallOnPage(
+// Selects the given funcCall/taskCall node then clicks the toolbar "Expand"
+// button — same round trip an instance uses (double-click is a no-op for
+// these kinds; see InstanceNode.tsx's onDoubleClick).
+async function expandCallOnPage(
   page: Page,
   graph: DesignGraph,
   layout: SavedLayout,
   callLocator: ReturnType<Page['locator']>,
+  requestMessageType: 'requestExpandFunctionCall' | 'requestExpandTaskCall',
 ): Promise<void> {
   const box = await callLocator.boundingBox();
-  if (!box) throw new Error('Could not locate the function call node to expand');
-  await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height / 2);
+  if (!box) throw new Error('Could not locate the call node to expand');
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const expandButton = page.locator('.svsch-selection-toolbar button', { hasText: 'Expand' });
+  await expect(expandButton).toBeVisible();
+  await expandButton.click();
   await expect
     .poll(async () =>
-      (await capturedMessages(page)).some(
-        (message: any) => message.type === 'requestExpandFunctionCall',
-      ),
+      (await capturedMessages(page)).some((message: any) => message.type === requestMessageType),
     )
     .toBe(true);
   const request = (await capturedMessages(page)).find(
-    (message: any) => message.type === 'requestExpandFunctionCall',
+    (message: any) => message.type === requestMessageType,
   );
-  const payload = await expandFunctionCallPayloadFor(graph, layout, request);
+  const { messageType, payload } = await expandCallPayloadFor(graph, layout, request);
   await page.evaluate(
-    ({ moduleName, payload }) => {
-      window.postMessage({ type: 'expandFunctionCallData', moduleName, payload }, '*');
+    ({ moduleName, messageType, payload }) => {
+      window.postMessage({ type: messageType, moduleName, payload }, '*');
     },
-    { moduleName: request.moduleName, payload },
+    { moduleName: request.moduleName, messageType, payload },
   );
   await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
 }
@@ -129,25 +140,30 @@ async function expandFunctionCallOnPage(
 // their splice fresh — the same content the webview itself spliced in — so
 // the SVG half of expectGraphAndScreenshot's regression check (renderSvg on
 // the tracked view) reflects the expanded state the PNG screenshot shows.
-async function trackFunctionCallSplicedView(
+async function trackCallSplicedView(
   page: Page,
   graph: DesignGraph,
   layout: SavedLayout,
   view: DiagramViewModel,
   callIds: string[],
+  expansionKind: 'funcCall' | 'taskCall',
 ): Promise<void> {
   const moduleLayout = layout.modules[view.moduleName] ?? { nodes: {} };
+  const expandedIds = Object.fromEntries(callIds.map((id) => [id, true]));
   const expandedLayout: SavedLayout = {
     ...layout,
     modules: {
       ...layout.modules,
-      [view.moduleName]: {
-        ...moduleLayout,
-        expandedFunctionCalls: {
-          ...(moduleLayout.expandedFunctionCalls ?? {}),
-          ...Object.fromEntries(callIds.map((id) => [id, true])),
-        },
-      },
+      [view.moduleName]:
+        expansionKind === 'funcCall'
+          ? {
+              ...moduleLayout,
+              expandedFunctionCalls: { ...(moduleLayout.expandedFunctionCalls ?? {}), ...expandedIds },
+            }
+          : {
+              ...moduleLayout,
+              expandedTaskCalls: { ...(moduleLayout.expandedTaskCalls ?? {}), ...expandedIds },
+            },
     },
   };
   const splicedView = await applyExpandedInstances({ graph, layout: expandedLayout, view });
@@ -178,7 +194,7 @@ test.describe('function call diagrams visual', () => {
     await fitGraphView(page, 0.2);
     await expectGraphAndScreenshot(page, 'function-call-collapsed.png');
 
-    await expandFunctionCallOnPage(page, graph, emptyLayout, call);
+    await expandCallOnPage(page, graph, emptyLayout, call, 'requestExpandFunctionCall');
 
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(3);
     const callWrapper = page.locator(`.react-flow__node[data-id="${callId}"]`);
@@ -188,7 +204,7 @@ test.describe('function call diagrams visual', () => {
     await expect(page.locator('[data-node-kind="alu"]')).toHaveCount(1);
 
     await fitGraphView(page, 0.2);
-    await trackFunctionCallSplicedView(page, graph, emptyLayout, view, [callId]);
+    await trackCallSplicedView(page, graph, emptyLayout, view, [callId], 'funcCall');
     await expectGraphAndScreenshot(page, 'function-call-expanded.png');
 
     // Collapse restores the original small FUNCTION block. A function call's
@@ -219,5 +235,49 @@ test.describe('function call diagrams visual', () => {
 
     await fitGraphView(page, 0.2);
     await expectGraphAndScreenshot(page, 'task-call.png');
+  });
+
+  // Task counterpart to "a function call renders as a FUNCTION block, and
+  // expanding it splices in its body" above (issue #340, folded into #335's
+  // Expand-button revision). No new screenshot baseline here — same splice
+  // machinery, already covered pixel-for-pixel by the function-call case —
+  // this just confirms the taskCall wiring (select+Expand, boundary ports,
+  // Collapse) round-trips too.
+  test('expanding a task call in place splices in its body, and Collapse restores it', async ({
+    page,
+  }) => {
+    await installMessageCapture(page);
+
+    const graph = await buildFixtureGraph('task_call.sv');
+    const emptyLayout: SavedLayout = { version: 1, modules: {} };
+    const view = await buildViewModel(graph, 'task_call', emptyLayout);
+
+    await openView(page, view);
+    await page.waitForSelector('[data-node-kind="taskCall"]', { state: 'attached' });
+    await waitForViewportTransformToSettle(page);
+
+    const call = page.locator('[data-node-kind="taskCall"]');
+    await expect(call).toHaveCount(1);
+    const callId = await call.getAttribute('data-node-id');
+    if (!callId) throw new Error('Could not locate the "add_values" task call node');
+
+    await fitGraphView(page, 0.2);
+    await expandCallOnPage(page, graph, emptyLayout, call, 'requestExpandTaskCall');
+
+    await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(3);
+    const callWrapper = page.locator(`.react-flow__node[data-id="${callId}"]`);
+    await expect(callWrapper).toHaveClass(/hdl-node-expand-ghost/);
+    await expect(page.locator('[data-node-kind="alu"]')).toHaveCount(1);
+
+    const ghostBox = await callWrapper.boundingBox();
+    if (!ghostBox) throw new Error('Could not locate the expanded "add_values" task call node');
+    await page.mouse.click(ghostBox.x + ghostBox.width / 2, ghostBox.y + 15);
+    const collapseButton = page.locator('.svsch-selection-toolbar button', { hasText: 'Collapse' });
+    await expect(collapseButton).toBeVisible();
+    await collapseButton.click();
+
+    await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(0);
+    await expect(call).toHaveCount(1);
+    await expect(callWrapper).not.toHaveClass(/hdl-node-expand-ghost/);
   });
 });
