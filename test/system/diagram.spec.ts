@@ -730,6 +730,11 @@ async function resizeSystemRegisterAndAssertPersistence(
       `Could not find register "q" after reopening the ${resizeCase.handle} resize case`,
     );
   }
+  // closeAndReopenSystemDiagram tears the panel all the way down and rebuilds
+  // it from disk (webview reload, module re-elaboration, ELK re-layout), so
+  // this is the heaviest round-trip in the suite. 10s cut it too close under
+  // CI's shared-runner load and produced a one-off timeout (see PR #272 CI
+  // run 32809807973) despite the persisted state already being correct.
   await expect
     .poll(
       async () => {
@@ -742,7 +747,7 @@ async function resizeSystemRegisterAndAssertPersistence(
           closeTo(reopenedPosition.y, resizedPosition.y)
         );
       },
-      { timeout: 10_000 },
+      { timeout: 20_000 },
     )
     .toBe(true);
   await assertSystemRegisterResetPortAnchored(webview, reopenedNodeId, resizedSize);

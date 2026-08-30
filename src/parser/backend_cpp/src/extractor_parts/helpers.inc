@@ -210,6 +210,32 @@ std::string explicitTypespecRange(vpiHandle handle) {
     return "";
 }
 
+// True when a declared range can span more than one bit: a numeric range like
+// "[7:0]", or a symbolic range like "[X:0]" whose parameter may still exceed
+// zero at elaboration time. A constant single-bit range ("[0:0]", "[3:3]")
+// stays false. Mirrors widthIsPotentiallyMultiBit in src/ir/edgeStyle.ts so
+// the backend's stacked-vs-thick classification agrees with the frontend's.
+bool widthIsPotentiallyMultiBit(const std::string& width) {
+    if (width.empty() || width == "interface") return false;
+    static const std::regex rangeRe(R"(^\s*\[\s*([^:\[\]]+?)\s*:\s*([^:\[\]]+?)\s*\]\s*$)");
+    std::smatch m;
+    if (!std::regex_match(width, m, rangeRe)) {
+        // Multi-dimensional packed ranges (e.g. [7:0][3:0]) are always multi-bit.
+        return width.find("][") != std::string::npos;
+    }
+    try {
+        size_t msb_pos, lsb_pos;
+        int msb = std::stoi(m[1].str(), &msb_pos);
+        int lsb = std::stoi(m[2].str(), &lsb_pos);
+        if (msb_pos == m[1].str().size() && lsb_pos == m[2].str().size()) {
+            return msb != lsb;
+        }
+    } catch (...) {
+        // Fall through: non-numeric range, treated as potentially multi-bit below.
+    }
+    return true;
+}
+
 int rangeWidthInBits(const std::string& width) {
     if (width.size() < 3 || width.front() != '[' || width.back() != ']') return 1;
     size_t colon = width.find(':');

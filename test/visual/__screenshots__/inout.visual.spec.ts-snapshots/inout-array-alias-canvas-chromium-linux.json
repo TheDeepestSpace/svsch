@@ -246,7 +246,7 @@
       "target": "mux:inout_array_alias:a_elem_0:ternary",
       "sourceHandle": "out:_0_",
       "targetHandle": "sel",
-      "path": "M 610.5 54 L 726 54 L 726 270 L 894 270 L 894 312"
+      "path": "M 600 48 L 624 48 L 720 48 L 720 264 L 888 264 L 888 312"
     },
     {
       "id": "edge:bus:inout_array_alias:drive_enable:mux:inout_array_alias:a_elem_1:ternary:drive_enable_1_",
@@ -254,7 +254,7 @@
       "target": "mux:inout_array_alias:a_elem_1:ternary",
       "sourceHandle": "out:_1_",
       "targetHandle": "sel",
-      "path": "M 610.5 102 L 894 102 L 894 168"
+      "path": "M 600 96 L 624 96 L 711 96 Q 720 87 729 96 L 888 96 L 888 120 L 888 168"
     },
     {
       "id": "edge:literal:inout_array_alias:8_hff:8_hff:mux:inout_array_alias:a_elem_0:ternary:8_hff",
