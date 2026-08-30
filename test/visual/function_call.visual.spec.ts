@@ -158,7 +158,10 @@ async function trackCallSplicedView(
         expansionKind === 'funcCall'
           ? {
               ...moduleLayout,
-              expandedFunctionCalls: { ...(moduleLayout.expandedFunctionCalls ?? {}), ...expandedIds },
+              expandedFunctionCalls: {
+                ...(moduleLayout.expandedFunctionCalls ?? {}),
+                ...expandedIds,
+              },
             }
           : {
               ...moduleLayout,
