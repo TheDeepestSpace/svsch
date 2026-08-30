@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2516" height="352" viewBox="0 0 2516 352" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="2516" height="352" fill="#fcfcfb" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="#0b0b0b">Visual suite — historical average per master run</text>
+  <rect x="24" y="52" width="14" height="14" rx="2" fill="#2a78d6" />
+<text x="44" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Elaboration avg</text>
+<rect x="178" y="52" width="14" height="14" rx="2" fill="#7c4dcc" />
+<text x="198" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Rendering avg</text>
+  <text x="48" y="82" font-size="14" font-weight="600" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif">Average duration per master run (ms) — dashed segment is this PR, not yet merged</text>
+<line x1="60" y1="312" x2="2492" y2="312" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="316" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="60" y1="292" x2="2492" y2="292" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="296" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">50</text>
+<line x1="60" y1="272" x2="2492" y2="272" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="276" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">100</text>
+<line x1="60" y1="252" x2="2492" y2="252" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="256" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">150</text>
+<line x1="60" y1="232" x2="2492" y2="232" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="236" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">200</text>
+<line x1="60" y1="212" x2="2492" y2="212" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="216" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">250</text>
+<line x1="60" y1="192" x2="2492" y2="192" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="196" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">300</text>
+<line x1="60" y1="172" x2="2492" y2="172" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="176" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">350</text>
+<line x1="60" y1="152" x2="2492" y2="152" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="156" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">400</text>
+<line x1="60" y1="132" x2="2492" y2="132" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="136" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">450</text>
+<line x1="60" y1="112" x2="2492" y2="112" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="116" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">500</text>
+<line x1="60" y1="92" x2="2492" y2="92" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="96" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">550</text>
+<line x1="60" y1="312" x2="2492" y2="312" stroke="#c3c2b7" stroke-width="1.5" />
+<line x1="60" y1="231.38701298701298" x2="124" y2="209.13846153846154" stroke="#2a78d6" stroke-width="2"  />
+<line x1="124" y1="209.13846153846154" x2="188" y2="218.40512820512822" stroke="#2a78d6" stroke-width="2"  />
+<line x1="188" y1="218.40512820512822" x2="252" y2="239.94358974358974" stroke="#2a78d6" stroke-width="2"  />
+<line x1="252" y1="239.94358974358974" x2="316" y2="241.28205128205127" stroke="#2a78d6" stroke-width="2"  />
+<line x1="316" y1="241.28205128205127" x2="380" y2="235.92911392405063" stroke="#2a78d6" stroke-width="2"  />
+<line x1="380" y1="235.92911392405063" x2="444" y2="227.57974683544302" stroke="#2a78d6" stroke-width="2"  />
+<line x1="444" y1="227.57974683544302" x2="508" y2="225.82784810126583" stroke="#2a78d6" stroke-width="2"  />
+<line x1="508" y1="225.82784810126583" x2="572" y2="227.78734177215188" stroke="#2a78d6" stroke-width="2"  />
+<line x1="572" y1="227.78734177215188" x2="636" y2="208.37073170731708" stroke="#2a78d6" stroke-width="2"  />
+<line x1="636" y1="208.37073170731708" x2="700" y2="211.99024390243903" stroke="#2a78d6" stroke-width="2"  />
+<line x1="700" y1="211.99024390243903" x2="764" y2="208.56585365853658" stroke="#2a78d6" stroke-width="2"  />
+<line x1="764" y1="208.56585365853658" x2="828" y2="207.52195121951218" stroke="#2a78d6" stroke-width="2"  />
+<line x1="828" y1="207.52195121951218" x2="892" y2="212.1512195121951" stroke="#2a78d6" stroke-width="2"  />
+<line x1="892" y1="212.1512195121951" x2="956" y2="208.81951219512194" stroke="#2a78d6" stroke-width="2"  />
+<line x1="956" y1="208.81951219512194" x2="1020" y2="211.8292682926829" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1020" y1="211.8292682926829" x2="1084" y2="231.70697674418602" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1084" y1="231.70697674418602" x2="1148" y2="209.39999999999998" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1148" y1="209.39999999999998" x2="1212" y2="214.68505747126437" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1212" y1="214.68505747126437" x2="1276" y2="210" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1276" y1="210" x2="1340" y2="245.6977777777778" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1340" y1="245.6977777777778" x2="1404.0000000000002" y2="217.9111111111111" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1404.0000000000002" y1="217.9111111111111" x2="1468" y2="209.6533333333333" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1468" y1="209.6533333333333" x2="1532" y2="214.32" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1532" y1="214.32" x2="1596" y2="211.2888888888889" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1596" y1="211.2888888888889" x2="1660" y2="219.13777777777779" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1660" y1="219.13777777777779" x2="1724" y2="232.57777777777778" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1724" y1="232.57777777777778" x2="1788" y2="211.80444444444444" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1788" y1="211.80444444444444" x2="1852" y2="207.4977777777778" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1852" y1="207.4977777777778" x2="1916" y2="215.02666666666664" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1916" y1="215.02666666666664" x2="1980" y2="209.47555555555556" stroke="#2a78d6" stroke-width="2"  />
+<line x1="1980" y1="209.47555555555556" x2="2044" y2="215.76444444444445" stroke="#2a78d6" stroke-width="2"  />
+<line x1="2044" y1="215.76444444444445" x2="2108" y2="210.65777777777777" stroke="#2a78d6" stroke-width="2"  />
+<line x1="2108" y1="210.65777777777777" x2="2172" y2="210.14222222222222" stroke="#2a78d6" stroke-width="2"  />
+<line x1="2172" y1="210.14222222222222" x2="2236" y2="215.41333333333333" stroke="#2a78d6" stroke-width="2"  />
+<line x1="2236" y1="215.41333333333333" x2="2300" y2="194.18695652173912" stroke="#2a78d6" stroke-width="2"  />
+<line x1="2300" y1="194.18695652173912" x2="2364" y2="199.64731182795697" stroke="#2a78d6" stroke-width="2"  />
+<line x1="2364" y1="199.64731182795697" x2="2428" y2="190.02580645161288" stroke="#2a78d6" stroke-width="2"  />
+<line x1="2428" y1="190.02580645161288" x2="2492" y2="206.61505376344087" stroke="#2a78d6" stroke-width="2" stroke-dasharray="5,4" />
+<circle cx="60" cy="231.38701298701298" r="3.5" fill="#2a78d6" />
+<circle cx="124" cy="209.13846153846154" r="3.5" fill="#2a78d6" />
+<circle cx="188" cy="218.40512820512822" r="3.5" fill="#2a78d6" />
+<circle cx="252" cy="239.94358974358974" r="3.5" fill="#2a78d6" />
+<circle cx="316" cy="241.28205128205127" r="3.5" fill="#2a78d6" />
+<circle cx="380" cy="235.92911392405063" r="3.5" fill="#2a78d6" />
+<circle cx="444" cy="227.57974683544302" r="3.5" fill="#2a78d6" />
+<circle cx="508" cy="225.82784810126583" r="3.5" fill="#2a78d6" />
+<circle cx="572" cy="227.78734177215188" r="3.5" fill="#2a78d6" />
+<circle cx="636" cy="208.37073170731708" r="3.5" fill="#2a78d6" />
+<circle cx="700" cy="211.99024390243903" r="3.5" fill="#2a78d6" />
+<circle cx="764" cy="208.56585365853658" r="3.5" fill="#2a78d6" />
+<circle cx="828" cy="207.52195121951218" r="3.5" fill="#2a78d6" />
+<circle cx="892" cy="212.1512195121951" r="3.5" fill="#2a78d6" />
+<circle cx="956" cy="208.81951219512194" r="3.5" fill="#2a78d6" />
+<circle cx="1020" cy="211.8292682926829" r="3.5" fill="#2a78d6" />
+<circle cx="1084" cy="231.70697674418602" r="3.5" fill="#2a78d6" />
+<circle cx="1148" cy="209.39999999999998" r="3.5" fill="#2a78d6" />
+<circle cx="1212" cy="214.68505747126437" r="3.5" fill="#2a78d6" />
+<circle cx="1276" cy="210" r="3.5" fill="#2a78d6" />
+<circle cx="1340" cy="245.6977777777778" r="3.5" fill="#2a78d6" />
+<circle cx="1404.0000000000002" cy="217.9111111111111" r="3.5" fill="#2a78d6" />
+<circle cx="1468" cy="209.6533333333333" r="3.5" fill="#2a78d6" />
+<circle cx="1532" cy="214.32" r="3.5" fill="#2a78d6" />
+<circle cx="1596" cy="211.2888888888889" r="3.5" fill="#2a78d6" />
+<circle cx="1660" cy="219.13777777777779" r="3.5" fill="#2a78d6" />
+<circle cx="1724" cy="232.57777777777778" r="3.5" fill="#2a78d6" />
+<circle cx="1788" cy="211.80444444444444" r="3.5" fill="#2a78d6" />
+<circle cx="1852" cy="207.4977777777778" r="3.5" fill="#2a78d6" />
+<circle cx="1916" cy="215.02666666666664" r="3.5" fill="#2a78d6" />
+<circle cx="1980" cy="209.47555555555556" r="3.5" fill="#2a78d6" />
+<circle cx="2044" cy="215.76444444444445" r="3.5" fill="#2a78d6" />
+<circle cx="2108" cy="210.65777777777777" r="3.5" fill="#2a78d6" />
+<circle cx="2172" cy="210.14222222222222" r="3.5" fill="#2a78d6" />
+<circle cx="2236" cy="215.41333333333333" r="3.5" fill="#2a78d6" />
+<circle cx="2300" cy="194.18695652173912" r="3.5" fill="#2a78d6" />
+<circle cx="2364" cy="199.64731182795697" r="3.5" fill="#2a78d6" />
+<circle cx="2428" cy="190.02580645161288" r="3.5" fill="#2a78d6" />
+<circle cx="2492" cy="206.61505376344087" r="4.5" fill="#fcfcfb" stroke="#2a78d6" stroke-width="2" />
+<line x1="60" y1="221.2311111111111" x2="124" y2="197.6791208791209" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="124" y1="197.6791208791209" x2="188" y2="203.23516483516482" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="188" y1="203.23516483516482" x2="252" y2="198.50109890109889" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="252" y1="198.50109890109889" x2="316" y2="193.53406593406595" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="316" y1="193.53406593406595" x2="380" y2="163.4257425742574" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="380" y1="163.4257425742574" x2="444" y2="158.66138613861384" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="444" y1="158.66138613861384" x2="508" y2="166.33663366336634" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="508" y1="166.33663366336634" x2="572" y2="163.25544554455445" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="572" y1="163.25544554455445" x2="636" y2="164.81923076923076" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="636" y1="164.81923076923076" x2="700" y2="165.12307692307692" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="700" y1="165.12307692307692" x2="764" y2="162.58461538461538" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="764" y1="162.58461538461538" x2="828" y2="161.08461538461538" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="828" y1="161.08461538461538" x2="892" y2="161.03076923076924" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="892" y1="161.03076923076924" x2="956" y2="158.4653846153846" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="956" y1="158.4653846153846" x2="1020" y2="164.46923076923076" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1020" y1="164.46923076923076" x2="1084" y2="191.4962962962963" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1084" y1="191.4962962962963" x2="1148" y2="155.24074074074073" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1148" y1="155.24074074074073" x2="1212" y2="164.99816513761468" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1212" y1="164.99816513761468" x2="1276" y2="164.06605504587154" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1276" y1="164.06605504587154" x2="1340" y2="202.07142857142856" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1340" y1="202.07142857142856" x2="1404.0000000000002" y2="165.31785714285712" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1404.0000000000002" y1="165.31785714285712" x2="1468" y2="154.7862068965517" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1468" y1="154.7862068965517" x2="1532" y2="154.77931034482756" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1532" y1="154.77931034482756" x2="1596" y2="159.64137931034483" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1596" y1="159.64137931034483" x2="1660" y2="159.75517241379308" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1660" y1="159.75517241379308" x2="1724" y2="181.6862068965517" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1724" y1="181.6862068965517" x2="1788" y2="154.3965517241379" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1788" y1="154.3965517241379" x2="1852" y2="151.6862068965517" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1852" y1="151.6862068965517" x2="1916" y2="151.69655172413792" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1916" y1="151.69655172413792" x2="1980" y2="157.10689655172413" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="1980" y1="157.10689655172413" x2="2044" y2="152.91379310344826" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="2044" y1="152.91379310344826" x2="2108" y2="149.65517241379308" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="2108" y1="149.65517241379308" x2="2172" y2="146.1758620689655" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="2172" y1="146.1758620689655" x2="2236" y2="152.94137931034481" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="2236" y1="152.94137931034481" x2="2300" y2="134.2123076923077" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="2300" y1="134.2123076923077" x2="2364" y2="130.70534351145037" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="2364" y1="130.70534351145037" x2="2428" y2="131.10839694656488" stroke="#7c4dcc" stroke-width="2"  />
+<line x1="2428" y1="131.10839694656488" x2="2492" y2="127.28854961832062" stroke="#7c4dcc" stroke-width="2" stroke-dasharray="5,4" />
+<circle cx="60" cy="221.2311111111111" r="3.5" fill="#7c4dcc" />
+<circle cx="124" cy="197.6791208791209" r="3.5" fill="#7c4dcc" />
+<circle cx="188" cy="203.23516483516482" r="3.5" fill="#7c4dcc" />
+<circle cx="252" cy="198.50109890109889" r="3.5" fill="#7c4dcc" />
+<circle cx="316" cy="193.53406593406595" r="3.5" fill="#7c4dcc" />
+<circle cx="380" cy="163.4257425742574" r="3.5" fill="#7c4dcc" />
+<circle cx="444" cy="158.66138613861384" r="3.5" fill="#7c4dcc" />
+<circle cx="508" cy="166.33663366336634" r="3.5" fill="#7c4dcc" />
+<circle cx="572" cy="163.25544554455445" r="3.5" fill="#7c4dcc" />
+<circle cx="636" cy="164.81923076923076" r="3.5" fill="#7c4dcc" />
+<circle cx="700" cy="165.12307692307692" r="3.5" fill="#7c4dcc" />
+<circle cx="764" cy="162.58461538461538" r="3.5" fill="#7c4dcc" />
+<circle cx="828" cy="161.08461538461538" r="3.5" fill="#7c4dcc" />
+<circle cx="892" cy="161.03076923076924" r="3.5" fill="#7c4dcc" />
+<circle cx="956" cy="158.4653846153846" r="3.5" fill="#7c4dcc" />
+<circle cx="1020" cy="164.46923076923076" r="3.5" fill="#7c4dcc" />
+<circle cx="1084" cy="191.4962962962963" r="3.5" fill="#7c4dcc" />
+<circle cx="1148" cy="155.24074074074073" r="3.5" fill="#7c4dcc" />
+<circle cx="1212" cy="164.99816513761468" r="3.5" fill="#7c4dcc" />
+<circle cx="1276" cy="164.06605504587154" r="3.5" fill="#7c4dcc" />
+<circle cx="1340" cy="202.07142857142856" r="3.5" fill="#7c4dcc" />
+<circle cx="1404.0000000000002" cy="165.31785714285712" r="3.5" fill="#7c4dcc" />
+<circle cx="1468" cy="154.7862068965517" r="3.5" fill="#7c4dcc" />
+<circle cx="1532" cy="154.77931034482756" r="3.5" fill="#7c4dcc" />
+<circle cx="1596" cy="159.64137931034483" r="3.5" fill="#7c4dcc" />
+<circle cx="1660" cy="159.75517241379308" r="3.5" fill="#7c4dcc" />
+<circle cx="1724" cy="181.6862068965517" r="3.5" fill="#7c4dcc" />
+<circle cx="1788" cy="154.3965517241379" r="3.5" fill="#7c4dcc" />
+<circle cx="1852" cy="151.6862068965517" r="3.5" fill="#7c4dcc" />
+<circle cx="1916" cy="151.69655172413792" r="3.5" fill="#7c4dcc" />
+<circle cx="1980" cy="157.10689655172413" r="3.5" fill="#7c4dcc" />
+<circle cx="2044" cy="152.91379310344826" r="3.5" fill="#7c4dcc" />
+<circle cx="2108" cy="149.65517241379308" r="3.5" fill="#7c4dcc" />
+<circle cx="2172" cy="146.1758620689655" r="3.5" fill="#7c4dcc" />
+<circle cx="2236" cy="152.94137931034481" r="3.5" fill="#7c4dcc" />
+<circle cx="2300" cy="134.2123076923077" r="3.5" fill="#7c4dcc" />
+<circle cx="2364" cy="130.70534351145037" r="3.5" fill="#7c4dcc" />
+<circle cx="2428" cy="131.10839694656488" r="3.5" fill="#7c4dcc" />
+<circle cx="2492" cy="127.28854961832062" r="4.5" fill="#fcfcfb" stroke="#7c4dcc" stroke-width="2" />
+  <text x="60" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">b81deb5</text>
+<text x="124" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">212d781</text>
+<text x="188" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">2254547</text>
+<text x="252" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">2159b0b</text>
+<text x="316" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">35642cc</text>
+<text x="380" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">a2ed914</text>
+<text x="444" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">3e614d7</text>
+<text x="508" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">8efe3a7</text>
+<text x="572" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">b0b46ce</text>
+<text x="636" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">36c172c</text>
+<text x="700" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">a81aeb8</text>
+<text x="764" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">7bd4158</text>
+<text x="828" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">971c28e</text>
+<text x="892" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">6bf669b</text>
+<text x="956" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">834574f</text>
+<text x="1020" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">599030e</text>
+<text x="1084" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">55c3c59</text>
+<text x="1148" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">238a16a</text>
+<text x="1212" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">ae845c2</text>
+<text x="1276" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">2c58440</text>
+<text x="1340" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">047ed46</text>
+<text x="1404.0000000000002" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">3f960ec</text>
+<text x="1468" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">375bceb</text>
+<text x="1532" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">2b9ddec</text>
+<text x="1596" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">7084771</text>
+<text x="1660" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">c35cf51</text>
+<text x="1724" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">5c77fab</text>
+<text x="1788" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">d2a3571</text>
+<text x="1852" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">b0ae3e0</text>
+<text x="1916" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">8d01ce7</text>
+<text x="1980" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">589d5e3</text>
+<text x="2044" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">f2bcfd7</text>
+<text x="2108" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">9d26e07</text>
+<text x="2172" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">d11db80</text>
+<text x="2236" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">c0f9616</text>
+<text x="2300" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">b4a6ace</text>
+<text x="2364" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">f6b2d11</text>
+<text x="2428" y="328" font-size="10" text-anchor="middle" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" font-weight="400">f91ec25</text>
+<text x="2492" y="328" font-size="10" text-anchor="middle" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif" font-weight="600">this PR</text>
+</svg>

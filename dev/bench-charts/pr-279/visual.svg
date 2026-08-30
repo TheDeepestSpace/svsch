@@ -1,0 +1,255 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="962.4" height="376" viewBox="0 0 962.4 376" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <pattern id="newHatchBlue" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#2a78d6" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#fcfcfb" stroke-width="3" />
+    </pattern>
+    <pattern id="newHatchPurple" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#7c4dcc" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#fcfcfb" stroke-width="3" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="962.4" height="376" fill="#fcfcfb" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="#0b0b0b">Visual suite performance statistics — baseline vs. this run, fastest to slowest</text>
+  <rect x="24" y="52" width="14" height="14" rx="2" fill="#2a78d6" />
+<text x="44" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Elaboration</text>
+<rect x="149.2" y="52" width="14" height="14" rx="2" fill="#7c4dcc" />
+<text x="169.2" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Rendering</text>
+<rect x="260" y="52" width="14" height="14" rx="2" fill="#0ca30c" />
+<text x="280" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Faster than baseline</text>
+<rect x="450" y="52" width="14" height="14" rx="2" fill="#d03b3b" />
+<text x="470" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Slower than baseline</text>
+<rect x="640" y="52" width="14" height="14" rx="2" fill="url(#newHatchBlue)" />
+<text x="660" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Elaboration (new)</text>
+<rect x="808.4" y="52" width="14" height="14" rx="2" fill="url(#newHatchPurple)" />
+<text x="828.4" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Rendering (new)</text>
+  <text x="48" y="82" font-size="14" font-weight="600" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif">Elaboration + rendering duration (ms)</text>
+<line x1="60" y1="352" x2="938.4" y2="352" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="356" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="60" y1="325.3333333333333" x2="938.4" y2="325.3333333333333" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="329.3333333333333" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">500</text>
+<line x1="60" y1="298.6666666666667" x2="938.4" y2="298.6666666666667" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="302.6666666666667" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1000</text>
+<line x1="60" y1="272" x2="938.4" y2="272" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="276" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1500</text>
+<line x1="60" y1="245.33333333333331" x2="938.4" y2="245.33333333333331" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="249.33333333333331" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2000</text>
+<line x1="60" y1="218.66666666666666" x2="938.4" y2="218.66666666666666" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="222.66666666666666" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2500</text>
+<line x1="60" y1="192" x2="938.4" y2="192" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="196" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3000</text>
+<line x1="60" y1="165.33333333333331" x2="938.4" y2="165.33333333333331" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="169.33333333333331" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3500</text>
+<line x1="60" y1="138.66666666666666" x2="938.4" y2="138.66666666666666" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="142.66666666666666" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4000</text>
+<line x1="60" y1="111.99999999999997" x2="938.4" y2="111.99999999999997" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="115.99999999999997" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4500</text>
+<line x1="60" y1="352" x2="938.4" y2="352" stroke="#c3c2b7" stroke-width="1.5" />
+<rect x="61.04216949152542" y="351.0933333333333" width="5.359728813559322" height="0.9066666666666667" fill="url(#newHatchBlue)" />
+<rect x="68.4862372881356" y="351.46666666666664" width="5.359728813559322" height="0.5333333333333333" fill="url(#newHatchBlue)" />
+<rect x="68.4862372881356" y="346.08" width="5.359728813559322" height="5.386666666666667" fill="url(#newHatchPurple)" />
+<rect x="75.93030508474577" y="350.88" width="5.359728813559322" height="1.12" fill="url(#newHatchBlue)" />
+<rect x="75.93030508474577" y="344.85333333333335" width="5.359728813559322" height="6.026666666666667" fill="url(#newHatchPurple)" />
+<rect x="83.37437288135594" y="350.08" width="5.359728813559322" height="1.9200000000000002" fill="url(#newHatchBlue)" />
+<rect x="83.37437288135594" y="342.18666666666667" width="5.359728813559322" height="7.8933333333333335" fill="url(#newHatchPurple)" />
+<rect x="90.81844067796611" y="347.68" width="5.359728813559322" height="4.32" fill="url(#newHatchBlue)" />
+<rect x="90.81844067796611" y="342.0266666666667" width="5.359728813559322" height="5.653333333333333" fill="url(#newHatchPurple)" />
+<rect x="98.26250847457628" y="348.53333333333336" width="5.359728813559322" height="3.466666666666667" fill="url(#newHatchBlue)" />
+<rect x="98.26250847457628" y="342.0266666666667" width="5.359728813559322" height="6.506666666666667" fill="url(#newHatchPurple)" />
+<rect x="105.70657627118645" y="350.82666666666665" width="5.359728813559322" height="1.1733333333333333" fill="url(#newHatchBlue)" />
+<rect x="105.70657627118645" y="341.6533333333333" width="5.359728813559322" height="9.173333333333334" fill="url(#newHatchPurple)" />
+<rect x="113.15064406779662" y="350.02666666666664" width="5.359728813559322" height="1.9733333333333334" fill="url(#newHatchBlue)" />
+<rect x="113.15064406779662" y="341.38666666666666" width="5.359728813559322" height="8.64" fill="url(#newHatchPurple)" />
+<rect x="120.59471186440679" y="350.18666666666667" width="5.359728813559322" height="1.8133333333333335" fill="url(#newHatchBlue)" />
+<rect x="120.59471186440679" y="341.17333333333335" width="5.359728813559322" height="9.013333333333334" fill="url(#newHatchPurple)" />
+<rect x="128.03877966101695" y="349.6533333333333" width="5.359728813559322" height="2.3466666666666667" fill="url(#newHatchBlue)" />
+<rect x="128.03877966101695" y="341.06666666666666" width="5.359728813559322" height="8.586666666666668" fill="url(#newHatchPurple)" />
+<rect x="135.48284745762712" y="349.8666666666667" width="5.359728813559322" height="2.1333333333333333" fill="url(#newHatchBlue)" />
+<rect x="135.48284745762712" y="341.0133333333333" width="5.359728813559322" height="8.853333333333333" fill="url(#newHatchPurple)" />
+<rect x="142.9269152542373" y="348.4266666666667" width="5.359728813559322" height="3.5733333333333337" fill="url(#newHatchBlue)" />
+<rect x="142.9269152542373" y="340.16" width="5.359728813559322" height="8.266666666666667" fill="url(#newHatchPurple)" />
+<rect x="150.37098305084746" y="348.26666666666665" width="5.359728813559322" height="3.7333333333333334" fill="url(#newHatchBlue)" />
+<rect x="150.37098305084746" y="339.94666666666666" width="5.359728813559322" height="8.32" fill="url(#newHatchPurple)" />
+<rect x="157.81505084745763" y="347.62666666666667" width="5.359728813559322" height="4.373333333333334" fill="url(#newHatchBlue)" />
+<rect x="157.81505084745763" y="339.84" width="5.359728813559322" height="7.786666666666667" fill="url(#newHatchPurple)" />
+<rect x="165.2591186440678" y="346.6666666666667" width="5.359728813559322" height="5.333333333333334" fill="url(#newHatchBlue)" />
+<rect x="165.2591186440678" y="339.73333333333335" width="5.359728813559322" height="6.933333333333334" fill="url(#newHatchPurple)" />
+<rect x="172.70318644067797" y="348.05333333333334" width="5.359728813559322" height="3.9466666666666668" fill="url(#newHatchBlue)" />
+<rect x="172.70318644067797" y="339.68" width="5.359728813559322" height="8.373333333333333" fill="url(#newHatchPurple)" />
+<rect x="180.14725423728814" y="348.1066666666667" width="5.359728813559322" height="3.8933333333333335" fill="url(#newHatchBlue)" />
+<rect x="180.14725423728814" y="339.62666666666667" width="5.359728813559322" height="8.48" fill="url(#newHatchPurple)" />
+<rect x="187.5913220338983" y="348.05333333333334" width="5.359728813559322" height="3.9466666666666668" fill="url(#newHatchBlue)" />
+<rect x="187.5913220338983" y="339.5733333333333" width="5.359728813559322" height="8.48" fill="url(#newHatchPurple)" />
+<rect x="195.03538983050845" y="347.73333333333335" width="5.359728813559322" height="4.266666666666667" fill="url(#newHatchBlue)" />
+<rect x="195.03538983050845" y="339.4666666666667" width="5.359728813559322" height="8.266666666666667" fill="url(#newHatchPurple)" />
+<rect x="202.47945762711862" y="348.05333333333334" width="5.359728813559322" height="3.9466666666666668" fill="url(#newHatchBlue)" />
+<rect x="202.47945762711862" y="339.4666666666667" width="5.359728813559322" height="8.586666666666668" fill="url(#newHatchPurple)" />
+<rect x="209.9235254237288" y="348.1066666666667" width="5.359728813559322" height="3.8933333333333335" fill="url(#newHatchBlue)" />
+<rect x="209.9235254237288" y="339.41333333333336" width="5.359728813559322" height="8.693333333333333" fill="url(#newHatchPurple)" />
+<rect x="217.36759322033896" y="346.4533333333333" width="5.359728813559322" height="5.546666666666667" fill="url(#newHatchBlue)" />
+<rect x="217.36759322033896" y="339.3066666666667" width="5.359728813559322" height="7.146666666666667" fill="url(#newHatchPurple)" />
+<rect x="224.81166101694913" y="347.94666666666666" width="5.359728813559322" height="4.053333333333334" fill="url(#newHatchBlue)" />
+<rect x="224.81166101694913" y="339.2" width="5.359728813559322" height="8.746666666666668" fill="url(#newHatchPurple)" />
+<rect x="232.2557288135593" y="347.8933333333333" width="5.359728813559322" height="4.106666666666667" fill="url(#newHatchBlue)" />
+<rect x="232.2557288135593" y="338.71999999999997" width="5.359728813559322" height="9.173333333333334" fill="url(#newHatchPurple)" />
+<rect x="239.69979661016947" y="347.3066666666667" width="5.359728813559322" height="4.693333333333333" fill="url(#newHatchBlue)" />
+<rect x="239.69979661016947" y="338.61333333333334" width="5.359728813559322" height="8.693333333333333" fill="url(#newHatchPurple)" />
+<rect x="247.14386440677964" y="348.05333333333334" width="5.359728813559322" height="3.9466666666666668" fill="url(#newHatchBlue)" />
+<rect x="247.14386440677964" y="338.18666666666667" width="5.359728813559322" height="9.866666666666667" fill="url(#newHatchPurple)" />
+<rect x="254.5879322033898" y="347.7866666666667" width="5.359728813559322" height="4.213333333333334" fill="url(#newHatchBlue)" />
+<rect x="254.5879322033898" y="338.08000000000004" width="5.359728813559322" height="9.706666666666667" fill="url(#newHatchPurple)" />
+<rect x="262.03200000000004" y="347.3066666666667" width="5.359728813559322" height="4.693333333333333" fill="url(#newHatchBlue)" />
+<rect x="262.03200000000004" y="337.70666666666665" width="5.359728813559322" height="9.600000000000001" fill="url(#newHatchPurple)" />
+<rect x="269.4760677966102" y="348.48" width="5.359728813559322" height="3.52" fill="url(#newHatchBlue)" />
+<rect x="269.4760677966102" y="337.6" width="5.359728813559322" height="10.88" fill="url(#newHatchPurple)" />
+<rect x="276.9201355932204" y="346.56" width="5.359728813559322" height="5.44" fill="url(#newHatchBlue)" />
+<rect x="276.9201355932204" y="337.6" width="5.359728813559322" height="8.96" fill="url(#newHatchPurple)" />
+<rect x="284.36420338983055" y="346.29333333333335" width="5.359728813559322" height="5.706666666666667" fill="url(#newHatchBlue)" />
+<rect x="284.36420338983055" y="337.5466666666667" width="5.359728813559322" height="8.746666666666668" fill="url(#newHatchPurple)" />
+<rect x="291.8082711864407" y="345.44" width="5.359728813559322" height="6.5600000000000005" fill="url(#newHatchBlue)" />
+<rect x="291.8082711864407" y="337.38666666666666" width="5.359728813559322" height="8.053333333333335" fill="url(#newHatchPurple)" />
+<rect x="299.2523389830509" y="348.53333333333336" width="5.359728813559322" height="3.466666666666667" fill="url(#newHatchBlue)" />
+<rect x="299.2523389830509" y="337.28000000000003" width="5.359728813559322" height="11.253333333333334" fill="url(#newHatchPurple)" />
+<rect x="306.69640677966106" y="345.38666666666666" width="5.359728813559322" height="6.613333333333334" fill="url(#newHatchBlue)" />
+<rect x="306.69640677966106" y="336.47999999999996" width="5.359728813559322" height="8.906666666666668" fill="url(#newHatchPurple)" />
+<rect x="314.14047457627123" y="345.8666666666667" width="5.359728813559322" height="6.133333333333334" fill="url(#newHatchBlue)" />
+<rect x="314.14047457627123" y="335.68" width="5.359728813559322" height="10.186666666666667" fill="url(#newHatchPurple)" />
+<rect x="321.58454237288134" y="345.97333333333336" width="5.359728813559322" height="6.026666666666667" fill="url(#newHatchBlue)" />
+<rect x="321.58454237288134" y="335.5733333333334" width="5.359728813559322" height="10.4" fill="url(#newHatchPurple)" />
+<rect x="329.0286101694915" y="346.08" width="5.359728813559322" height="5.920000000000001" fill="url(#newHatchBlue)" />
+<rect x="329.0286101694915" y="335.46666666666664" width="5.359728813559322" height="10.613333333333333" fill="url(#newHatchPurple)" />
+<rect x="336.4726779661017" y="347.46666666666664" width="5.359728813559322" height="4.533333333333333" fill="url(#newHatchBlue)" />
+<rect x="336.4726779661017" y="335.0933333333333" width="5.359728813559322" height="12.373333333333335" fill="url(#newHatchPurple)" />
+<rect x="343.91674576271186" y="346.1333333333333" width="5.359728813559322" height="5.866666666666667" fill="url(#newHatchBlue)" />
+<rect x="343.91674576271186" y="334.93333333333334" width="5.359728813559322" height="11.200000000000001" fill="url(#newHatchPurple)" />
+<rect x="351.360813559322" y="344.1066666666667" width="5.359728813559322" height="7.8933333333333335" fill="url(#newHatchBlue)" />
+<rect x="351.360813559322" y="334.77333333333337" width="5.359728813559322" height="9.333333333333334" fill="url(#newHatchPurple)" />
+<rect x="358.8048813559322" y="345.44" width="5.359728813559322" height="6.5600000000000005" fill="url(#newHatchBlue)" />
+<rect x="358.8048813559322" y="334.71999999999997" width="5.359728813559322" height="10.72" fill="url(#newHatchPurple)" />
+<rect x="366.24894915254237" y="343.36" width="5.359728813559322" height="8.64" fill="url(#newHatchBlue)" />
+<rect x="366.24894915254237" y="334.56" width="5.359728813559322" height="8.8" fill="url(#newHatchPurple)" />
+<rect x="373.69301694915254" y="344.48" width="5.359728813559322" height="7.5200000000000005" fill="url(#newHatchBlue)" />
+<rect x="373.69301694915254" y="334.08000000000004" width="5.359728813559322" height="10.4" fill="url(#newHatchPurple)" />
+<rect x="381.1370847457627" y="343.04" width="5.359728813559322" height="8.96" fill="url(#newHatchBlue)" />
+<rect x="381.1370847457627" y="334.0266666666667" width="5.359728813559322" height="9.013333333333334" fill="url(#newHatchPurple)" />
+<rect x="388.5811525423729" y="343.62666666666667" width="5.359728813559322" height="8.373333333333333" fill="url(#newHatchBlue)" />
+<rect x="388.5811525423729" y="333.81333333333333" width="5.359728813559322" height="9.813333333333334" fill="url(#newHatchPurple)" />
+<rect x="396.02522033898305" y="342.29333333333335" width="5.359728813559322" height="9.706666666666667" fill="url(#newHatchBlue)" />
+<rect x="396.02522033898305" y="333.44" width="5.359728813559322" height="8.853333333333333" fill="url(#newHatchPurple)" />
+<rect x="403.4692881355932" y="345.76" width="5.359728813559322" height="6.24" fill="url(#newHatchBlue)" />
+<rect x="403.4692881355932" y="333.0133333333333" width="5.359728813559322" height="12.746666666666668" fill="url(#newHatchPurple)" />
+<rect x="410.9133559322034" y="333.0133333333333" width="5.359728813559322" height="18.986666666666668" fill="url(#newHatchPurple)" />
+<rect x="418.35742372881356" y="341.97333333333336" width="5.359728813559322" height="10.026666666666667" fill="url(#newHatchBlue)" />
+<rect x="418.35742372881356" y="332.96000000000004" width="5.359728813559322" height="9.013333333333334" fill="url(#newHatchPurple)" />
+<rect x="425.8014915254237" y="341.81333333333333" width="5.359728813559322" height="10.186666666666667" fill="url(#newHatchBlue)" />
+<rect x="425.8014915254237" y="332.85333333333335" width="5.359728813559322" height="8.96" fill="url(#newHatchPurple)" />
+<rect x="433.2455593220339" y="341.44" width="5.359728813559322" height="10.56" fill="url(#newHatchBlue)" />
+<rect x="433.2455593220339" y="332.64" width="5.359728813559322" height="8.8" fill="url(#newHatchPurple)" />
+<rect x="440.68962711864407" y="339.46666666666664" width="5.359728813559322" height="12.533333333333335" fill="url(#newHatchBlue)" />
+<rect x="440.68962711864407" y="332.64" width="5.359728813559322" height="6.826666666666667" fill="url(#newHatchPurple)" />
+<rect x="448.13369491525424" y="332.4266666666667" width="5.359728813559322" height="19.573333333333334" fill="url(#newHatchPurple)" />
+<rect x="455.5777627118644" y="341.2266666666667" width="5.359728813559322" height="10.773333333333333" fill="url(#newHatchBlue)" />
+<rect x="455.5777627118644" y="332.32" width="5.359728813559322" height="8.906666666666668" fill="url(#newHatchPurple)" />
+<rect x="463.0218305084746" y="332" width="5.359728813559322" height="20" fill="url(#newHatchPurple)" />
+<rect x="470.46589830508475" y="331.8933333333333" width="5.359728813559322" height="20.10666666666667" fill="url(#newHatchPurple)" />
+<rect x="477.9099661016949" y="331.68" width="5.359728813559322" height="20.32" fill="url(#newHatchPurple)" />
+<rect x="485.3540338983051" y="341.2266666666667" width="5.359728813559322" height="10.773333333333333" fill="url(#newHatchBlue)" />
+<rect x="485.3540338983051" y="331.52000000000004" width="5.359728813559322" height="9.706666666666667" fill="url(#newHatchPurple)" />
+<rect x="492.79810169491526" y="342.02666666666664" width="5.359728813559322" height="9.973333333333334" fill="url(#newHatchBlue)" />
+<rect x="492.79810169491526" y="331.52" width="5.359728813559322" height="10.506666666666668" fill="url(#newHatchPurple)" />
+<rect x="500.24216949152543" y="340.48" width="5.359728813559322" height="11.520000000000001" fill="url(#newHatchBlue)" />
+<rect x="500.24216949152543" y="331.3066666666667" width="5.359728813559322" height="9.173333333333334" fill="url(#newHatchPurple)" />
+<rect x="507.6862372881356" y="342.02666666666664" width="5.359728813559322" height="9.973333333333334" fill="url(#newHatchBlue)" />
+<rect x="507.6862372881356" y="331.14666666666665" width="5.359728813559322" height="10.88" fill="url(#newHatchPurple)" />
+<rect x="515.1303050847458" y="339.46666666666664" width="5.359728813559322" height="12.533333333333335" fill="url(#newHatchBlue)" />
+<rect x="515.1303050847458" y="331.14666666666665" width="5.359728813559322" height="8.32" fill="url(#newHatchPurple)" />
+<rect x="522.574372881356" y="338.18666666666667" width="5.359728813559322" height="13.813333333333334" fill="url(#newHatchBlue)" />
+<rect x="522.574372881356" y="330.50666666666666" width="5.359728813559322" height="7.680000000000001" fill="url(#newHatchPurple)" />
+<rect x="530.0184406779662" y="344.16" width="5.359728813559322" height="7.840000000000001" fill="url(#newHatchBlue)" />
+<rect x="530.0184406779662" y="330.18666666666667" width="5.359728813559322" height="13.973333333333334" fill="url(#newHatchPurple)" />
+<rect x="537.4625084745763" y="341.97333333333336" width="5.359728813559322" height="10.026666666666667" fill="url(#newHatchBlue)" />
+<rect x="537.4625084745763" y="330.0266666666667" width="5.359728813559322" height="11.946666666666667" fill="url(#newHatchPurple)" />
+<rect x="544.9065762711865" y="341.0133333333333" width="5.359728813559322" height="10.986666666666668" fill="url(#newHatchBlue)" />
+<rect x="544.9065762711865" y="329.06666666666666" width="5.359728813559322" height="11.946666666666667" fill="url(#newHatchPurple)" />
+<rect x="552.3506440677967" y="339.46666666666664" width="5.359728813559322" height="12.533333333333335" fill="url(#newHatchBlue)" />
+<rect x="552.3506440677967" y="328.96" width="5.359728813559322" height="10.506666666666668" fill="url(#newHatchPurple)" />
+<rect x="559.7947118644068" y="328.8" width="5.359728813559322" height="23.200000000000003" fill="url(#newHatchPurple)" />
+<rect x="567.238779661017" y="338.50666666666666" width="5.359728813559322" height="13.493333333333334" fill="url(#newHatchBlue)" />
+<rect x="567.238779661017" y="328.4266666666667" width="5.359728813559322" height="10.08" fill="url(#newHatchPurple)" />
+<rect x="574.6828474576271" y="327.8933333333333" width="5.359728813559322" height="24.10666666666667" fill="url(#newHatchPurple)" />
+<rect x="582.1269152542372" y="337.0133333333333" width="5.359728813559322" height="14.986666666666668" fill="url(#newHatchBlue)" />
+<rect x="582.1269152542372" y="327.46666666666664" width="5.359728813559322" height="9.546666666666667" fill="url(#newHatchPurple)" />
+<rect x="589.5709830508474" y="341.06666666666666" width="5.359728813559322" height="10.933333333333334" fill="url(#newHatchBlue)" />
+<rect x="589.5709830508474" y="327.3066666666667" width="5.359728813559322" height="13.760000000000002" fill="url(#newHatchPurple)" />
+<rect x="597.0150508474576" y="336.8" width="5.359728813559322" height="15.200000000000001" fill="url(#newHatchBlue)" />
+<rect x="597.0150508474576" y="327.2" width="5.359728813559322" height="9.600000000000001" fill="url(#newHatchPurple)" />
+<rect x="604.4591186440678" y="327.14666666666665" width="5.359728813559322" height="24.853333333333335" fill="url(#newHatchPurple)" />
+<rect x="611.9031864406779" y="344.2133333333333" width="5.359728813559322" height="7.786666666666667" fill="url(#newHatchBlue)" />
+<rect x="611.9031864406779" y="327.0933333333333" width="5.359728813559322" height="17.12" fill="url(#newHatchPurple)" />
+<rect x="619.3472542372881" y="344.8" width="5.359728813559322" height="7.2" fill="url(#newHatchBlue)" />
+<rect x="619.3472542372881" y="326.9866666666667" width="5.359728813559322" height="17.813333333333336" fill="url(#newHatchPurple)" />
+<rect x="626.7913220338983" y="340.6933333333333" width="5.359728813559322" height="11.306666666666667" fill="url(#newHatchBlue)" />
+<rect x="626.7913220338983" y="326.29333333333335" width="5.359728813559322" height="14.4" fill="url(#newHatchPurple)" />
+<rect x="634.2353898305084" y="338.61333333333334" width="5.359728813559322" height="13.386666666666667" fill="url(#newHatchBlue)" />
+<rect x="634.2353898305084" y="325.65333333333336" width="5.359728813559322" height="12.96" fill="url(#newHatchPurple)" />
+<rect x="641.6794576271186" y="336.2133333333333" width="5.359728813559322" height="15.786666666666667" fill="url(#newHatchBlue)" />
+<rect x="641.6794576271186" y="325.28" width="5.359728813559322" height="10.933333333333334" fill="url(#newHatchPurple)" />
+<rect x="649.1235254237288" y="339.8933333333333" width="5.359728813559322" height="12.106666666666667" fill="url(#newHatchBlue)" />
+<rect x="649.1235254237288" y="324.96" width="5.359728813559322" height="14.933333333333334" fill="url(#newHatchPurple)" />
+<rect x="656.567593220339" y="344.58666666666664" width="5.359728813559322" height="7.413333333333334" fill="url(#newHatchBlue)" />
+<rect x="656.567593220339" y="324.26666666666665" width="5.359728813559322" height="20.32" fill="url(#newHatchPurple)" />
+<rect x="664.0116610169491" y="324.15999999999997" width="5.359728813559322" height="27.840000000000003" fill="url(#newHatchPurple)" />
+<rect x="671.4557288135593" y="323.73333333333335" width="5.359728813559322" height="28.26666666666667" fill="url(#newHatchPurple)" />
+<rect x="678.8997966101695" y="323.68" width="5.359728813559322" height="28.32" fill="url(#newHatchBlue)" />
+<rect x="686.3438644067796" y="339.94666666666666" width="5.359728813559322" height="12.053333333333335" fill="url(#newHatchBlue)" />
+<rect x="686.3438644067796" y="323.5733333333333" width="5.359728813559322" height="16.373333333333335" fill="url(#newHatchPurple)" />
+<rect x="693.7879322033898" y="337.06666666666666" width="5.359728813559322" height="14.933333333333334" fill="url(#newHatchBlue)" />
+<rect x="693.7879322033898" y="321.2266666666667" width="5.359728813559322" height="15.840000000000002" fill="url(#newHatchPurple)" />
+<rect x="701.232" y="332.05333333333334" width="5.359728813559322" height="19.94666666666667" fill="url(#newHatchBlue)" />
+<rect x="701.232" y="320.96000000000004" width="5.359728813559322" height="11.093333333333334" fill="url(#newHatchPurple)" />
+<rect x="708.6760677966101" y="337.6" width="5.359728813559322" height="14.4" fill="url(#newHatchBlue)" />
+<rect x="708.6760677966101" y="319.68" width="5.359728813559322" height="17.92" fill="url(#newHatchPurple)" />
+<rect x="716.1201355932203" y="339.36" width="5.359728813559322" height="12.64" fill="url(#newHatchBlue)" />
+<rect x="716.1201355932203" y="319.4666666666667" width="5.359728813559322" height="19.893333333333334" fill="url(#newHatchPurple)" />
+<rect x="723.5642033898305" y="319.2" width="5.359728813559322" height="32.800000000000004" fill="url(#newHatchPurple)" />
+<rect x="731.0082711864407" y="318.7733333333333" width="5.359728813559322" height="33.22666666666667" fill="url(#newHatchPurple)" />
+<rect x="738.4523389830508" y="316.90666666666664" width="5.359728813559322" height="35.093333333333334" fill="url(#newHatchPurple)" />
+<rect x="745.896406779661" y="336.1066666666667" width="5.359728813559322" height="15.893333333333334" fill="url(#newHatchBlue)" />
+<rect x="745.896406779661" y="316.16" width="5.359728813559322" height="19.94666666666667" fill="url(#newHatchPurple)" />
+<rect x="753.3404745762712" y="314.02666666666664" width="5.359728813559322" height="37.973333333333336" fill="url(#newHatchPurple)" />
+<rect x="760.7845423728813" y="312.8" width="5.359728813559322" height="39.2" fill="url(#newHatchPurple)" />
+<rect x="768.2286101694915" y="310.1333333333333" width="5.359728813559322" height="41.86666666666667" fill="url(#newHatchPurple)" />
+<rect x="775.6726779661017" y="309.5466666666667" width="5.359728813559322" height="42.45333333333333" fill="url(#newHatchPurple)" />
+<rect x="783.1167457627118" y="308.64" width="5.359728813559322" height="43.36" fill="url(#newHatchPurple)" />
+<rect x="790.560813559322" y="307.25333333333333" width="5.359728813559322" height="44.74666666666667" fill="url(#newHatchPurple)" />
+<rect x="798.0048813559322" y="306.82666666666665" width="5.359728813559322" height="45.17333333333334" fill="url(#newHatchPurple)" />
+<rect x="805.4489491525424" y="302.9866666666667" width="5.359728813559322" height="49.013333333333335" fill="url(#newHatchPurple)" />
+<rect x="812.8930169491525" y="300.8" width="5.359728813559322" height="51.2" fill="url(#newHatchPurple)" />
+<rect x="820.3370847457627" y="298.24" width="5.359728813559322" height="53.760000000000005" fill="url(#newHatchPurple)" />
+<rect x="827.7811525423729" y="295.5733333333333" width="5.359728813559322" height="56.42666666666667" fill="url(#newHatchPurple)" />
+<rect x="835.225220338983" y="347.73333333333335" width="5.359728813559322" height="4.266666666666667" fill="url(#newHatchBlue)" />
+<rect x="835.225220338983" y="289.0133333333333" width="5.359728813559322" height="58.720000000000006" fill="url(#newHatchPurple)" />
+<rect x="842.6692881355932" y="349.76" width="5.359728813559322" height="2.24" fill="url(#newHatchBlue)" />
+<rect x="842.6692881355932" y="286.82666666666665" width="5.359728813559322" height="62.93333333333334" fill="url(#newHatchPurple)" />
+<rect x="850.1133559322034" y="350.18666666666667" width="5.359728813559322" height="1.8133333333333335" fill="url(#newHatchBlue)" />
+<rect x="850.1133559322034" y="286.29333333333335" width="5.359728813559322" height="63.89333333333334" fill="url(#newHatchPurple)" />
+<rect x="857.5574237288135" y="347.84" width="5.359728813559322" height="4.16" fill="url(#newHatchBlue)" />
+<rect x="857.5574237288135" y="282.88" width="5.359728813559322" height="64.96000000000001" fill="url(#newHatchPurple)" />
+<rect x="865.0014915254237" y="275.73333333333335" width="5.359728813559322" height="76.26666666666667" fill="url(#newHatchPurple)" />
+<rect x="872.4455593220339" y="271.52" width="5.359728813559322" height="80.48" fill="url(#newHatchPurple)" />
+<rect x="879.8896271186441" y="270.2933333333333" width="5.359728813559322" height="81.70666666666668" fill="url(#newHatchPurple)" />
+<rect x="887.3336949152542" y="267.2" width="5.359728813559322" height="84.80000000000001" fill="url(#newHatchPurple)" />
+<rect x="894.7777627118644" y="351.14666666666665" width="5.359728813559322" height="0.8533333333333334" fill="url(#newHatchBlue)" />
+<rect x="894.7777627118644" y="259.5733333333333" width="5.359728813559322" height="91.57333333333334" fill="url(#newHatchPurple)" />
+<rect x="902.2218305084746" y="248.69333333333333" width="5.359728813559322" height="103.30666666666667" fill="url(#newHatchBlue)" />
+<rect x="902.2218305084746" y="240.37333333333333" width="5.359728813559322" height="8.32" fill="url(#newHatchPurple)" />
+<rect x="909.6658983050847" y="248.32" width="5.359728813559322" height="103.68" fill="url(#newHatchBlue)" />
+<rect x="909.6658983050847" y="239.09333333333333" width="5.359728813559322" height="9.226666666666667" fill="url(#newHatchPurple)" />
+<rect x="917.1099661016949" y="239.62666666666667" width="5.359728813559322" height="112.37333333333333" fill="url(#newHatchBlue)" />
+<rect x="917.1099661016949" y="231.14666666666668" width="5.359728813559322" height="8.48" fill="url(#newHatchPurple)" />
+<rect x="924.5540338983051" y="240.05333333333334" width="5.359728813559322" height="111.94666666666667" fill="url(#newHatchBlue)" />
+<rect x="924.5540338983051" y="231.04000000000002" width="5.359728813559322" height="9.013333333333334" fill="url(#newHatchPurple)" />
+<rect x="931.9981016949152" y="200.74666666666667" width="5.359728813559322" height="151.25333333333333" fill="url(#newHatchBlue)" />
+<rect x="931.9981016949152" y="157.76" width="5.359728813559322" height="42.98666666666667" fill="url(#newHatchPurple)" />
+  
+</svg>

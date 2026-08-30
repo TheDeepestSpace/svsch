@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1225.2" height="586" viewBox="0 0 1225.2 586" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <pattern id="newHatchBlue" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#2a78d6" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#fcfcfb" stroke-width="3" />
+    </pattern>
+    <pattern id="newHatchPurple" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#7c4dcc" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#fcfcfb" stroke-width="3" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1225.2" height="586" fill="#fcfcfb" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="#0b0b0b">Visual suite performance statistics — baseline vs. this run, fastest to slowest (DEMO with imaginary numbers)</text>
+  <rect x="24" y="52" width="14" height="14" rx="2" fill="#2a78d6" />
+<text x="44" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Elaboration</text>
+<rect x="149.2" y="52" width="14" height="14" rx="2" fill="#7c4dcc" />
+<text x="169.2" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Rendering</text>
+<rect x="260" y="52" width="14" height="14" rx="2" fill="#0ca30c" />
+<text x="280" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Faster than baseline</text>
+<rect x="450" y="52" width="14" height="14" rx="2" fill="#d03b3b" />
+<text x="470" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Slower than baseline</text>
+<rect x="640" y="52" width="14" height="14" rx="2" fill="url(#newHatchBlue)" />
+<text x="660" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Elaboration (new)</text>
+<rect x="808.4" y="52" width="14" height="14" rx="2" fill="url(#newHatchPurple)" />
+<text x="828.4" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Rendering (new)</text>
+  <text x="48" y="82" font-size="14" font-weight="600" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif">Elaboration + rendering duration (ms)</text>
+<line x1="60" y1="352" x2="1201.2" y2="352" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="356" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="60" y1="333.53846153846155" x2="1201.2" y2="333.53846153846155" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="337.53846153846155" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">20</text>
+<line x1="60" y1="315.0769230769231" x2="1201.2" y2="315.0769230769231" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="319.0769230769231" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">40</text>
+<line x1="60" y1="296.61538461538464" x2="1201.2" y2="296.61538461538464" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="300.61538461538464" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">60</text>
+<line x1="60" y1="278.15384615384613" x2="1201.2" y2="278.15384615384613" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="282.15384615384613" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">80</text>
+<line x1="60" y1="259.6923076923077" x2="1201.2" y2="259.6923076923077" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="263.6923076923077" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">100</text>
+<line x1="60" y1="241.23076923076923" x2="1201.2" y2="241.23076923076923" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="245.23076923076923" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">120</text>
+<line x1="60" y1="222.76923076923077" x2="1201.2" y2="222.76923076923077" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="226.76923076923077" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">140</text>
+<line x1="60" y1="204.3076923076923" x2="1201.2" y2="204.3076923076923" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="208.3076923076923" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">160</text>
+<line x1="60" y1="185.84615384615384" x2="1201.2" y2="185.84615384615384" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="189.84615384615384" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">180</text>
+<line x1="60" y1="167.3846153846154" x2="1201.2" y2="167.3846153846154" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="171.3846153846154" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">200</text>
+<line x1="60" y1="148.9230769230769" x2="1201.2" y2="148.9230769230769" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="152.9230769230769" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">220</text>
+<line x1="60" y1="130.46153846153845" x2="1201.2" y2="130.46153846153845" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="134.46153846153845" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">240</text>
+<line x1="60" y1="112" x2="1201.2" y2="112" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="116" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">260</text>
+<line x1="60" y1="352" x2="1201.2" y2="352" stroke="#c3c2b7" stroke-width="1.5" />
+<rect x="91.95360000000001" y="278.15384615384613" width="164.3328" height="73.84615384615385" fill="#2a78d6" />
+<rect x="91.95360000000001" y="241.23076923076923" width="164.3328" height="36.92307692307692" fill="#0ca30c" />
+<rect x="91.95360000000001" y="213.53846153846155" width="164.3328" height="27.692307692307693" fill="#7c4dcc" />
+<rect x="91.95360000000001" y="199.69230769230768" width="164.3328" height="13.846153846153847" fill="#0ca30c" />
+<rect x="320.1936" y="296.61538461538464" width="164.3328" height="55.38461538461539" fill="#2a78d6" />
+<rect x="320.1936" y="250.46153846153845" width="164.3328" height="46.15384615384616" fill="#0ca30c" />
+<rect x="320.1936" y="213.53846153846152" width="164.3328" height="36.92307692307693" fill="#7c4dcc" />
+<rect x="320.1936" y="190.46153846153845" width="164.3328" height="23.076923076923073" fill="#d03b3b" />
+<rect x="548.4336000000001" y="268.9230769230769" width="164.3328" height="83.07692307692308" fill="url(#newHatchBlue)" />
+<rect x="548.4336000000001" y="236.61538461538458" width="164.3328" height="32.30769230769231" fill="url(#newHatchPurple)" />
+<rect x="776.6736000000001" y="268.9230769230769" width="164.3328" height="83.07692307692308" fill="#2a78d6" />
+<rect x="776.6736000000001" y="222.76923076923077" width="164.3328" height="46.153846153846146" fill="#d03b3b" />
+<rect x="776.6736000000001" y="199.6923076923077" width="164.3328" height="23.076923076923077" fill="#7c4dcc" />
+<rect x="776.6736000000001" y="181.23076923076923" width="164.3328" height="18.461538461538463" fill="#0ca30c" />
+<rect x="1004.9136000000001" y="259.6923076923077" width="164.3328" height="92.3076923076923" fill="#2a78d6" />
+<rect x="1004.9136000000001" y="213.53846153846152" width="164.3328" height="46.153846153846175" fill="#d03b3b" />
+<rect x="1004.9136000000001" y="176.61538461538458" width="164.3328" height="36.92307692307693" fill="#7c4dcc" />
+<rect x="1004.9136000000001" y="148.9230769230769" width="164.3328" height="27.692307692307686" fill="#d03b3b" />
+  <text x="179.62" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 179.62, 362)">both-faster</text>
+<text x="407.86" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 407.86, 362)">elab-faster-render-slower</text>
+<text x="636.1" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 636.1, 362)">new-test</text>
+<text x="864.34" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 864.34, 362)">elab-slower-render-faster</text>
+<text x="1092.58" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 1092.58, 362)">both-slower</text>
+</svg>

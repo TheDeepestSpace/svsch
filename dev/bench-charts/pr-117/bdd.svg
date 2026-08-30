@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="769.5999999999999" height="376" viewBox="0 0 769.5999999999999 376" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <pattern id="newHatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#0ca30c" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#fcfcfb" stroke-width="3" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="769.5999999999999" height="376" fill="#fcfcfb" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="#0b0b0b">bdd-diagram-generation-duration — baseline vs. this run</text>
+  <rect x="24" y="52" width="14" height="14" rx="2" fill="#2a78d6" />
+<text x="44" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Baseline (master)</text>
+<rect x="192.39999999999998" y="52" width="14" height="14" rx="2" fill="#0ca30c" />
+<text x="212.39999999999998" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Faster than baseline</text>
+<rect x="382.4" y="52" width="14" height="14" rx="2" fill="#d03b3b" />
+<text x="402.4" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Slower than baseline</text>
+<rect x="572.4" y="52" width="14" height="14" rx="2" fill="url(#newHatch)" />
+<text x="592.4" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">New (no baseline yet)</text>
+  <text x="48" y="82" font-size="14" font-weight="600" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif">Diagram rebuild duration (ms)</text>
+<line x1="60" y1="352" x2="745.5999999999999" y2="352" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="356" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="60" y1="332" x2="745.5999999999999" y2="332" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="336" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1000</text>
+<line x1="60" y1="312" x2="745.5999999999999" y2="312" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="316" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2000</text>
+<line x1="60" y1="292" x2="745.5999999999999" y2="292" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="296" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3000</text>
+<line x1="60" y1="272" x2="745.5999999999999" y2="272" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="276" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4000</text>
+<line x1="60" y1="252" x2="745.5999999999999" y2="252" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="256" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">5000</text>
+<line x1="60" y1="232" x2="745.5999999999999" y2="232" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="236" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">6000</text>
+<line x1="60" y1="212" x2="745.5999999999999" y2="212" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="216" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">7000</text>
+<line x1="60" y1="192" x2="745.5999999999999" y2="192" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="196" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">8000</text>
+<line x1="60" y1="172" x2="745.5999999999999" y2="172" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="176" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">9000</text>
+<line x1="60" y1="152" x2="745.5999999999999" y2="152" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="156" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">10000</text>
+<line x1="60" y1="132" x2="745.5999999999999" y2="132" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="136" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">11000</text>
+<line x1="60" y1="112" x2="745.5999999999999" y2="112" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="116" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">12000</text>
+<line x1="60" y1="352" x2="745.5999999999999" y2="352" stroke="#c3c2b7" stroke-width="1.5" />
+<rect x="60.897046728971965" y="151.29999999999998" width="4.613383177570093" height="200.70000000000002" fill="url(#newHatch)" />
+<rect x="67.30452336448597" y="306.38" width="4.613383177570093" height="45.62" fill="url(#newHatch)" />
+<rect x="73.71199999999999" y="151.32" width="4.613383177570093" height="200.68" fill="url(#newHatch)" />
+<rect x="80.11947663551402" y="307.42" width="4.613383177570093" height="44.58" fill="url(#newHatch)" />
+<rect x="86.52695327102803" y="305.42" width="4.613383177570093" height="46.58" fill="url(#newHatch)" />
+<rect x="92.93442990654205" y="303.88" width="4.613383177570093" height="48.120000000000005" fill="url(#newHatch)" />
+<rect x="99.34190654205607" y="293.5" width="4.613383177570093" height="58.5" fill="url(#newHatch)" />
+<rect x="105.74938317757008" y="306.76" width="4.613383177570093" height="45.24" fill="url(#newHatch)" />
+<rect x="112.15685981308411" y="307.15999999999997" width="4.613383177570093" height="44.84" fill="url(#newHatch)" />
+<rect x="118.56433644859811" y="303.48" width="4.613383177570093" height="48.52" fill="url(#newHatch)" />
+<rect x="124.97181308411214" y="302.9" width="4.613383177570093" height="49.1" fill="url(#newHatch)" />
+<rect x="131.37928971962614" y="306.3" width="4.613383177570093" height="45.7" fill="url(#newHatch)" />
+<rect x="137.78676635514017" y="305.84" width="4.613383177570093" height="46.160000000000004" fill="url(#newHatch)" />
+<rect x="144.1942429906542" y="306.92" width="4.613383177570093" height="45.08" fill="url(#newHatch)" />
+<rect x="150.6017196261682" y="307.78" width="4.613383177570093" height="44.22" fill="url(#newHatch)" />
+<rect x="157.00919626168223" y="151.2" width="4.613383177570093" height="200.8" fill="url(#newHatch)" />
+<rect x="163.41667289719626" y="307.38" width="4.613383177570093" height="44.62" fill="url(#newHatch)" />
+<rect x="169.82414953271027" y="151.2" width="4.613383177570093" height="200.8" fill="url(#newHatch)" />
+<rect x="176.23162616822427" y="306.18" width="4.613383177570093" height="45.82" fill="url(#newHatch)" />
+<rect x="182.63910280373833" y="295.48" width="4.613383177570093" height="56.52" fill="url(#newHatch)" />
+<rect x="189.04657943925233" y="296.04" width="4.613383177570093" height="55.96" fill="url(#newHatch)" />
+<rect x="195.45405607476633" y="307.88" width="4.613383177570093" height="44.12" fill="url(#newHatch)" />
+<rect x="201.86153271028036" y="151.24" width="4.613383177570093" height="200.76" fill="url(#newHatch)" />
+<rect x="208.2690093457944" y="304.58" width="4.613383177570093" height="47.42" fill="url(#newHatch)" />
+<rect x="214.6764859813084" y="299.8" width="4.613383177570093" height="52.2" fill="url(#newHatch)" />
+<rect x="221.08396261682242" y="303.1" width="4.613383177570093" height="48.9" fill="url(#newHatch)" />
+<rect x="227.49143925233642" y="305.94" width="4.613383177570093" height="46.06" fill="url(#newHatch)" />
+<rect x="233.89891588785045" y="150.62" width="4.613383177570093" height="201.38" fill="url(#newHatch)" />
+<rect x="240.30639252336448" y="303.98" width="4.613383177570093" height="48.02" fill="url(#newHatch)" />
+<rect x="246.71386915887848" y="151.28" width="4.613383177570093" height="200.72" fill="url(#newHatch)" />
+<rect x="253.1213457943925" y="301.64" width="4.613383177570093" height="50.36" fill="url(#newHatch)" />
+<rect x="259.52882242990654" y="150.56" width="4.613383177570093" height="201.44" fill="url(#newHatch)" />
+<rect x="265.9362990654206" y="151.32" width="4.613383177570093" height="200.68" fill="url(#newHatch)" />
+<rect x="272.3437757009346" y="300.48" width="4.613383177570093" height="51.52" fill="url(#newHatch)" />
+<rect x="278.7512523364486" y="151.29999999999998" width="4.613383177570093" height="200.70000000000002" fill="url(#newHatch)" />
+<rect x="285.15872897196266" y="151.28" width="4.613383177570093" height="200.72" fill="url(#newHatch)" />
+<rect x="291.5662056074766" y="151.34" width="4.613383177570093" height="200.66" fill="url(#newHatch)" />
+<rect x="297.97368224299066" y="300.3" width="4.613383177570093" height="51.7" fill="url(#newHatch)" />
+<rect x="304.3811588785047" y="151.26" width="4.613383177570093" height="200.74" fill="url(#newHatch)" />
+<rect x="310.78863551401867" y="151.22" width="4.613383177570093" height="200.78" fill="url(#newHatch)" />
+<rect x="317.1961121495327" y="151.24" width="4.613383177570093" height="200.76" fill="url(#newHatch)" />
+<rect x="323.6035887850467" y="306.58" width="4.613383177570093" height="45.42" fill="url(#newHatch)" />
+<rect x="330.0110654205607" y="151.35999999999999" width="4.613383177570093" height="200.64000000000001" fill="url(#newHatch)" />
+<rect x="336.4185420560748" y="306.88" width="4.613383177570093" height="45.12" fill="url(#newHatch)" />
+<rect x="342.8260186915888" y="151.32" width="4.613383177570093" height="200.68" fill="url(#newHatch)" />
+<rect x="349.2334953271028" y="302.7" width="4.613383177570093" height="49.300000000000004" fill="url(#newHatch)" />
+<rect x="355.64097196261685" y="303.32" width="4.613383177570093" height="48.68" fill="url(#newHatch)" />
+<rect x="362.04844859813085" y="151.28" width="4.613383177570093" height="200.72" fill="url(#newHatch)" />
+<rect x="368.45592523364485" y="303.15999999999997" width="4.613383177570093" height="48.84" fill="url(#newHatch)" />
+<rect x="374.8634018691589" y="305.78" width="4.613383177570093" height="46.22" fill="url(#newHatch)" />
+<rect x="381.2708785046729" y="304.2" width="4.613383177570093" height="47.800000000000004" fill="url(#newHatch)" />
+<rect x="387.6783551401869" y="305.56" width="4.613383177570093" height="46.44" fill="url(#newHatch)" />
+<rect x="394.0858317757009" y="307.02" width="4.613383177570093" height="44.980000000000004" fill="url(#newHatch)" />
+<rect x="400.49330841121497" y="301.6" width="4.613383177570093" height="50.4" fill="url(#newHatch)" />
+<rect x="406.90078504672897" y="301.78" width="4.613383177570093" height="50.22" fill="url(#newHatch)" />
+<rect x="413.30826168224297" y="305.54" width="4.613383177570093" height="46.46" fill="url(#newHatch)" />
+<rect x="419.71573831775703" y="306.54" width="4.613383177570093" height="45.46" fill="url(#newHatch)" />
+<rect x="426.12321495327103" y="298.32" width="4.613383177570093" height="53.68" fill="url(#newHatch)" />
+<rect x="432.53069158878503" y="300.92" width="4.613383177570093" height="51.08" fill="url(#newHatch)" />
+<rect x="438.9381682242991" y="302.52" width="4.613383177570093" height="49.480000000000004" fill="url(#newHatch)" />
+<rect x="445.3456448598131" y="306.1" width="4.613383177570093" height="45.9" fill="url(#newHatch)" />
+<rect x="451.7531214953271" y="307.3" width="4.613383177570093" height="44.7" fill="url(#newHatch)" />
+<rect x="458.1605981308411" y="306.2" width="4.613383177570093" height="45.800000000000004" fill="url(#newHatch)" />
+<rect x="464.56807476635515" y="302.84" width="4.613383177570093" height="49.160000000000004" fill="url(#newHatch)" />
+<rect x="470.97555140186915" y="302.9" width="4.613383177570093" height="49.1" fill="url(#newHatch)" />
+<rect x="477.38302803738316" y="306.15999999999997" width="4.613383177570093" height="45.84" fill="url(#newHatch)" />
+<rect x="483.7905046728972" y="306.54" width="4.613383177570093" height="45.46" fill="url(#newHatch)" />
+<rect x="490.1979813084112" y="302.36" width="4.613383177570093" height="49.64" fill="url(#newHatch)" />
+<rect x="496.6054579439252" y="305" width="4.613383177570093" height="47" fill="url(#newHatch)" />
+<rect x="503.0129345794392" y="304.86" width="4.613383177570093" height="47.14" fill="url(#newHatch)" />
+<rect x="509.4204112149533" y="299.94" width="4.613383177570093" height="52.06" fill="url(#newHatch)" />
+<rect x="515.8278878504673" y="306.68" width="4.613383177570093" height="45.32" fill="url(#newHatch)" />
+<rect x="522.2353644859812" y="306.65999999999997" width="4.613383177570093" height="45.34" fill="url(#newHatch)" />
+<rect x="528.6428411214953" y="307.34" width="4.613383177570093" height="44.660000000000004" fill="url(#newHatch)" />
+<rect x="535.0503177570093" y="307.1" width="4.613383177570093" height="44.9" fill="url(#newHatch)" />
+<rect x="541.4577943925234" y="305.34" width="4.613383177570093" height="46.660000000000004" fill="url(#newHatch)" />
+<rect x="547.8652710280375" y="301.68" width="4.613383177570093" height="50.32" fill="url(#newHatch)" />
+<rect x="554.2727476635514" y="302.92" width="4.613383177570093" height="49.08" fill="url(#newHatch)" />
+<rect x="560.6802242990653" y="151.38" width="4.613383177570093" height="200.62" fill="url(#newHatch)" />
+<rect x="567.0877009345794" y="306.06" width="4.613383177570093" height="45.94" fill="url(#newHatch)" />
+<rect x="573.4951775700935" y="150.72" width="4.613383177570093" height="201.28" fill="url(#newHatch)" />
+<rect x="579.9026542056075" y="303.84" width="4.613383177570093" height="48.160000000000004" fill="url(#newHatch)" />
+<rect x="586.3101308411215" y="304.28" width="4.613383177570093" height="47.72" fill="url(#newHatch)" />
+<rect x="592.7176074766355" y="306.46" width="4.613383177570093" height="45.54" fill="url(#newHatch)" />
+<rect x="599.1250841121495" y="305.98" width="4.613383177570093" height="46.02" fill="url(#newHatch)" />
+<rect x="605.5325607476635" y="305.44" width="4.613383177570093" height="46.56" fill="url(#newHatch)" />
+<rect x="611.9400373831776" y="307.6" width="4.613383177570093" height="44.4" fill="url(#newHatch)" />
+<rect x="618.3475140186915" y="304.98" width="4.613383177570093" height="47.02" fill="url(#newHatch)" />
+<rect x="624.7549906542056" y="307.36" width="4.613383177570093" height="44.64" fill="url(#newHatch)" />
+<rect x="631.1624672897196" y="305.2" width="4.613383177570093" height="46.800000000000004" fill="url(#newHatch)" />
+<rect x="637.5699439252336" y="305.6" width="4.613383177570093" height="46.4" fill="url(#newHatch)" />
+<rect x="643.9774205607476" y="300.9" width="4.613383177570093" height="51.1" fill="url(#newHatch)" />
+<rect x="650.3848971962617" y="298.74" width="4.613383177570093" height="53.26" fill="url(#newHatch)" />
+<rect x="656.7923738317756" y="305.28" width="4.613383177570093" height="46.72" fill="url(#newHatch)" />
+<rect x="663.1998504672897" y="306.56" width="4.613383177570093" height="45.44" fill="url(#newHatch)" />
+<rect x="669.6073271028038" y="305.82" width="4.613383177570093" height="46.18" fill="url(#newHatch)" />
+<rect x="676.0148037383177" y="305.8" width="4.613383177570093" height="46.2" fill="url(#newHatch)" />
+<rect x="682.4222803738318" y="305.96" width="4.613383177570093" height="46.04" fill="url(#newHatch)" />
+<rect x="688.8297570093458" y="304.64" width="4.613383177570093" height="47.36" fill="url(#newHatch)" />
+<rect x="695.2372336448598" y="302.86" width="4.613383177570093" height="49.14" fill="url(#newHatch)" />
+<rect x="701.6447102803738" y="305.48" width="4.613383177570093" height="46.52" fill="url(#newHatch)" />
+<rect x="708.0521869158878" y="307.36" width="4.613383177570093" height="44.64" fill="url(#newHatch)" />
+<rect x="714.4596635514018" y="307.58" width="4.613383177570093" height="44.42" fill="url(#newHatch)" />
+<rect x="720.8671401869159" y="307.46" width="4.613383177570093" height="44.54" fill="url(#newHatch)" />
+<rect x="727.2746168224298" y="301.72" width="4.613383177570093" height="50.28" fill="url(#newHatch)" />
+<rect x="733.6820934579439" y="298.74" width="4.613383177570093" height="53.26" fill="url(#newHatch)" />
+<rect x="740.089570093458" y="303.06" width="4.613383177570093" height="48.94" fill="url(#newHatch)" />
+  
+</svg>

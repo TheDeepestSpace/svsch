@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="769.5999999999999" height="586" viewBox="0 0 769.5999999999999 586" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <pattern id="newHatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#2a78d6" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#fcfcfb" stroke-width="3" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="769.5999999999999" height="586" fill="#fcfcfb" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="#0b0b0b">System suite performance statistics — baseline vs. this run</text>
+  <rect x="24" y="52" width="14" height="14" rx="2" fill="#2a78d6" />
+<text x="44" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Baseline (master)</text>
+<rect x="192.39999999999998" y="52" width="14" height="14" rx="2" fill="#0ca30c" />
+<text x="212.39999999999998" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Faster than baseline</text>
+<rect x="382.4" y="52" width="14" height="14" rx="2" fill="#d03b3b" />
+<text x="402.4" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">Slower than baseline</text>
+<rect x="572.4" y="52" width="14" height="14" rx="2" fill="url(#newHatch)" />
+<text x="592.4" y="63" font-size="12" fill="#52514e" font-family="system-ui, -apple-system, sans-serif">New (no baseline yet)</text>
+  <text x="48" y="82" font-size="14" font-weight="600" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif">Duration (ms)</text>
+<line x1="60" y1="352" x2="745.5999999999999" y2="352" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="356" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="60" y1="328" x2="745.5999999999999" y2="328" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="332" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1000</text>
+<line x1="60" y1="304" x2="745.5999999999999" y2="304" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="308" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2000</text>
+<line x1="60" y1="280" x2="745.5999999999999" y2="280" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="284" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3000</text>
+<line x1="60" y1="256" x2="745.5999999999999" y2="256" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="260" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4000</text>
+<line x1="60" y1="232" x2="745.5999999999999" y2="232" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="236" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">5000</text>
+<line x1="60" y1="208" x2="745.5999999999999" y2="208" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="212" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">6000</text>
+<line x1="60" y1="184" x2="745.5999999999999" y2="184" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="188" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">7000</text>
+<line x1="60" y1="160" x2="745.5999999999999" y2="160" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="164" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">8000</text>
+<line x1="60" y1="136" x2="745.5999999999999" y2="136" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="140" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">9000</text>
+<line x1="60" y1="112" x2="745.5999999999999" y2="112" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="116" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">10000</text>
+<line x1="60" y1="352" x2="745.5999999999999" y2="352" stroke="#c3c2b7" stroke-width="1.5" />
+<rect x="91.99466666666666" y="164.392" width="164.54399999999998" height="187.608" fill="#2a78d6" />
+<rect x="91.99466666666666" y="162.232" width="164.54399999999998" height="2.1599999999999966" fill="#d03b3b" />
+<text x="174.26666666666665" y="156.232" font-size="10" text-anchor="middle" fill="#d03b3b" font-family="system-ui, -apple-system, sans-serif">+1%</text>
+<rect x="320.52799999999996" y="174.232" width="164.54399999999998" height="177.768" fill="#2a78d6" />
+<rect x="320.52799999999996" y="169.576" width="164.54399999999998" height="4.656000000000006" fill="#d03b3b" />
+<text x="402.79999999999995" y="163.576" font-size="10" text-anchor="middle" fill="#d03b3b" font-family="system-ui, -apple-system, sans-serif">+3%</text>
+<rect x="549.0613333333333" y="207.088" width="164.54399999999998" height="144.912" fill="#2a78d6" />
+<rect x="549.0613333333333" y="173.32" width="164.54399999999998" height="33.768" fill="#d03b3b" />
+<text x="631.3333333333333" y="167.32" font-size="10" text-anchor="middle" fill="#d03b3b" font-family="system-ui, -apple-system, sans-serif">+23%</text>
+  <text x="179.76666666666665" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 179.76666666666665, 362)">vscode 1.122.1</text>
+<text x="408.29999999999995" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 408.29999999999995, 362)">vscode 1.90.0</text>
+<text x="636.8333333333333" y="362" font-size="9.5" fill="#52514e" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, 636.8333333333333, 362)">vscode 1.91.0</text>
+</svg>
