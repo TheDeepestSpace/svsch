@@ -461,6 +461,92 @@ test('hides the block-selection toolbar when only a cut net label is selected', 
   }
 });
 
+test('reselects only the cut-out block\'s own net-end stubs, and moves them along with it', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'generate_arm_intrusion');
+
+    const blockId = await findSystemNodeId(webview, 'u_free', 'instance');
+    if (!blockId) {
+      throw new Error('Could not find block "u_free"');
+    }
+    await clickSystemNode(workbox, webview, blockId);
+
+    const cutOutButton = webview.locator('.svsch-selection-toolbar button', { hasText: 'Cut out' });
+    await expect(cutOutButton).toBeVisible();
+    await cutOutButton.click();
+
+    // u_free sits on two nets crossing the cut boundary — the incoming "a" net
+    // and the outgoing "z" net — so cutting it produces four stub labels: one
+    // on u_free's own side of each net, and one on the far side (the module's
+    // "a"/"z" boundary ports, which aren't part of this selection).
+    let stubs: { attached: string[]; other: string[] } = { attached: [], other: [] };
+    await expect
+      .poll(
+        async () => {
+          stubs = await findSystemCutStubsForBlock(webview, blockId);
+          return stubs.attached.length === 2 && stubs.other.length === 2;
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+    const { attached, other } = stubs;
+
+    // The block and the stubs landing on it should already be selected
+    // (issue #361); the stubs on the far side, attached to the untouched
+    // boundary ports, should not have been swept into the group.
+    await expect(webview.locator(`.react-flow__node[data-id="${blockId}"]`)).toHaveClass(
+      /selected/,
+    );
+    for (const id of attached) {
+      await expect(webview.locator(`.react-flow__node[data-id="${id}"]`)).toHaveClass(/selected/);
+    }
+    for (const id of other) {
+      await expect(webview.locator(`.react-flow__node[data-id="${id}"]`)).not.toHaveClass(
+        /selected/,
+      );
+    }
+
+    const positionsBefore = await Promise.all(
+      attached.map((id) => systemNodePosition(webview, id)),
+    );
+
+    await dragSystemNodeByGridCells(workbox, webview, blockId, 4, 4);
+
+    // Dragging any node in a multi-selection moves the whole selection
+    // together, so each reselected stub should have shifted by exactly the
+    // same delta as the block it's still attached to.
+    for (let i = 0; i < attached.length; i++) {
+      const before = positionsBefore[i];
+      const after = await systemNodePosition(webview, attached[i]);
+      expect(closeTo(after.x, before.x + 4 * SYSTEM_GRID_SIZE)).toBe(true);
+      expect(closeTo(after.y, before.y + 4 * SYSTEM_GRID_SIZE)).toBe(true);
+    }
+
+    await dismissSystemNotifications(workbox);
+    // Zoom to fit so the selection highlight on the moved block and its
+    // stubs is actually legible in the screenshot, rather than a few pixels
+    // in a wide, mostly-empty canvas.
+    await webview
+      .locator('html')
+      .evaluate(() => (window as any).reactFlowInstance?.fitView({ padding: 0.2, duration: 0 }));
+    await workbox.waitForTimeout(300);
+    await webview.locator('.canvas').hover({ position: { x: 8, y: 8 }, force: true });
+    await expect(workbox).toHaveScreenshot('cut-out-block-move-carries-its-selected-stubs.png');
+  } finally {
+    await clearSystemLayout();
+  }
+});
+
 const SYSTEM_NODE_RESIZE_CASES = [
   { kind: 'side', handle: 'right', cellsX: 3, cellsY: 0 },
   { kind: 'side', handle: 'bottom', cellsX: 0, cellsY: 3 },
@@ -1104,6 +1190,48 @@ async function findSystemCutLabelIdAttachedTo(
     const otherEndId = stub.source === id ? stub.target : stub.source;
     const otherNode = nodesById.get(otherEndId) as any;
     return otherNode?.data?.node?.kind === 'netLabel' ? otherEndId : null;
+  }, blockId);
+}
+
+// For every net a cut-out block sits on, the cut produces a stub at *both*
+// ends: one landing on the block itself, one landing on whatever the net's
+// other side was (another block, or a module boundary port). Only the
+// former belongs in the block's reselected group — this partitions a
+// block's cut-net-end stub ids into the two buckets so a test can assert
+// on each side independently (issue #362 follow-up).
+async function findSystemCutStubsForBlock(
+  webview: FrameLocator,
+  blockId: string,
+): Promise<{ attached: string[]; other: string[] }> {
+  return webview.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
+    const cutStubEdges = rf
+      .getEdges()
+      .filter((e: any) => e.data?.edge?.metadata?.cutStub !== undefined);
+    const netKeys = new Set(
+      cutStubEdges
+        .filter((e: any) => e.source === id || e.target === id)
+        .map((e: any) => e.data.edge.metadata.cutStub.netKey),
+    );
+    const attached = new Set<string>();
+    const other = new Set<string>();
+    for (const e of cutStubEdges) {
+      const netKey = e.data.edge.metadata.cutStub.netKey;
+      if (!netKeys.has(netKey)) continue;
+      const touchesBlock = e.source === id || e.target === id;
+      const sourceNode = nodesById.get(e.source) as any;
+      const targetNode = nodesById.get(e.target) as any;
+      const stubEndId =
+        sourceNode?.data?.node?.kind === 'netLabel'
+          ? e.source
+          : targetNode?.data?.node?.kind === 'netLabel'
+            ? e.target
+            : null;
+      if (stubEndId === null) continue;
+      (touchesBlock ? attached : other).add(stubEndId);
+    }
+    return { attached: Array.from(attached), other: Array.from(other) };
   }, blockId);
 }
 
