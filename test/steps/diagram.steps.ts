@@ -2309,16 +2309,13 @@ Then(
   },
 );
 
-Then(
-  'I should see a task call node {string}',
-  async function (this: BddWorld, callLabel: string) {
-    const id = await findNodeIdByLabel(this.webviewPage, callLabel, 'taskCall');
-    if (!id) throw new Error(`Could not find task call node "${callLabel}"`);
-    const locator = this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`);
-    await expect(locator).toBeVisible();
-    await expect(locator).not.toHaveClass(/hdl-node-expand-ghost/);
-  },
-);
+Then('I should see a task call node {string}', async function (this: BddWorld, callLabel: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, callLabel, 'taskCall');
+  if (!id) throw new Error(`Could not find task call node "${callLabel}"`);
+  const locator = this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`);
+  await expect(locator).toBeVisible();
+  await expect(locator).not.toHaveClass(/hdl-node-expand-ghost/);
+});
 
 When(
   'I collapse the expanded task call {string}',
