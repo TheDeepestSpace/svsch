@@ -59,6 +59,39 @@ describe('LayoutStore', () => {
     expect(layout.nodes.node1.x).toBe(3);
   });
 
+  it('skips the disk write when a debounced write repeats the last-written content', async () => {
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 1, y: 1 } } });
+    await store.flush();
+
+    const moduleAPath = path.join(tmpDir, '.svsch', 'layouts', 'moduleA.json');
+    const mtimeAfterFirstWrite = (await fs.stat(moduleAPath)).mtimeMs;
+
+    // A per-render safety-net snapshot re-sending the exact same content
+    // (nothing actually changed) must not touch the file — otherwise an idle
+    // diagram would churn its layout file (and git history) on every repaint.
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 1, y: 1 } } });
+    await store.flush();
+
+    expect((await fs.stat(moduleAPath)).mtimeMs).toBe(mtimeAfterFirstWrite);
+
+    // A genuine change still writes through.
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 2, y: 1 } } });
+    await store.flush();
+    expect((await store.readModuleLayout('moduleA')).nodes.node1.x).toBe(2);
+  });
+
+  it('rewrites identical content after a reset clears the dedup cache', async () => {
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 1, y: 1 } } });
+    await store.flush();
+
+    await store.resetModuleLayout('moduleA');
+    expect(await store.readModuleLayout('moduleA')).toEqual({ nodes: {} });
+
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 1, y: 1 } } });
+    await store.flush();
+    expect((await store.readModuleLayout('moduleA')).nodes.node1.x).toBe(1);
+  });
+
   it('sanitizes module names containing illegal filesystem characters', async () => {
     const moduleName = 'pkg::sub/module a';
     await store.writeModuleLayout(moduleName, { nodes: { node1: { x: 5, y: 5 } } });

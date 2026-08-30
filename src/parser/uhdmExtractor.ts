@@ -950,7 +950,11 @@ function mergeBusNodesFromSourceGraph(
           target: mappedTarget,
           sourcePort: mappedSourcePort,
           targetPort: mappedTargetPort,
-          id: edgeId(mappedSource, mappedTarget, edge.signal || Math.random().toString()),
+          // `edge.id` is already unique within sourceModule.edges, so it's a stable
+          // disambiguator when there's no declared signal name to key on — using
+          // Math.random() here made this merge (and anything keyed off the result,
+          // like a saved edge route) non-deterministic across otherwise-identical runs.
+          id: edgeId(mappedSource, mappedTarget, edge.signal || edge.id),
         });
       }
     }
