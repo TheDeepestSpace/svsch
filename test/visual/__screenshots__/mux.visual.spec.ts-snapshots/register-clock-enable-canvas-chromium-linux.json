@@ -24,8 +24,8 @@
       "id": "cut-label:port:register_clock_enable:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 24
+        "x": -120,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:port:register_clock_enable:rst:port:rst:source",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 24
+        "x": -120,
+        "y": 144
       },
       "width": 96,
       "height": 48,
@@ -119,8 +119,8 @@
       "id": "port:register_clock_enable:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": -264,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -199,8 +199,8 @@
       "id": "port:register_clock_enable:rst",
       "type": "hdl",
       "position": {
-        "x": 288,
-        "y": 36
+        "x": -264,
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -266,7 +266,7 @@
       "target": "cut-label:port:register_clock_enable:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 144 48 L 168 48 L 168 48"
+      "path": "M -144 120 L -120 120 L -120 120"
     },
     {
       "id": "cut-stub:port:register_clock_enable:rst:port:rst:sink:edge:port:register_clock_enable:rst:reg:register_clock_enable:q:rst",
@@ -282,7 +282,7 @@
       "target": "cut-label:port:register_clock_enable:rst:port:rst:source",
       "sourceHandle": "port:rst",
       "targetHandle": "cut",
-      "path": "M 408 48 L 432 48 L 432 48"
+      "path": "M -144 168 L -120 168 L -120 168"
     },
     {
       "id": "edge:mux:register_clock_enable:q:en:q_next:reg:register_clock_enable:q:q_next",
@@ -290,7 +290,7 @@
       "target": "reg:register_clock_enable:q",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 576 192 L 600 192 L 600 0 L 0 0 L 0 240 L 120 240 L 144 240"
+      "path": "M 576 192 L 600 192 L 624 192 L 624 408 L 0 408 L 0 240 L 120 240 L 144 240"
     },
     {
       "id": "edge:port:register_clock_enable:d:mux:register_clock_enable:q:en:q_next:d",

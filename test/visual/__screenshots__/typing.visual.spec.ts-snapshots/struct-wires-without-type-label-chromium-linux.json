@@ -44,8 +44,8 @@
       "id": "cut-label:port:struct_composition:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 24
+        "x": -216,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:struct_comp:struct_composition:pkt:out:pkt:sink:edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt",
       "type": "hdl",
       "position": {
-        "x": 288,
-        "y": 24
+        "x": 1200,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -104,8 +104,8 @@
       "id": "port:struct_composition:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": -360,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -124,8 +124,8 @@
       "id": "port:struct_composition:flat",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 36
+        "x": 1320,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -294,7 +294,7 @@
       "target": "cut-label:port:struct_composition:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 144 48 L 168 48 L 168 48"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:struct_comp:struct_composition:pkt:out:pkt:sink:edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt",
@@ -302,7 +302,7 @@
       "target": "port:struct_composition:flat",
       "sourceHandle": "cut",
       "targetHandle": "port:flat",
-      "path": "M 384 48 L 384 48 L 408 48"
+      "path": "M 1296 120 L 1296 120 L 1320 120"
     },
     {
       "id": "cut-stub:struct_comp:struct_composition:pkt:out:pkt:source",

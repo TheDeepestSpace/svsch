@@ -24,8 +24,8 @@
       "id": "cut-label:port:enum_types:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 24
+        "x": -216,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:port:enum_types:rst_n:port:rst_n:source",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 24
+        "x": -216,
+        "y": 144
       },
       "width": 96,
       "height": 48,
@@ -84,8 +84,8 @@
       "id": "cut-label:reg:enum_types:current_state:q:sink:edge:reg:enum_types:current_state:port:enum_types:out_state:out_state",
       "type": "hdl",
       "position": {
-        "x": 552,
-        "y": 24
+        "x": 960,
+        "y": 96
       },
       "width": 144,
       "height": 48,
@@ -144,8 +144,8 @@
       "id": "port:enum_types:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": -360,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -184,8 +184,8 @@
       "id": "port:enum_types:out_state",
       "type": "hdl",
       "position": {
-        "x": 720,
-        "y": 36
+        "x": 1128,
+        "y": 108
       },
       "width": 192,
       "height": 24,
@@ -204,8 +204,8 @@
       "id": "port:enum_types:rst_n",
       "type": "hdl",
       "position": {
-        "x": 288,
-        "y": 36
+        "x": -360,
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -276,7 +276,7 @@
       "target": "cut-label:port:enum_types:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 144 48 L 168 48 L 168 48"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:port:enum_types:rst_n:port:rst_n:sink:edge:port:enum_types:rst_n:reg:enum_types:current_state:rst_n",
@@ -292,7 +292,7 @@
       "target": "cut-label:port:enum_types:rst_n:port:rst_n:source",
       "sourceHandle": "port:rst_n",
       "targetHandle": "cut",
-      "path": "M 408 48 L 432 48 L 432 48"
+      "path": "M -240 168 L -216 168 L -216 168"
     },
     {
       "id": "cut-stub:reg:enum_types:current_state:q:sink:edge:reg:enum_types:current_state:port:enum_types:out_state:out_state",
@@ -300,7 +300,7 @@
       "target": "port:enum_types:out_state",
       "sourceHandle": "cut",
       "targetHandle": "port:out_state",
-      "path": "M 696 48 L 696 48 L 720 48"
+      "path": "M 1104 120 L 1104 120 L 1128 120"
     },
     {
       "id": "cut-stub:reg:enum_types:current_state:q:source",

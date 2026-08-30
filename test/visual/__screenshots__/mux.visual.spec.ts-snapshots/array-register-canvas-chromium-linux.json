@@ -24,8 +24,8 @@
       "id": "cut-label:port:array_register:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 24
+        "x": -216,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -299,8 +299,8 @@
       "id": "port:array_register:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": -360,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -441,7 +441,7 @@
       "target": "cut-label:port:array_register:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 144 48 L 168 48 L 168 48"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:reg:array_register:M:q:sink:edge:reg:array_register:M:mux:array_register:M_addr:M",

@@ -24,8 +24,8 @@
       "id": "cut-label:port:register_active_low_reset:c_main:port:c_main:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 24
+        "x": -216,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:port:register_active_low_reset:rst_n:port:rst_n:source",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 24
+        "x": -216,
+        "y": 144
       },
       "width": 96,
       "height": 48,
@@ -84,8 +84,8 @@
       "id": "port:register_active_low_reset:c_main",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": -360,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -144,8 +144,8 @@
       "id": "port:register_active_low_reset:rst_n",
       "type": "hdl",
       "position": {
-        "x": 288,
-        "y": 36
+        "x": -360,
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -211,7 +211,7 @@
       "target": "cut-label:port:register_active_low_reset:c_main:port:c_main:source",
       "sourceHandle": "port:c_main",
       "targetHandle": "cut",
-      "path": "M 144 48 L 168 48 L 168 48"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:port:register_active_low_reset:rst_n:port:rst_n:sink:edge:port:register_active_low_reset:rst_n:reg:register_active_low_reset:q:rst_n",
@@ -227,7 +227,7 @@
       "target": "cut-label:port:register_active_low_reset:rst_n:port:rst_n:source",
       "sourceHandle": "port:rst_n",
       "targetHandle": "cut",
-      "path": "M 408 48 L 432 48 L 432 48"
+      "path": "M -240 168 L -216 168 L -216 168"
     },
     {
       "id": "edge:port:register_active_low_reset:d:reg:register_active_low_reset:q:d",
