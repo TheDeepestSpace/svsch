@@ -461,7 +461,7 @@ test('hides the block-selection toolbar when only a cut net label is selected', 
   }
 });
 
-test('reselects only the cut-out block\'s own net-end stubs, and moves them along with it', async ({
+test("reselects only the cut-out block's own net-end stubs, and moves them along with it", async ({
   workbox,
   evaluateInVSCode,
 }) => {
