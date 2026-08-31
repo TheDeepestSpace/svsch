@@ -18,7 +18,7 @@ RUN apt update && apt upgrade -y && \
     apt install -y \
     build-essential cmake ninja-build git curl wget ca-certificates zip \
     software-properties-common dumb-init \
-    python3-pip unzip sudo && \
+    python3-pip unzip sudo lcov && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create dev sudo user

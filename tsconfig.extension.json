@@ -48,7 +48,11 @@
     "src/webview/nodes/zext/ZextNode.tsx",
     "src/webview/nodes/shared/context.tsx",
     "src/webview/nodes/shared/skins.tsx",
+    "src/webview/nodes/shared/ExpandGrabBands.tsx",
+    "src/webview/nodes/shared/HdlNodeBase.tsx",
+    "src/webview/nodes/shared/InputPortHandles.tsx",
     "src/webview/nodes/shared/NodeResizeControls.tsx",
+    "src/webview/nodes/shared/NodeWarningIcon.tsx",
     "src/webview/orthogonal/OrthogonalEdge.tsx",
     "src/webview/orthogonal/index.ts",
     "src/parser/backend_cpp/build/**"
