@@ -208,7 +208,7 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       try {
-        gitAuthed(githubToken, ['fetch', 'origin', 'gh-pages']);
+        gitAuthed(githubToken, ['fetch', '--depth=1', 'origin', 'gh-pages']);
         if (worktreeAdded) {
           git(['worktree', 'remove', '--force', worktreeDir]);
           worktreeAdded = false;
