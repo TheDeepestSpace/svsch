@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.66% </span>
+                <span class="strong">87.67% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1557/1776</span>
+                <span class='fraction'>1558/1777</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">76.91% </span>
+                <span class="strong">76.94% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1163/1512</span>
+                <span class='fraction'>1165/1514</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.42% </span>
+                <span class="strong">88.43% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1452/1642</span>
+                <span class='fraction'>1453/1643</span>
             </div>
         
             
@@ -4959,7 +4959,15 @@
 <a name='L4894'></a><a href='#L4894'>4894</a>
 <a name='L4895'></a><a href='#L4895'>4895</a>
 <a name='L4896'></a><a href='#L4896'>4896</a>
-<a name='L4897'></a><a href='#L4897'>4897</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L4897'></a><a href='#L4897'>4897</a>
+<a name='L4898'></a><a href='#L4898'>4898</a>
+<a name='L4899'></a><a href='#L4899'>4899</a>
+<a name='L4900'></a><a href='#L4900'>4900</a>
+<a name='L4901'></a><a href='#L4901'>4901</a>
+<a name='L4902'></a><a href='#L4902'>4902</a>
+<a name='L4903'></a><a href='#L4903'>4903</a>
+<a name='L4904'></a><a href='#L4904'>4904</a>
+<a name='L4905'></a><a href='#L4905'>4905</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -5128,7 +5136,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">128x</span>
+<span class="cline-any cline-yes">128x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">91x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">128x</span>
@@ -6965,10 +6981,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">128x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">256x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -10023,10 +10039,18 @@ export async function buildViewModel(
   // Only a label ELK is actually free to move is fed into its placement graph
   // — see buildCutLabelPlacementNodes. The rest (a manual cut awaiting its
   // first Auto Layout pass, or one the user has dragged and pinned) keep
-  // reserving their lead-side margin exactly as before.
-  const elkManagedCutLabelRoles = cutLabelRoles.filter(
-    (role) =&gt; isCutLabelElkManaged(role, moduleLayout) &amp;&amp; !fullyCutNetKeys.has(role.netKey),
-  );
+  // reserving their lead-side margin exactly as before. A compound
+  // generate-region layout never receives these placement nodes either (see
+  // autoLayoutMissingNodes' cutLabelNodes handling below), so treating any
+  // label as ELK-managed here would strip its margin reservation with
+  // nothing picking up the slack — arms would lose the spacing that used to
+  // keep neighboring generate regions apart.
+  const useCompoundGenerateLayout = canUseCompoundGenerateLayout(armRegions, moduleLayout);
+  const elkManagedCutLabelRoles = useCompoundGenerateLayout
+    ? []
+    : cutLabelRoles.filter(
+        (role) =&gt; isCutLabelElkManaged(role, moduleLayout) &amp;&amp; !fullyCutNetKeys.has(role.netKey),
+      );
   const elkManagedOwnerPorts = new Set(
     elkManagedCutLabelRoles.map((role) =&gt; ownerPortKey(role.ownerNodeId, role.ownerPortId)),
   );
@@ -14758,7 +14782,7 @@ function snapPosition(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-31T04:38:07.623Z
+                at 2026-08-31T07:18:24.030Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
