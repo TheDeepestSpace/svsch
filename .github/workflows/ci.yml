@@ -972,7 +972,7 @@ jobs:
           status=$?
           set -e
           if [ "$status" -eq 0 ]; then
-            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            git fetch --depth=1 origin gh-pages:refs/remotes/origin/gh-pages
           elif [ "$status" -eq 2 ]; then
             echo "gh-pages branch not found on remote; continuing without a baseline"
           else
@@ -1044,7 +1044,7 @@ jobs:
           status=$?
           set -e
           if [ "$status" -eq 0 ]; then
-            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            git fetch --depth=1 origin gh-pages:refs/remotes/origin/gh-pages
           elif [ "$status" -eq 2 ]; then
             echo "gh-pages branch not found on remote; continuing without a baseline"
           else

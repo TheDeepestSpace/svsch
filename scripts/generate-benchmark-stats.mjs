@@ -207,7 +207,7 @@ function publishFiles(contentByFilename) {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-charts-'));
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
-      gitAuthed(['fetch', 'origin', 'gh-pages']);
+      gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
       if (attempt > 1) {
         git(['worktree', 'remove', '--force', worktreeDir]);
       }

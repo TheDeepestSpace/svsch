@@ -9,6 +9,12 @@
   "bin": {
     "svsch": "./dist/cli.js"
   },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TheDeepestSpace/svsch"
