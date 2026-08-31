@@ -637,6 +637,13 @@ function smoothPath(coords) {
 // of squish, since which point is "not yet merged" is worth calling out.
 // `series` defaults to the visual suite's elaboration/rendering pair;
 // passing a single-entry array (e.g. CI duration) draws one line instead.
+//
+// `milestones` (optional, from dev/bench/milestones.json — see
+// trim-benchmark-history.mjs) annotates one-off events that shift the trend
+// discontinuously (e.g. the backend binary gaining coverage instrumentation
+// and becoming permanently slower) — a dashed vertical marker + label at the
+// matching history point, so a step-change reads as "explained" rather than
+// as an unflagged regression.
 export function renderHistoryTrendChart({
   title,
   history,
@@ -646,6 +653,7 @@ export function renderHistoryTrendChart({
   currentLabel = 'this PR',
   valueLabel = 'Average duration per master run (ms)',
   squish = false,
+  milestones = [],
 }) {
   // `dateMs` defaults to chart-generation time when the caller hasn't
   // already threaded one through (e.g. an in-progress "so far" preview) —
@@ -728,6 +736,21 @@ export function renderHistoryTrendChart({
   parts.push(
     `<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`,
   );
+
+  // Matched against `history` (not `points`) by full sha — index alignment
+  // with `points` holds for every non-"this PR" point, which is all a
+  // milestone can ever land on, so points[index].dateMs is its x position.
+  const milestoneMarks = milestones
+    .map((milestone) => {
+      const index = history.findIndex((entry) => entry.sha === milestone.sha);
+      return index === -1 ? null : { x: xFor(points[index].dateMs), label: milestone.label };
+    })
+    .filter((mark) => mark !== null);
+  for (const mark of milestoneMarks) {
+    parts.push(
+      `<line x1="${mark.x}" y1="${TREND_TOP_MARGIN - 16}" x2="${mark.x}" y2="${originY}" stroke="${COLORS.inkMuted}" stroke-width="1.5" stroke-dasharray="3,3" />`,
+    );
+  }
 
   // Moving average lines are drawn first (no point markers, dotted, dimmed)
   // so the raw per-run lines and dots sit on top of them rather than being
@@ -836,12 +859,20 @@ export function renderHistoryTrendChart({
         ].join('\n');
       });
 
+  // Drawn last (on top of the series lines) so the label text stays legible
+  // regardless of where the data happens to cross it.
+  const milestoneLabelParts = milestoneMarks.map(
+    (mark) =>
+      `<text x="${mark.x + 4}" y="${TREND_TOP_MARGIN - 6}" font-size="10" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(mark.label)}</text>`,
+  );
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
   <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
   ${renderLegend(24, 52, legendItems)}
   ${parts.join('\n')}
   ${axisLabelParts.join('\n')}
+  ${milestoneLabelParts.join('\n')}
 </svg>`;
 }
 

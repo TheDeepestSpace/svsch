@@ -160,6 +160,19 @@ const historyAverages = mergeBenchmarkHistory(
   computeBenchmarkHistory(baselineData),
 );
 
+// dev/bench/milestones.json holds one-off trend annotations (see
+// trim-benchmark-history.mjs) — e.g. the commit where the backend gained
+// coverage instrumentation and got permanently slower. Missing just means
+// none have been recorded yet, not a hard failure.
+const milestones = (() => {
+  try {
+    return JSON.parse(git(['show', 'origin/gh-pages:dev/bench/milestones.json']));
+  } catch (err) {
+    console.error('No benchmark milestones.json on gh-pages yet (or failed to read it):', err);
+    return [];
+  }
+})();
+
 const chartGroups = new Map();
 for (const { name, file } of suiteArgs) {
   const meta = METRIC_META[name];
@@ -288,6 +301,7 @@ if (elaborationMetric && renderingMetric) {
       title: 'Visual suite — historical average per master run',
       history: historyAverages,
       currentRunAverages,
+      milestones,
     }),
   );
 }
