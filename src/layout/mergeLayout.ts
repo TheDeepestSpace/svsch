@@ -166,10 +166,18 @@ export async function buildViewModel(
   // Only a label ELK is actually free to move is fed into its placement graph
   // — see buildCutLabelPlacementNodes. The rest (a manual cut awaiting its
   // first Auto Layout pass, or one the user has dragged and pinned) keep
-  // reserving their lead-side margin exactly as before.
-  const elkManagedCutLabelRoles = cutLabelRoles.filter(
-    (role) => isCutLabelElkManaged(role, moduleLayout) && !fullyCutNetKeys.has(role.netKey),
-  );
+  // reserving their lead-side margin exactly as before. A compound
+  // generate-region layout never receives these placement nodes either (see
+  // autoLayoutMissingNodes' cutLabelNodes handling below), so treating any
+  // label as ELK-managed here would strip its margin reservation with
+  // nothing picking up the slack — arms would lose the spacing that used to
+  // keep neighboring generate regions apart.
+  const useCompoundGenerateLayout = canUseCompoundGenerateLayout(armRegions, moduleLayout);
+  const elkManagedCutLabelRoles = useCompoundGenerateLayout
+    ? []
+    : cutLabelRoles.filter(
+        (role) => isCutLabelElkManaged(role, moduleLayout) && !fullyCutNetKeys.has(role.netKey),
+      );
   const elkManagedOwnerPorts = new Set(
     elkManagedCutLabelRoles.map((role) => ownerPortKey(role.ownerNodeId, role.ownerPortId)),
   );

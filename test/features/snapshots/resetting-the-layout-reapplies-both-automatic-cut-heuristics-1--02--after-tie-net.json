@@ -4,8 +4,8 @@
       "id": "cut-label:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:q:clk",
       "type": "hdl",
       "position": {
-        "x": 336,
-        "y": 240
+        "x": 144,
+        "y": 288
       },
       "width": 96,
       "height": 48,
@@ -24,8 +24,8 @@
       "id": "cut-label:port:top:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": -216,
-        "y": 96
+        "x": -24,
+        "y": 144
       },
       "width": 96,
       "height": 48,
@@ -44,8 +44,8 @@
       "id": "cut-label:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:q:rst_n",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 336
+        "x": 144,
+        "y": 384
       },
       "width": 96,
       "height": 48,
@@ -64,7 +64,7 @@
       "id": "cut-label:port:top:rst_n:port:rst_n:source",
       "type": "hdl",
       "position": {
-        "x": -216,
+        "x": 72,
         "y": 144
       },
       "width": 96,
@@ -263,7 +263,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 264 L 432 264 L 456 264"
+      "path": "M 240 312 L 240 312 L 336 312 L 336 264 L 432 264 L 456 264"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -271,7 +271,7 @@
       "target": "cut-label:port:top:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -240 120 L -216 120 L -216 120"
+      "path": "M -240 120 L -216 120 L -216 144 L -24 144 L -24 168 L -24 168"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:q:rst_n",
@@ -279,7 +279,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "rst_n",
-      "path": "M 504 336 L 504 336 L 504 288"
+      "path": "M 192 384 L 192 384 L 336 384 L 336 336 L 504 336 L 504 288"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:source",
@@ -287,7 +287,7 @@
       "target": "cut-label:port:top:rst_n:port:rst_n:source",
       "sourceHandle": "port:rst_n",
       "targetHandle": "cut",
-      "path": "M -240 168 L -216 168 L -216 168"
+      "path": "M -240 168 L -216 168 L -216 216 L 72 216 L 72 168 L 72 168"
     },
     {
       "id": "edge:port:top:a:port:top:x:x",
