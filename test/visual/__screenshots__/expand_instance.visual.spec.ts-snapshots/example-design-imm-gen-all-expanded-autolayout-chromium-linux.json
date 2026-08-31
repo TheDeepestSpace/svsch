@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 1104,
-        "y": 24
+        "y": 72
       },
       "width": 144,
       "height": 101,
@@ -35,7 +35,7 @@
       "type": "hdl",
       "position": {
         "x": 1104,
-        "y": 144
+        "y": 192
       },
       "width": 144,
       "height": 101,
@@ -65,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 240
+        "y": 264
       },
       "width": 144,
       "height": 101,
@@ -108,6 +108,11 @@
             "direction": "input"
           },
           {
+            "id": "out:_11:8_",
+            "name": "[11:8]",
+            "direction": "output"
+          },
+          {
             "id": "out:_3_",
             "name": "[3]",
             "direction": "output"
@@ -115,11 +120,6 @@
           {
             "id": "out:_3:0_",
             "name": "[3:0]",
-            "direction": "output"
-          },
-          {
-            "id": "out:_11:8_",
-            "name": "[11:8]",
             "direction": "output"
           }
         ]
@@ -130,7 +130,7 @@
       "type": "hdl",
       "position": {
         "x": 120,
-        "y": 252
+        "y": 276
       },
       "width": 48,
       "height": 24,
@@ -150,7 +150,7 @@
       "type": "hdl",
       "position": {
         "x": 1152,
-        "y": 276
+        "y": 324
       },
       "width": 96,
       "height": 24,
@@ -170,7 +170,7 @@
       "type": "hdl",
       "position": {
         "x": 1464,
-        "y": 168
+        "y": 192
       },
       "width": 192,
       "height": 144,
@@ -215,7 +215,7 @@
       "type": "hdl",
       "position": {
         "x": 1872,
-        "y": 228
+        "y": 252
       },
       "width": 216,
       "height": 24,
@@ -255,7 +255,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 24
+        "y": 72
       },
       "width": 144,
       "height": 48,
@@ -280,7 +280,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 144
+        "y": 192
       },
       "width": 144,
       "height": 48,
@@ -305,7 +305,7 @@
       "type": "hdl",
       "position": {
         "x": 384,
-        "y": 240
+        "y": 264
       },
       "width": 144,
       "height": 48,
@@ -333,7 +333,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:imm_4_b0100",
       "targetHandle": "in:4_b0100",
-      "path": "M 1248 48 L 1272 48 L 1368 48 L 1368 216 L 1440 216 L 1464 216"
+      "path": "M 1248 96 L 1272 96 L 1368 96 L 1368 240 L 1440 240 L 1464 240"
     },
     {
       "id": "edge:bus:imm_gen:imm_4_b0111:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b0111",
@@ -341,7 +341,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:imm_4_b0111",
       "targetHandle": "in:4_b0111",
-      "path": "M 1248 168 L 1272 168 L 1344 168 L 1344 240 L 1440 240 L 1464 240"
+      "path": "M 1248 216 L 1272 216 L 1344 216 L 1344 264 L 1440 264 L 1464 264"
     },
     {
       "id": "edge:bus:imm_gen:imm_4_b1000:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b1000",
@@ -349,7 +349,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:imm_4_b1000",
       "targetHandle": "in:4_b1000",
-      "path": "M 888 264 L 912 264 L 1440 264 L 1464 264"
+      "path": "M 888 288 L 912 288 L 1008 288 L 1008 312 L 1368 312 L 1368 288 L 1440 288 L 1464 288"
     },
     {
       "id": "edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b0100:expr:instr_3:0_",
@@ -357,7 +357,7 @@
       "target": "bus:imm_gen:imm_4_b0100:expr",
       "sourceHandle": "out:_3:0_",
       "targetHandle": "in:_3:0_",
-      "path": "M 528 96 L 552 96 L 1080 96 L 1104 96"
+      "path": "M 528 144 L 552 144 L 1080 144 L 1104 144"
     },
     {
       "id": "edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b0111:expr:instr_3:0_",
@@ -365,7 +365,7 @@
       "target": "bus:imm_gen:imm_4_b0111:expr",
       "sourceHandle": "out:_3:0_",
       "targetHandle": "in:_3:0_",
-      "path": "M 528 96 L 552 96 L 720 96 L 720 216 L 1080 216 L 1104 216"
+      "path": "M 528 144 L 552 144 L 1008 144 L 1008 264 L 1080 264 L 1104 264"
     },
     {
       "id": "edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b1000:expr:instr_3:0_",
@@ -373,7 +373,7 @@
       "target": "bus:imm_gen:imm_4_b1000:expr",
       "sourceHandle": "out:_3:0_",
       "targetHandle": "in:_3:0_",
-      "path": "M 528 96 L 552 96 L 720 96 L 720 312 L 744 312"
+      "path": "M 528 144 L 552 144 L 720 144 L 720 336 L 744 336"
     },
     {
       "id": "edge:bus:imm_gen:instr:mux:imm_gen:imm:instr_11:8_:imm:instr_11:8_",
@@ -381,7 +381,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:_11:8_",
       "targetHandle": "sel",
-      "path": "M 528 144 L 552 144 L 648 144 L 648 105 Q 657 96 648 87 L 648 0 L 1560 0 L 1560 144 L 1560 192"
+      "path": "M 528 48 L 552 48 L 1560 48 L 1560 168 L 1560 216"
     },
     {
       "id": "edge:bus:imm_gen:instr:replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH___4:instr_3_",
@@ -389,7 +389,7 @@
       "target": "replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH_-_4",
       "sourceHandle": "out:_3_",
       "targetHandle": "port:in",
-      "path": "M 528 48 L 552 48 L 639 48 Q 648 39 657 48 L 720 48 L 744 48"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     },
     {
       "id": "edge:bus:imm_gen:instr:replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH___4:instr_3_",
@@ -397,7 +397,7 @@
       "target": "replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH_-_4",
       "sourceHandle": "out:_3_",
       "targetHandle": "port:in",
-      "path": "M 528 48 L 552 48 L 639 48 Q 648 39 657 48 L 720 48 L 720 87 Q 729 96 720 105 L 720 168 L 744 168"
+      "path": "M 528 96 L 552 96 L 720 96 L 720 135 Q 729 144 720 153 L 720 216 L 744 216"
     },
     {
       "id": "edge:literal:imm_gen:1_b0:1_b0:replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH___4:1_b0",
@@ -405,7 +405,7 @@
       "target": "replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH_-_4",
       "sourceHandle": "port:1_b0",
       "targetHandle": "port:in",
-      "path": "M 168 264 L 192 264 L 360 264 L 384 264"
+      "path": "M 168 288 L 192 288 L 360 288 L 384 288"
     },
     {
       "id": "edge:literal:imm_gen:imm_default:_0:mux:imm_gen:imm:instr_11:8_:imm:imm_default",
@@ -413,7 +413,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "port:imm_default",
       "targetHandle": "in:default",
-      "path": "M 1248 288 L 1272 288 L 1440 288 L 1464 288"
+      "path": "M 1248 336 L 1272 336 L 1368 336 L 1368 312 L 1440 312 L 1464 312"
     },
     {
       "id": "edge:mux:imm_gen:imm:instr_11:8_:imm:port:imm_gen:imm:imm",
@@ -421,7 +421,7 @@
       "target": "port:imm_gen:imm",
       "sourceHandle": "out",
       "targetHandle": "port:imm",
-      "path": "M 1656 240 L 1680 240 L 1848 240 L 1872 240"
+      "path": "M 1656 264 L 1680 264 L 1848 264 L 1872 264"
     },
     {
       "id": "edge:port:imm_gen:instr:bus:imm_gen:instr:instr",
@@ -437,7 +437,7 @@
       "target": "bus:imm_gen:imm_4_b0100:expr",
       "sourceHandle": "port:imm_4_b0100_concat_in0",
       "targetHandle": "in:_7:4_",
-      "path": "M 888 48 L 912 48 L 1080 48 L 1104 48"
+      "path": "M 888 96 L 912 96 L 1080 96 L 1104 96"
     },
     {
       "id": "edge:replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b0111:expr:imm_4_b0111_concat_in0",
@@ -445,7 +445,7 @@
       "target": "bus:imm_gen:imm_4_b0111:expr",
       "sourceHandle": "port:imm_4_b0111_concat_in0",
       "targetHandle": "in:_7:4_",
-      "path": "M 888 168 L 912 168 L 1080 168 L 1104 168"
+      "path": "M 888 216 L 912 216 L 999 216 Q 1008 207 1017 216 L 1080 216 L 1104 216"
     },
     {
       "id": "edge:replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b1000:expr:imm_4_b1000_concat_in0",
@@ -453,7 +453,7 @@
       "target": "bus:imm_gen:imm_4_b1000:expr",
       "sourceHandle": "port:imm_4_b1000_concat_in0",
       "targetHandle": "in:_7:4_",
-      "path": "M 528 264 L 552 264 L 720 264 L 744 264"
+      "path": "M 528 288 L 552 288 L 720 288 L 744 288"
     }
   ]
 }

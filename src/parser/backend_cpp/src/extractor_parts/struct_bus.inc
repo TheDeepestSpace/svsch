@@ -2,6 +2,47 @@
 // here so the breakout-tap fallback below can use it.
 std::string widthFromSignalSlice(const std::string& signal);
 
+namespace {
+
+std::optional<int> aggregateTapIndex(const NodePort& port) {
+    const std::string& label = port.label.empty() ? port.name : port.label;
+    std::smatch match;
+    static const std::regex index_regex(R"(\[\s*(-?\d+))");
+    if (!std::regex_search(label, match, index_regex)) return std::nullopt;
+
+    try {
+        return std::stoi(match[1].str());
+    } catch (...) {
+        return std::nullopt;
+    }
+}
+
+// Aggregate taps are displayed in vector order. Keep the aggregate's single
+// whole-value port first, then normalize its taps to the same MSB-first
+// convention used by concatenations.
+void sortAggregateTapsMsbFirst(std::vector<NodePort>& ports, const std::string& tap_direction) {
+    std::vector<NodePort> aggregate_ports;
+    std::vector<NodePort> taps;
+    for (const auto& port : ports) {
+        if (port.direction == tap_direction) taps.push_back(port);
+        else aggregate_ports.push_back(port);
+    }
+
+    std::stable_sort(taps.begin(), taps.end(), [](const NodePort& a, const NodePort& b) {
+        const auto a_index = aggregateTapIndex(a);
+        const auto b_index = aggregateTapIndex(b);
+        if (a_index && b_index) return *a_index > *b_index;
+        if (a_index.has_value() != b_index.has_value()) return a_index.has_value();
+        return false;
+    });
+
+    ports.clear();
+    ports.insert(ports.end(), aggregate_ports.begin(), aggregate_ports.end());
+    ports.insert(ports.end(), taps.begin(), taps.end());
+}
+
+} // namespace
+
 std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& mod) {
     int type = vpi_get(vpiType, select_handle);
     std::string select_str = getSignalName(select_handle);
@@ -189,6 +230,7 @@ std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& m
         std::string tap_width = getWidth(select_handle);
         if (tap_width.empty()) tap_width = widthFromSignalSlice(select_str);
         bus_node->ports.push_back({tap_label, "output", select_str, tap_width, tap_label});
+        sortAggregateTapsMsbFirst(bus_node->ports, "output");
     }
 
     return select_str;
@@ -534,6 +576,7 @@ void DesignExtractor::ensureBusSliceCompositionInput(Module& mod, const std::str
         slice_width = bits > 1 ? "[" + std::to_string(bits - 1) + ":0]" : "[0:0]";
     }
     node->ports.push_back({slice, "input", input_signal, slice_width, slice, source});
+    sortAggregateTapsMsbFirst(node->ports, "input");
 }
 
 void DesignExtractor::ensureArrayCompositionInput(Module& mod, const std::string& base, const std::string& index_label, const std::string& input_signal, const std::string& width, SourceInfo source) {
@@ -606,26 +649,7 @@ void DesignExtractor::ensureArrayCompositionInput(Module& mod, const std::string
         node->ports.push_back({index_label, "input", input_signal, width.empty() ? output_width : width, index_label, source});
     }
 
-    std::vector<NodePort> outputs;
-    std::vector<NodePort> inputs;
-    for (const auto& port : node->ports) {
-        if (port.direction == "input") inputs.push_back(port);
-        else outputs.push_back(port);
-    }
-    auto label_index = [](const std::string& label) {
-        std::smatch match;
-        if (std::regex_search(label, match, std::regex(R"(\[\s*(-?\d+)\s*\])"))) {
-            return std::stoi(match[1].str());
-        }
-        return 0;
-    };
-    std::sort(inputs.begin(), inputs.end(), [&](const NodePort& a, const NodePort& b) {
-        return label_index(a.label.empty() ? a.name : a.label) > label_index(b.label.empty() ? b.name : b.label);
-    });
-
-    node->ports.clear();
-    node->ports.insert(node->ports.end(), outputs.begin(), outputs.end());
-    node->ports.insert(node->ports.end(), inputs.begin(), inputs.end());
+    sortAggregateTapsMsbFirst(node->ports, "input");
 }
 
 std::string DesignExtractor::ensureStructComposition(Module& mod, const std::string& base) {
