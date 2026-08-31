@@ -2502,7 +2502,11 @@ describe('layout merge', () => {
     const sinks = view.nodes.filter((node) => node.metadata?.cutNet?.role === 'sink').map(boundsOf);
 
     expect(sinks).toHaveLength(2);
-    expect(sinks[0].x).toBe(sinks[1].x);
+    // Both hang off the same 'y' port, so ELK's own placement (not the
+    // geometric axis-aware stagger this used to rely on exclusively) settles
+    // them into adjacent rows a grid apart in x — no longer pixel-identical,
+    // but still tightly stacked and non-overlapping.
+    expect(Math.abs(sinks[0].x - sinks[1].x)).toBeLessThanOrEqual(diagramSizing.gridSize);
     expect(sinks[0].y).not.toBe(sinks[1].y);
     expect(boxesOverlap(sinks[0], sinks[1])).toBe(false);
   });
@@ -2577,8 +2581,14 @@ describe('layout merge', () => {
     expect(dataBounds.y + dataBounds.height / 2).toBe(
       register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2,
     );
+    // D and clk are only one grid row apart, closer than a label is tall, so
+    // the two can never both sit level with their own port without
+    // overlapping. ELK's own same-layer spacing (not the old geometric
+    // stagger) now resolves that by dropping the clock label a full label
+    // height below where it'd sit if level — still adjacent to the register,
+    // just no longer pixel-level with its own port.
     expect(clockBounds.y + clockBounds.height / 2).toBe(
-      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 1.5,
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 3.5,
     );
     expect(boxesOverlap(dataBounds, clockBounds)).toBe(false);
   });

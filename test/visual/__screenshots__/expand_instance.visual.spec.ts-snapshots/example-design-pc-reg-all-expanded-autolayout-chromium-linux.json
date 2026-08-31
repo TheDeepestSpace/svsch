@@ -4,8 +4,8 @@
       "id": "cut-label:port:pc_reg:clk:port:clk:sink:edge:port:pc_reg:clk:reg:pc_reg:pc:clk",
       "type": "hdl",
       "position": {
-        "x": 192,
-        "y": 192
+        "x": -72,
+        "y": 216
       },
       "width": 96,
       "height": 48,
@@ -24,8 +24,8 @@
       "id": "cut-label:port:pc_reg:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": -72,
-        "y": 72
+        "x": 144,
+        "y": 48
       },
       "width": 96,
       "height": 48,
@@ -44,8 +44,8 @@
       "id": "cut-label:port:pc_reg:reset_n:port:reset_n:sink:edge:port:pc_reg:reset_n:reg:pc_reg:pc:reset_n",
       "type": "hdl",
       "position": {
-        "x": 360,
-        "y": 288
+        "x": -120,
+        "y": 312
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:port:pc_reg:reset_n:port:reset_n:source",
       "type": "hdl",
       "position": {
-        "x": 192,
-        "y": 72
+        "x": 600,
+        "y": 48
       },
       "width": 96,
       "height": 48,
@@ -84,8 +84,8 @@
       "id": "port:pc_reg:clk",
       "type": "hdl",
       "position": {
-        "x": -216,
-        "y": 84
+        "x": -192,
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -104,8 +104,8 @@
       "id": "port:pc_reg:next_pc",
       "type": "hdl",
       "position": {
-        "x": -216,
-        "y": 180
+        "x": -192,
+        "y": 156
       },
       "width": 216,
       "height": 24,
@@ -124,8 +124,8 @@
       "id": "port:pc_reg:pc",
       "type": "hdl",
       "position": {
-        "x": 720,
-        "y": 180
+        "x": 648,
+        "y": 156
       },
       "width": 168,
       "height": 24,
@@ -144,8 +144,8 @@
       "id": "port:pc_reg:reset_n",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 84
+        "x": 264,
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -164,8 +164,8 @@
       "id": "reg:pc_reg:pc",
       "type": "hdl",
       "position": {
-        "x": 312,
-        "y": 144
+        "x": 240,
+        "y": 120
       },
       "width": 192,
       "height": 96,
@@ -203,7 +203,7 @@
       "target": "reg:pc_reg:pc",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 288 216 L 288 216 L 312 216"
+      "path": "M 24 240 L 24 240 L 120 240 L 120 192 L 216 192 L 240 192"
     },
     {
       "id": "cut-stub:port:pc_reg:clk:port:clk:source",
@@ -211,7 +211,7 @@
       "target": "cut-label:port:pc_reg:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -96 96 L -72 96 L -72 96"
+      "path": "M -72 72 L -48 72 L 144 72 L 144 72"
     },
     {
       "id": "cut-stub:port:pc_reg:reset_n:port:reset_n:sink:edge:port:pc_reg:reset_n:reg:pc_reg:pc:reset_n",
@@ -219,7 +219,7 @@
       "target": "reg:pc_reg:pc",
       "sourceHandle": "cut",
       "targetHandle": "reset_n",
-      "path": "M 408 288 L 408 288 L 408 240"
+      "path": "M -72 312 L -72 312 L 144 312 L 144 264 L 336 264 L 336 216"
     },
     {
       "id": "cut-stub:port:pc_reg:reset_n:port:reset_n:source",
@@ -227,7 +227,7 @@
       "target": "cut-label:port:pc_reg:reset_n:port:reset_n:source",
       "sourceHandle": "port:reset_n",
       "targetHandle": "cut",
-      "path": "M 168 96 L 192 96 L 192 96"
+      "path": "M 384 72 L 408 72 L 600 72 L 600 72"
     },
     {
       "id": "edge:port:pc_reg:next_pc:reg:pc_reg:pc:next_pc",
@@ -235,7 +235,7 @@
       "target": "reg:pc_reg:pc",
       "sourceHandle": "port:next_pc",
       "targetHandle": "d",
-      "path": "M 0 192 L 24 192 L 288 192 L 312 192"
+      "path": "M 24 168 L 48 168 L 216 168 L 240 168"
     },
     {
       "id": "edge:reg:pc_reg:pc:port:pc_reg:pc:pc",
@@ -243,7 +243,7 @@
       "target": "port:pc_reg:pc",
       "sourceHandle": "q",
       "targetHandle": "port:pc",
-      "path": "M 504 192 L 528 192 L 696 192 L 720 192"
+      "path": "M 432 168 L 456 168 L 624 168 L 648 168"
     }
   ]
 }
