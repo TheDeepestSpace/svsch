@@ -2273,6 +2273,42 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
       }
     }
 
+    // The backend stamps combFeedback on edges that close a purely
+    // combinational cycle (no register/latch in the loop) — e.g. a
+    // cross-coupled NAND SR latch. Surface one warning per independent loop,
+    // mirroring the inferred-latch warning above; the loop still renders as a
+    // normal cyclic (feedback) edge.
+    {
+      const feedbackEdges = module.edges.filter((edge) => edge.metadata?.combFeedback);
+      const loopOf = new Map<string, string>();
+      const findLoop = (id: string): string => {
+        let root = id;
+        while (loopOf.get(root) !== root) root = loopOf.get(root)!;
+        return root;
+      };
+      for (const edge of feedbackEdges) {
+        for (const id of [edge.source, edge.target]) {
+          if (!loopOf.has(id)) loopOf.set(id, id);
+        }
+        loopOf.set(findLoop(edge.source), findLoop(edge.target));
+      }
+      const loops = new Map<string, DiagramEdge[]>();
+      for (const edge of feedbackEdges) {
+        const root = findLoop(edge.source);
+        loops.set(root, [...(loops.get(root) ?? []), edge]);
+      }
+      for (const loopEdges of loops.values()) {
+        const signals = [...new Set(loopEdges.map((edge) => edge.signal).filter(Boolean))];
+        graph.diagnostics.push({
+          severity: 'warning',
+          message:
+            `${modName} has a combinational feedback loop` +
+            (signals.length ? ` through ${signals.join(', ')}` : ''),
+          source: loopEdges[0].sourceRange,
+        });
+      }
+    }
+
     graph.modules[modName] = module;
   }
 

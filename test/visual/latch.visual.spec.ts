@@ -33,4 +33,32 @@ test.describe('latch visual rendering', () => {
       clip: await paddedAllNodesClip(page),
     });
   });
+
+  test('renders a structural cross-coupled NAND SR latch with feedback edges', async ({ page }) => {
+    const view = await openFixture(page, 'latch_sr_gate.sv');
+    const gates = view.nodes.filter((node) => node.kind === 'gate');
+    expect(gates).toHaveLength(2);
+
+    // The cross-coupled wires survive layout as a genuine 2-cycle between the
+    // two NAND gates instead of being dropped or collapsed.
+    const qGate = gates.find((node) => node.id.includes(':q:'));
+    const qnGate = gates.find((node) => node.id.includes(':qn:'));
+    expect(qGate).toBeDefined();
+    expect(qnGate).toBeDefined();
+    expect(view.edges.some((edge) => edge.source === qGate?.id && edge.target === qnGate?.id)).toBe(
+      true,
+    );
+    expect(view.edges.some((edge) => edge.source === qnGate?.id && edge.target === qGate?.id)).toBe(
+      true,
+    );
+
+    await expect(page.locator('[data-node-kind="gate"]')).toHaveCount(2);
+    await expect(page.locator('[data-node-kind="port"] >> text=s_n')).toBeVisible();
+    await expect(page.locator('[data-node-kind="port"] >> text=r_n')).toBeVisible();
+
+    await fitGraphView(page);
+    await expectGraphAndScreenshot(page, 'latch-sr-gate-canvas.png', {
+      clip: await paddedAllNodesClip(page),
+    });
+  });
 });
