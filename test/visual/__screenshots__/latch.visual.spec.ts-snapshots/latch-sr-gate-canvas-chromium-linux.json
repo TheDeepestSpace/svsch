@@ -85,7 +85,7 @@
       "type": "hdl",
       "position": {
         "x": 672,
-        "y": 108
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -148,7 +148,7 @@
       "target": "gate:sr_latch_gate:qn:nand",
       "sourceHandle": "out:q",
       "targetHandle": "port:in1",
-      "path": "M 768 96 L 792 96 L 792 192 L 336 192 L 336 144 L 360 144"
+      "path": "M 768 96 L 792 96 L 816 96 L 816 216 L 336 216 L 336 144 L 360 144"
     },
     {
       "id": "edge:gate:sr_latch_gate:q:nand:port:sr_latch_gate:q:q",
@@ -172,7 +172,7 @@
       "target": "port:sr_latch_gate:qn",
       "sourceHandle": "out:qn",
       "targetHandle": "port:qn",
-      "path": "M 456 120 L 480 120 L 648 120 L 672 120"
+      "path": "M 456 120 L 480 120 L 648 120 L 648 192 L 672 192"
     },
     {
       "id": "edge:port:sr_latch_gate:r_n:gate:sr_latch_gate:qn:nand:r_n",
