@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-08-31 04:52:45</td>
+            <td class="headerValue">2026-09-01 04:24:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">17</td>
@@ -195,11 +195,11 @@
 <a name="133"><span class="lineNum">     133 </span><span class="lineCov">       2124 :     return &quot;&quot;;</span></a>
 <a name="134"><span class="lineNum">     134 </span><span class="lineCov">       5809 : }</span></a>
 <a name="135"><span class="lineNum">     135 </span>            : </a>
-<a name="136"><span class="lineNum">     136 </span><span class="lineCov">       3338 : void DesignExtractor::collectInterfaceTypesFromDesign() {</span></a>
-<a name="137"><span class="lineNum">     137 </span><span class="lineCov">       3338 :     auto* wrapped = reinterpret_cast&lt;uhdm_handle*&gt;(design_);</span></a>
-<a name="138"><span class="lineNum">     138 </span><span class="lineCov">       3338 :     if (!wrapped || !wrapped-&gt;object) return;</span></a>
-<a name="139"><span class="lineNum">     139 </span><span class="lineCov">       3338 :     auto* design = static_cast&lt;const UHDM::design*&gt;(wrapped-&gt;object);</span></a>
-<a name="140"><span class="lineNum">     140 </span><span class="lineCov">       3338 :     if (!design || !design-&gt;AllInterfaces()) return;</span></a>
+<a name="136"><span class="lineNum">     136 </span><span class="lineCov">       3337 : void DesignExtractor::collectInterfaceTypesFromDesign() {</span></a>
+<a name="137"><span class="lineNum">     137 </span><span class="lineCov">       3337 :     auto* wrapped = reinterpret_cast&lt;uhdm_handle*&gt;(design_);</span></a>
+<a name="138"><span class="lineNum">     138 </span><span class="lineCov">       3337 :     if (!wrapped || !wrapped-&gt;object) return;</span></a>
+<a name="139"><span class="lineNum">     139 </span><span class="lineCov">       3337 :     auto* design = static_cast&lt;const UHDM::design*&gt;(wrapped-&gt;object);</span></a>
+<a name="140"><span class="lineNum">     140 </span><span class="lineCov">       3337 :     if (!design || !design-&gt;AllInterfaces()) return;</span></a>
 <a name="141"><span class="lineNum">     141 </span>            : </a>
 <a name="142"><span class="lineNum">     142 </span><span class="lineCov">       3211 :     for (const UHDM::interface_inst* iface : *design-&gt;AllInterfaces()) {</span></a>
 <a name="143"><span class="lineNum">     143 </span><span class="lineCov">       2519 :         if (!iface) continue;</span></a>
@@ -367,9 +367,9 @@
 <a name="305"><span class="lineNum">     305 </span><span class="lineCov">         92 :         scoped_text = scoped.str();</span></a>
 <a name="306"><span class="lineNum">     306 </span><span class="lineCov">         92 :     }</span></a>
 <a name="307"><span class="lineNum">     307 </span>            : </a>
-<a name="308"><span class="lineNum">     308 </span><span class="lineCov">      83087 :     for (auto&amp; port : mod.ports) {</span></a>
-<a name="309"><span class="lineNum">     309 </span><span class="lineCov">      61253 :         if (!port.typeName.empty() &amp;&amp; interfaceTypes_.count(port.typeName)) continue;</span></a>
-<a name="310"><span class="lineNum">     310 </span><span class="lineCov">     435287 :         for (const auto&amp; [type_name, type] : interfaceTypes_) {</span></a>
+<a name="308"><span class="lineNum">     308 </span><span class="lineCov">      83089 :     for (auto&amp; port : mod.ports) {</span></a>
+<a name="309"><span class="lineNum">     309 </span><span class="lineCov">      61255 :         if (!port.typeName.empty() &amp;&amp; interfaceTypes_.count(port.typeName)) continue;</span></a>
+<a name="310"><span class="lineNum">     310 </span><span class="lineCov">     435289 :         for (const auto&amp; [type_name, type] : interfaceTypes_) {</span></a>
 <a name="311"><span class="lineNum">     311 </span><span class="lineCov">     761016 :             std::string pattern = &quot;\\b&quot; + type_name + &quot;\\s*(?:\\.\\s*([A-Za-z_$][\\w$]*))?\\s+&quot; + port.name + &quot;\\b&quot;;</span></a>
 <a name="312"><span class="lineNum">     312 </span><span class="lineCov">     380508 :             std::smatch match;</span></a>
 <a name="313"><span class="lineNum">     313 </span><span class="lineCov">     380508 :             if (!std::regex_search(scoped_text, match, std::regex(pattern))) continue;</span></a>
@@ -455,13 +455,13 @@
 <a name="393"><span class="lineNum">     393 </span><span class="lineNoCov">          0 :     }</span></a>
 <a name="394"><span class="lineNum">     394 </span><span class="lineCov">         65 : }</span></a>
 <a name="395"><span class="lineNum">     395 </span>            : </a>
-<a name="396"><span class="lineNum">     396 </span><span class="lineCov">      14918 : std::optional&lt;InterfaceSignal&gt; DesignExtractor::interfacePortInfoForModule(const std::string&amp; moduleName, const std::string&amp; portName) const {</span></a>
-<a name="397"><span class="lineNum">     397 </span><span class="lineCov">     623690 :     for (const auto&amp; module : modules_) {</span></a>
-<a name="398"><span class="lineNum">     398 </span><span class="lineCov">     616143 :         if (module.name != moduleName) continue;</span></a>
-<a name="399"><span class="lineNum">     399 </span><span class="lineCov">      14650 :         auto it = module.interfaceSignals.find(portName);</span></a>
-<a name="400"><span class="lineNum">     400 </span><span class="lineCov">      14650 :         if (it != module.interfaceSignals.end()) return it-&gt;second;</span></a>
+<a name="396"><span class="lineNum">     396 </span><span class="lineCov">      14924 : std::optional&lt;InterfaceSignal&gt; DesignExtractor::interfacePortInfoForModule(const std::string&amp; moduleName, const std::string&amp; portName) const {</span></a>
+<a name="397"><span class="lineNum">     397 </span><span class="lineCov">     623708 :     for (const auto&amp; module : modules_) {</span></a>
+<a name="398"><span class="lineNum">     398 </span><span class="lineCov">     616155 :         if (module.name != moduleName) continue;</span></a>
+<a name="399"><span class="lineNum">     399 </span><span class="lineCov">      14656 :         auto it = module.interfaceSignals.find(portName);</span></a>
+<a name="400"><span class="lineNum">     400 </span><span class="lineCov">      14656 :         if (it != module.interfaceSignals.end()) return it-&gt;second;</span></a>
 <a name="401"><span class="lineNum">     401 </span>            :     }</a>
-<a name="402"><span class="lineNum">     402 </span><span class="lineCov">       7547 :     return std::nullopt;</span></a>
+<a name="402"><span class="lineNum">     402 </span><span class="lineCov">       7553 :     return std::nullopt;</span></a>
 <a name="403"><span class="lineNum">     403 </span>            : }</a>
 <a name="404"><span class="lineNum">     404 </span>            : </a>
 <a name="405"><span class="lineNum">     405 </span><span class="lineCov">      32869 : static std::string flipInterfacePortDirection(const std::string&amp; direction) {</span></a>
