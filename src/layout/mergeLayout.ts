@@ -1295,9 +1295,13 @@ function isCutLabelElkManaged(role: CutLabelRole, moduleLayout: SavedModuleLayou
 // node — wired to its owning port by an edge exactly like any other — lets
 // the layered algorithm account for it the same way it accounts for every
 // other node: its own layer, its own spacing, crossing minimization aware it
-// exists at all. resolveCutLabelCollisions (still run afterward, see
-// buildNetCutProjection) remains a safety net for whatever this doesn't
-// fully resolve, rather than the primary placement mechanism.
+// exists at all. The slot ELK picks is a *reservation*, not the rendered
+// position — the projection pulls each label back toward its owning port's
+// lead point afterward (see pulledInCutLabelPosition), so labels hug their
+// port whenever the space next to it is clear. resolveCutLabelCollisions
+// (still run afterward, see buildNetCutProjection) remains a safety net for
+// whatever this doesn't fully resolve, rather than the primary placement
+// mechanism.
 function buildCutLabelPlacementNodes(
   elkManagedRoles: CutLabelRole[],
   moduleName: string,
@@ -1394,6 +1398,50 @@ function elkPlacedCutLabelPosition(
   };
 }
 
+// ELK's placement pass can only give a managed label a slot inside a real
+// layer, and layers sit at least a full node-separation gap apart — so even a
+// perfectly ELK-placed label ends up far from the port it names, where the
+// pre-ELK behavior tucked it right against the lead point. The label's value
+// as a placement-graph participant is the *reserved* slot (nodes were laid
+// out knowing it exists), not the slot's coordinates: walk from the canonical
+// adjacent-to-lead position toward ELK's slot in grid steps along the stub
+// axis and take the first spot clear of every design node — the canonical
+// spot whenever it's free (the common case), ELK's own reservation when the
+// whole corridor is blocked. Label-label overlaps are deliberately ignored
+// here: resolveCutLabelCollisions already resolves those (shared-endpoint
+// stagger, adjacent-port-row escape) for canonical placements, and it runs on
+// pulled-in labels all the same.
+function pulledInCutLabelPosition(
+  role: CutLabelRole,
+  canonical: { x: number; y: number },
+  elkPlaced: { x: number; y: number },
+  obstacles: NodeBounds[],
+): { x: number; y: number } {
+  const dimensions = diagramNodeDimensions({
+    id: role.labelId,
+    kind: 'netLabel',
+    label: role.cut.label,
+    ports: [],
+  });
+  const clear = (position: { x: number; y: number }) =>
+    !obstacles.some((bounds) => boundsOverlap({ ...position, ...dimensions }, bounds));
+  const axis = role.handleSide === 'left' || role.handleSide === 'right' ? 'x' : 'y';
+  const grid = diagramSizing.gridSize;
+  const span = elkPlaced[axis] - canonical[axis];
+  const direction = Math.sign(span);
+  const steps = Math.floor(Math.abs(span) / grid);
+  for (let step = 0; step <= steps; step += 1) {
+    const candidate =
+      axis === 'x'
+        ? { x: canonical.x + direction * step * grid, y: canonical.y }
+        : { x: canonical.x, y: canonical.y + direction * step * grid };
+    if (clear(candidate)) {
+      return candidate;
+    }
+  }
+  return elkPlaced;
+}
+
 function buildNetCutProjection(
   designModule: DesignModule,
   moduleLayout: SavedModuleLayout,
@@ -1407,6 +1455,7 @@ function buildNetCutProjection(
   const endpointByLabelId = new Map<string, string>();
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
+  const designNodeBounds = positionedNodes.map((node) => nodeBounds(node));
 
   for (const role of cutLabelRoles) {
     const lead = renderedLeadPoint(
@@ -1425,9 +1474,15 @@ function buildNetCutProjection(
       deferredNodeIds.add(role.labelId);
     }
 
-    const fallbackPosition =
-      elkPlacedCutLabelPosition(role, lead.point, nodesById, elkPositions) ??
-      labelPositionForHandlePoint(lead.point, role.handleSide, role.cut.label);
+    const canonicalPosition = labelPositionForHandlePoint(
+      lead.point,
+      role.handleSide,
+      role.cut.label,
+    );
+    const elkPosition = elkPlacedCutLabelPosition(role, lead.point, nodesById, elkPositions);
+    const fallbackPosition = elkPosition
+      ? pulledInCutLabelPosition(role, canonicalPosition, elkPosition, designNodeBounds)
+      : canonicalPosition;
 
     const labelNode = makeCutLabelNode(
       role.labelId,

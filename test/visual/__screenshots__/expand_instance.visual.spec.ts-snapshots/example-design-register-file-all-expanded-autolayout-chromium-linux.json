@@ -94,8 +94,8 @@
       "id": "cut-label:port:register_file:clk:port:clk:sink:edge:port:register_file:clk:reg:register_file:regs:clk",
       "type": "hdl",
       "position": {
-        "x": 1728,
-        "y": 360
+        "x": 1920,
+        "y": 312
       },
       "width": 96,
       "height": 48,
@@ -114,7 +114,7 @@
       "id": "cut-label:port:register_file:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": 288,
+        "x": 96,
         "y": 24
       },
       "width": 96,
@@ -134,8 +134,8 @@
       "id": "cut-label:port:register_file:reset_n:port:reset_n:sink:edge:port:register_file:reset_n:reg:register_file:regs:reset_n",
       "type": "hdl",
       "position": {
-        "x": 1704,
-        "y": 456
+        "x": 2112,
+        "y": 408
       },
       "width": 96,
       "height": 48,
@@ -154,7 +154,7 @@
       "id": "cut-label:port:register_file:reset_n:port:reset_n:source",
       "type": "hdl",
       "position": {
-        "x": 744,
+        "x": 552,
         "y": 24
       },
       "width": 96,
@@ -174,8 +174,8 @@
       "id": "cut-label:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_addr:regs",
       "type": "hdl",
       "position": {
-        "x": 1368,
-        "y": 456
+        "x": 1560,
+        "y": 288
       },
       "width": 96,
       "height": 48,
@@ -194,7 +194,7 @@
       "id": "cut-label:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:regs",
       "type": "hdl",
       "position": {
-        "x": 912,
+        "x": 1152,
         "y": 288
       },
       "width": 96,
@@ -214,7 +214,7 @@
       "id": "cut-label:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_read_rs1_addr:regs",
       "type": "hdl",
       "position": {
-        "x": 144,
+        "x": 336,
         "y": 480
       },
       "width": 96,
@@ -234,7 +234,7 @@
       "id": "cut-label:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_read_rs2_addr:regs",
       "type": "hdl",
       "position": {
-        "x": 144,
+        "x": 336,
         "y": 744
       },
       "width": 96,
@@ -254,7 +254,7 @@
       "id": "cut-label:reg:register_file:regs:q:source",
       "type": "hdl",
       "position": {
-        "x": 2496,
+        "x": 2304,
         "y": 288
       },
       "width": 96,
@@ -743,7 +743,7 @@
       "target": "reg:register_file:regs",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 1824 384 L 1920 384 L 1920 336 L 2016 336"
+      "path": "M 2016 336"
     },
     {
       "id": "cut-stub:port:register_file:clk:port:clk:source",
@@ -751,7 +751,7 @@
       "target": "cut-label:port:register_file:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 72 48 L 96 48 L 288 48 L 288 48"
+      "path": "M 72 48 L 96 48 L 96 48"
     },
     {
       "id": "cut-stub:port:register_file:reset_n:port:reset_n:sink:edge:port:register_file:reset_n:reg:register_file:regs:reset_n",
@@ -759,7 +759,7 @@
       "target": "reg:register_file:regs",
       "sourceHandle": "cut",
       "targetHandle": "reset_n",
-      "path": "M 1752 456 L 1944 456 L 1944 408 L 2160 408 L 2160 384"
+      "path": "M 2160 408 L 2160 384"
     },
     {
       "id": "cut-stub:port:register_file:reset_n:port:reset_n:source",
@@ -767,7 +767,7 @@
       "target": "cut-label:port:register_file:reset_n:port:reset_n:source",
       "sourceHandle": "port:reset_n",
       "targetHandle": "cut",
-      "path": "M 528 48 L 552 48 L 744 48 L 744 48"
+      "path": "M 528 48 L 552 48 L 552 48"
     },
     {
       "id": "cut-stub:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_addr:regs",
@@ -775,7 +775,7 @@
       "target": "mux:register_file:regs_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:default",
-      "path": "M 1474.5 486 L 1566 486 L 1566 318 L 1672.5 318"
+      "path": "M 1666.5 318 L 1672.5 318"
     },
     {
       "id": "cut-stub:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:regs",
@@ -783,7 +783,7 @@
       "target": "mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 1018.5 318 L 1264.5 318"
+      "path": "M 1258.5 318 L 1264.5 318"
     },
     {
       "id": "cut-stub:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_read_rs1_addr:regs",
@@ -791,7 +791,7 @@
       "target": "mux:register_file:regs_read_rs1_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:in",
-      "path": "M 250.5 510 L 456 510"
+      "path": "M 442.5 510 L 456 510"
     },
     {
       "id": "cut-stub:reg:register_file:regs:q:sink:edge:reg:register_file:regs:mux:register_file:regs_read_rs2_addr:regs",
@@ -799,7 +799,7 @@
       "target": "mux:register_file:regs_read_rs2_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:in",
-      "path": "M 250.5 774 L 456 774"
+      "path": "M 442.5 774 L 456 774"
     },
     {
       "id": "cut-stub:reg:register_file:regs:q:source",
@@ -807,7 +807,7 @@
       "target": "cut-label:reg:register_file:regs:q:source",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 2290.5 318 L 2488.5 318"
+      "path": "M 2290.5 318 L 2296.5 318"
     },
     {
       "id": "edge:comparator:register_file:if_sel_n9_in1:n11:expr:gate:register_file:if_sel_n9:n10:and:if_sel_n9_in1",
@@ -847,7 +847,7 @@
       "target": "comparator:register_file:if_sel_n9_in1:n11:expr",
       "sourceHandle": "port:_0",
       "targetHandle": "port:rhs",
-      "path": "M 240 408 L 264 408 L 432 408 L 432 240 L 456 240"
+      "path": "M 240 408 L 264 408 L 312 408 L 312 240 L 432 240 L 456 240"
     },
     {
       "id": "edge:literal:register_file:_0:_0:comparator:register_file:rs1_data_sel:expr:_0",
@@ -855,7 +855,7 @@
       "target": "comparator:register_file:rs1_data_sel:expr",
       "sourceHandle": "port:_0",
       "targetHandle": "port:rhs",
-      "path": "M 240 408 L 264 408 L 432 408 L 432 360 L 456 360"
+      "path": "M 240 408 L 264 408 L 312 408 L 312 360 L 432 360 L 456 360"
     },
     {
       "id": "edge:literal:register_file:_0:_0:comparator:register_file:rs2_data_sel:expr:_0",
@@ -863,7 +863,7 @@
       "target": "comparator:register_file:rs2_data_sel:expr",
       "sourceHandle": "port:_0",
       "targetHandle": "port:rhs",
-      "path": "M 240 408 L 264 408 L 432 408 L 432 648 L 456 648"
+      "path": "M 240 408 L 264 408 L 312 408 L 312 648 L 432 648 L 456 648"
     },
     {
       "id": "edge:literal:register_file:_0:_0:mux:register_file:rs1_data:ternary:_0",
@@ -879,7 +879,7 @@
       "target": "mux:register_file:rs2_data:ternary",
       "sourceHandle": "port:_0",
       "targetHandle": "in:true",
-      "path": "M 240 408 L 264 408 L 432 408 L 432 696 L 768 696 L 792 696"
+      "path": "M 240 408 L 264 408 L 312 408 L 312 696 L 768 696 L 792 696"
     },
     {
       "id": "edge:mux:register_file:regs_addr:reg:register_file:regs:regs_next",
@@ -887,7 +887,7 @@
       "target": "reg:register_file:regs",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1834.5 294 L 1950 294 L 1950 318 L 2032.5 318"
+      "path": "M 1834.5 294 L 1878 294 L 1878 318 L 2032.5 318"
     },
     {
       "id": "edge:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:mux:register_file:regs_addr:regs_rd_addr__next",
@@ -959,7 +959,7 @@
       "target": "comparator:register_file:rs1_data_sel:expr",
       "sourceHandle": "port:rs1_addr",
       "targetHandle": "port:lhs",
-      "path": "M 240 360 L 264 360 L 432 360 L 432 312 L 456 312"
+      "path": "M 240 360 L 264 360 L 303 360 Q 312 351 321 360 L 432 360 L 432 312 L 456 312"
     },
     {
       "id": "edge:port:register_file:rs1_addr:mux:register_file:regs_read_rs1_addr:rs1_addr",
@@ -967,7 +967,7 @@
       "target": "mux:register_file:regs_read_rs1_addr",
       "sourceHandle": "port:rs1_addr",
       "targetHandle": "sel",
-      "path": "M 240 360 L 264 360 L 432 360 L 432 399 Q 441 408 432 417 L 432 432 L 504 432 L 504 480"
+      "path": "M 240 360 L 264 360 L 303 360 Q 312 351 321 360 L 432 360 L 432 399 Q 441 408 432 417 L 432 432 L 504 432 L 504 480"
     },
     {
       "id": "edge:port:register_file:rs2_addr:comparator:register_file:rs2_data_sel:expr:rs2_addr",
@@ -975,7 +975,7 @@
       "target": "comparator:register_file:rs2_data_sel:expr",
       "sourceHandle": "port:rs2_addr",
       "targetHandle": "port:lhs",
-      "path": "M 240 672 L 264 672 L 432 672 L 432 600 L 456 600"
+      "path": "M 240 672 L 264 672 L 303 672 Q 312 663 321 672 L 432 672 L 432 600 L 456 600"
     },
     {
       "id": "edge:port:register_file:rs2_addr:mux:register_file:regs_read_rs2_addr:rs2_addr",
@@ -983,7 +983,7 @@
       "target": "mux:register_file:regs_read_rs2_addr",
       "sourceHandle": "port:rs2_addr",
       "targetHandle": "sel",
-      "path": "M 240 672 L 264 672 L 432 672 L 432 696 L 504 696 L 504 744"
+      "path": "M 240 672 L 264 672 L 303 672 Q 312 663 321 672 L 432 672 L 432 696 L 504 696 L 504 744"
     },
     {
       "id": "edge:port:register_file:write_data:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:write_data",
@@ -991,7 +991,7 @@
       "target": "mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next",
       "sourceHandle": "port:write_data",
       "targetHandle": "in:true",
-      "path": "M 1008 264 L 1152 264 L 1152 288 L 1248 288"
+      "path": "M 1008 264 L 1080 264 L 1080 288 L 1248 288"
     }
   ]
 }

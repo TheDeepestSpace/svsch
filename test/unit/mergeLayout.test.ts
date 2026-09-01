@@ -2588,13 +2588,13 @@ describe('layout merge', () => {
       register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2,
     );
     // D and clk are only one grid row apart, closer than a label is tall, so
-    // the two can never both sit level with their own port without
-    // overlapping. ELK's own same-layer spacing (not the old geometric
-    // stagger) now resolves that by dropping the clock label a full label
-    // height below where it'd sit if level — still adjacent to the register,
-    // just no longer pixel-level with its own port.
+    // the two can never both sit level with their own port at the same
+    // horizontal offset. Pulling ELK-placed labels back to their lead points
+    // (see pulledInCutLabelPosition) restores the geometric stagger: both
+    // stay pixel-level with their own port and the collision resolver offsets
+    // the clock label along the handle axis instead.
     expect(clockBounds.y + clockBounds.height / 2).toBe(
-      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 3.5,
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 1.5,
     );
     expect(boxesOverlap(dataBounds, clockBounds)).toBe(false);
   });

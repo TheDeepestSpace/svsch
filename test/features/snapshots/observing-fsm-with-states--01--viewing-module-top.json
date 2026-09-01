@@ -4,8 +4,8 @@
       "id": "cut-label:latch:top:next_r:q:sink:edge:latch:top:next_r:mux:top:next_r:next_state_en:next_r_latch_d:next_r",
       "type": "hdl",
       "position": {
-        "x": 600,
-        "y": 672
+        "x": 792,
+        "y": 552
       },
       "width": 96,
       "height": 48,
@@ -24,7 +24,7 @@
       "id": "cut-label:latch:top:next_r:q:sink:edge:latch:top:next_r:reg:top:r:next_r",
       "type": "hdl",
       "position": {
-        "x": 48,
+        "x": 336,
         "y": 168
       },
       "width": 96,
@@ -44,7 +44,7 @@
       "id": "cut-label:latch:top:next_r:q:source",
       "type": "hdl",
       "position": {
-        "x": 1680,
+        "x": 1488,
         "y": 528
       },
       "width": 96,
@@ -64,7 +64,7 @@
       "id": "cut-label:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:r:clk",
       "type": "hdl",
       "position": {
-        "x": 336,
+        "x": 240,
         "y": 192
       },
       "width": 96,
@@ -528,7 +528,7 @@
       "target": "mux:top:next_r:next_state_en:next_r_latch_d",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 696 696 L 696 696 L 792 696 L 792 576 L 888 576 L 912 576"
+      "path": "M 888 576 L 888 576 L 912 576"
     },
     {
       "id": "cut-stub:latch:top:next_r:q:sink:edge:latch:top:next_r:reg:top:r:next_r",
@@ -536,7 +536,7 @@
       "target": "reg:top:r",
       "sourceHandle": "cut",
       "targetHandle": "d",
-      "path": "M 144 192 L 144 192 L 432 192 L 456 192"
+      "path": "M 432 192 L 432 192 L 456 192"
     },
     {
       "id": "cut-stub:latch:top:next_r:q:source",
@@ -544,7 +544,7 @@
       "target": "cut-label:latch:top:next_r:q:source",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 1464 552 L 1488 552 L 1680 552 L 1680 552"
+      "path": "M 1464 552 L 1488 552 L 1488 552"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:r:clk",
@@ -552,7 +552,7 @@
       "target": "reg:top:r",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 216 L 432 216 L 456 216"
+      "path": "M 336 216 L 336 216 L 432 216 L 456 216"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -624,7 +624,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 144 600 L 168 600 L 192 600 L 192 624 L 168 624 L 168 336 L 240 336 L 240 240 L 432 240 L 456 240"
+      "path": "M 144 600 L 168 600 L 216 600 L 216 240 L 432 240 L 456 240"
     },
     {
       "id": "edge:literal:top:next_r_if_true_n0_BUSY:DONE:mux:top:next_r:r:next_r_if_true_n0:next_r_if_true_n0_BUSY",
@@ -632,7 +632,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_if_true_n0_BUSY",
       "targetHandle": "in:BUSY",
-      "path": "M 144 552 L 168 552 L 360 552 L 384 552"
+      "path": "M 144 552 L 168 552 L 207 552 Q 216 543 225 552 L 360 552 L 384 552"
     },
     {
       "id": "edge:literal:top:next_r_if_true_n0_IDLE:START:mux:top:next_r:r:next_r_if_true_n0:next_r_if_true_n0_IDLE",
@@ -640,7 +640,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_if_true_n0_IDLE",
       "targetHandle": "in:IDLE",
-      "path": "M 144 456 L 168 456 L 264 456 L 264 504 L 360 504 L 384 504"
+      "path": "M 144 456 L 168 456 L 207 456 Q 216 447 225 456 L 264 456 L 264 504 L 360 504 L 384 504"
     },
     {
       "id": "edge:literal:top:next_r_if_true_n0_START:BUSY:mux:top:next_r:r:next_r_if_true_n0:next_r_if_true_n0_START",
@@ -648,7 +648,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_if_true_n0_START",
       "targetHandle": "in:START",
-      "path": "M 144 504 L 168 504 L 264 504 L 264 528 L 360 528 L 384 528"
+      "path": "M 144 504 L 168 504 L 207 504 Q 216 495 225 504 L 264 504 L 264 528 L 360 528 L 384 528"
     },
     {
       "id": "edge:mux:top:next_r:next_state_en:next_r_latch_d:latch:top:next_r:next_r_latch_d",
