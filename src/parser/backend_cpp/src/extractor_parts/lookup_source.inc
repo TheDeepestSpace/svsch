@@ -1,9 +1,21 @@
 void DesignExtractor::buildEdges(Module& mod) {
     // Collect stacked signals: outputs of isArrayNode nodes. Scalar controls can still
     // be promoted into stacked inputs when they target array-capable nodes.
+    //
+    // A breakout bus node (kind "bus", aggregateKind "array", role != "composition",
+    // e.g. `logic y_arr [3:0]` fed by an instance array) is the one exception: its
+    // whole-array bundle arrives on an *input* port, and its *output* ports are the
+    // already-disambiguated per-element taps (`y_arr[0]`, `y_arr[1]`, ...) — each one
+    // names a single resolved net, not a bundle of N array elements. Registers, muxes,
+    // ports, and composition bus nodes are the opposite: their output ports carry the
+    // same signal name repeated across N elements, which is genuinely a bundle and
+    // must stay stacked.
     std::set<std::string> stacked_signals;
     for (const auto& n : mod.nodes) {
         if (!n.metadata.isArrayNode) continue;
+        bool isArrayBreakoutBus =
+            n.kind == "bus" && n.metadata.aggregateKind == "array" && n.metadata.role != "composition";
+        if (isArrayBreakoutBus) continue;
         for (const auto& p : n.ports) {
             if (p.direction == "output") stacked_signals.insert(p.signal);
         }
@@ -155,7 +167,40 @@ void DesignExtractor::buildEdges(Module& mod) {
                     return false;
                 };
 
-                e.isStacked = stacked_signals.count(signal) > 0
+                // A breakout tap whose own net is multi-bit (e.g. `wire [7:0] a
+                // [0:1]`) is one wide wire per element, not a bundle of scalar
+                // lanes — it shouldn't be marked stacked just because it's an
+                // array-node output. This only applies to edges *fanning out*
+                // of a breakout node (`d` is the breakout): the hub edge
+                // *feeding* a breakout node (`l` is the breakout) still
+                // carries N distinct array elements bundled onto one wire and
+                // stays stacked regardless of per-element width.
+                //
+                // A breakout node's own ports (both its "whole array" hub
+                // port and its per-element tap ports) don't reliably carry
+                // the per-element declared width — UHDM reports them blank
+                // or "[0:0]". The one place that width is reliably known is
+                // the module boundary port sharing the node's underlying
+                // signal name, when one exists.
+                auto breakout_element_width = [&](const std::pair<std::string, std::string>& endpoint) -> std::string {
+                    for (const auto& n : mod.nodes) {
+                        if (n.id != endpoint.first) continue;
+                        if (n.kind != "bus" || n.metadata.aggregateKind != "array") return "";
+                        for (const auto& p : mod.ports) {
+                            if (p.name == n.metadata.expression) return p.width;
+                        }
+                        return "";
+                    }
+                    return "";
+                };
+
+                bool multiBitElement = widthIsPotentiallyMultiBit(edge_width);
+                if (is_array_breakout(d)) {
+                    std::string elemWidth = breakout_element_width(d);
+                    if (!elemWidth.empty()) multiBitElement = widthIsPotentiallyMultiBit(elemWidth);
+                }
+
+                e.isStacked = (stacked_signals.count(signal) > 0 && !multiBitElement)
                     || is_array_composition(d)
                     || is_array_breakout(l)
                     || has_array_alias(signal);

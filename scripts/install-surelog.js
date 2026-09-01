@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process');
+const { setTimeout: sleep } = require('timers/promises');
 const fs = require('fs');
 const path = require('path');
 
@@ -66,7 +67,19 @@ async function main() {
 
   try {
     log('Downloading surelog wheel from', WHEEL_URL);
-    execSync(`curl -L -o "${tmpWheel}" "${WHEEL_URL}"`, { stdio: 'inherit' });
+    // release-assets.githubusercontent.com occasionally resets the
+    // connection mid-download in CI; retry a few times before giving up.
+    const maxAttempts = 3;
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        execSync(`curl -fL -o "${tmpWheel}" "${WHEEL_URL}"`, { stdio: 'inherit' });
+        break;
+      } catch (err) {
+        if (attempt >= maxAttempts) throw err;
+        log(`Download failed (attempt ${attempt}/${maxAttempts}), retrying...`);
+        await sleep(2 ** attempt * 1000);
+      }
+    }
 
     log('Extracting surelog binary from wheel');
     ensureDir(outBinDir);
