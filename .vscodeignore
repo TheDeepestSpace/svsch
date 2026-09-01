@@ -28,6 +28,7 @@ dist/cli.js
 dist/cli.js.map
 dist/elk.bundled-*.js
 dist/elk.bundled-*.js.map
+dist/**/*.d.ts
 !media/**
 node_modules/.bin/**
 node_modules/*/.github/**

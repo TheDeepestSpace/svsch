@@ -112,6 +112,67 @@ describe('gate node extraction (uhdm)', () => {
     ).toEqual(['a', 'b', 'c']);
   });
 
+  it.each([
+    ['&&', 'and'],
+    ['||', 'or'],
+  ] as const)(
+    'flattens a same-operator logical %s chain into one n-ary %s gate',
+    async (op, expectedOp) => {
+      const module = await extract(`
+      module top(input logic a, input logic b, input logic c, input logic d, output logic y);
+        assign y = a ${op} b ${op} c ${op} d;
+      endmodule
+    `);
+      const gateNodes = gates(module);
+      expect(gateNodes).toHaveLength(1);
+      expect(gateNodes[0].metadata?.operation).toBe(expectedOp);
+      expect(
+        gateNodes[0].ports
+          .filter((port) => port.direction === 'input')
+          .map((port) => port.connectedSignal),
+      ).toEqual(['a', 'b', 'c', 'd']);
+    },
+  );
+
+  it('keeps comparator leaves when flattening a logical AND chain', async () => {
+    const module = await extract(`
+      module top(
+        input logic [3:0] a,
+        input logic [3:0] b,
+        input logic c,
+        input logic [3:0] d,
+        input logic [3:0] e,
+        output logic y
+      );
+        assign y = (a == b) && c && (d == e);
+      endmodule
+    `);
+    const gateNodes = gates(module);
+    expect(gateNodes).toHaveLength(1);
+    expect(gateNodes[0].metadata?.operation).toBe('and');
+    expect(gateNodes[0].ports.filter((port) => port.direction === 'input')).toHaveLength(3);
+
+    const comparators = module.nodes.filter((node) => node.kind === 'comparator');
+    expect(comparators).toHaveLength(2);
+    for (const comparator of comparators) {
+      expect(
+        module.edges.some(
+          (edge) => edge.source === comparator.id && edge.target === gateNodes[0].id,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it('keeps a mixed bitwise/logical expression as one comb node', async () => {
+    const module = await extract(`
+      module top(input logic a, input logic b, input logic c, output logic y);
+        assign y = (a & b) || c;
+      endmodule
+    `);
+    expect(gates(module)).toHaveLength(0);
+    expect(module.nodes.filter((node) => node.kind === 'comb')).toHaveLength(1);
+  });
+
   it(
     'flattens a chain of the same operator into one n-ary gate ' + '(a ^ b ^ c -> one 3-input XOR)',
     async () => {

@@ -2,12 +2,19 @@
   "name": "svsch",
   "displayName": "svsch",
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "thedeepestspace",
   "license": "AGPL-3.0",
+  "icon": "icon.png",
   "bin": {
     "svsch": "./dist/cli.js"
   },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TheDeepestSpace/svsch"
@@ -123,6 +130,7 @@
     "build:extension": "npx tsc -p tsconfig.extension.json",
     "build:cli": "npx vite build --config vite.config.cli.ts",
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
+    "compile:backend:coverage": "mkdir -p src/parser/backend_cpp/build-coverage && cd src/parser/backend_cpp/build-coverage && cmake .. -G Ninja -DENABLE_COVERAGE=ON && ninja svsch_backend",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
     "release": "SURELOG_AUTO_INSTALL=1 npm run compile && npx changeset publish",
     "watch": "node scripts/copy-diagram-css.js --watch & vite build --watch & tsc -watch -p tsconfig.extension.json",
@@ -134,6 +142,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:backend": "node scripts/run-backend-tests.js",
+    "test:backend:coverage": "node scripts/run-backend-coverage.js",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots=changed",
     "test:visual:merge-reports": "playwright merge-reports --config playwright.config.ts blob-report",

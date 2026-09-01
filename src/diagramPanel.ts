@@ -15,12 +15,15 @@ import type {
 import {
   buildViewModel,
   firstOpenAutoCutEdges,
+  markFirstOpenHandled,
   mergeEdgeRoutePoints,
+  mergeEdgeSnapshot,
   mergeEdgeWaypoint,
   mergeFirstOpenNetCuts,
   mergeNetCut,
   mergeNetCuts,
   mergeNodePositions,
+  mergeNodeSnapshot,
   mergeRegionBounds,
   mergeRelayoutSelection,
   mergeRerouteEdges,
@@ -1159,15 +1162,15 @@ export class DiagramPanel {
       this.panel === panel && this.graph === graph && this.currentModule === moduleName;
     const store = this.getStore();
     if (store) {
-      const isFirstOpen =
-        !this.layout.modules[moduleName] && !(await store.hasModuleLayout(moduleName));
-      if (!isCurrentView()) {
-        return;
-      }
       await this.ensureModuleLayout(store, moduleName);
       if (!isCurrentView()) {
         return;
       }
+      // Explicit flag, not "no saved layout exists": mergeNodeSnapshot below
+      // now persists a full render snapshot unconditionally, so a module's
+      // file can already exist (and moduleLayout.nodes already be non-empty)
+      // well before the user has ever genuinely opened it.
+      const isFirstOpen = !this.layout.modules[moduleName]?.firstOpenHandled;
       if (isFirstOpen) {
         const designModule = graph.modules[moduleName];
         if (designModule) {
@@ -1178,6 +1181,7 @@ export class DiagramPanel {
           if (edges.length > 0) {
             this.layout = mergeFirstOpenNetCuts(this.layout, moduleName, edges, designModule);
           }
+          this.layout = markFirstOpenHandled(this.layout, moduleName);
           await this.persistModuleLayout(store, moduleName);
         }
       }
@@ -1185,6 +1189,15 @@ export class DiagramPanel {
     const view: DiagramViewModel = await buildViewModel(graph, moduleName, this.layout, {
       elkSizeOverrides: this.expandedFrameSizesByModule.get(moduleName),
     });
+    if (store) {
+      this.layout = mergeNodeSnapshot(this.layout, moduleName, view.nodes);
+      this.layout = mergeEdgeSnapshot(this.layout, moduleName, view.edges);
+      // Fire-and-forget: this per-render durability snapshot must never make
+      // the webview wait on a disk write. LayoutStore debounces per module
+      // and skips writes whose content hasn't actually changed, so an idle
+      // diagram doesn't churn the file (or its git history) on every repaint.
+      void this.persistModuleLayout(store, moduleName);
+    }
     if (!isCurrentView()) {
       return;
     }

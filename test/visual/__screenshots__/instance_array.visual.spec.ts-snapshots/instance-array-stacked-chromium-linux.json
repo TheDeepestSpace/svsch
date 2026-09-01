@@ -551,7 +551,7 @@
       "target": "comb:instance_array_top:y_bus[0]:alias",
       "sourceHandle": "out:_0_",
       "targetHandle": "port:y_arr",
-      "path": "M 1687 76 L 1780 76 L 1780 364 L 1896 364"
+      "path": "M 1680 72 L 1704 72 L 1776 72 L 1776 360 L 1872 360 L 1896 360"
     },
     {
       "id": "edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_",
@@ -559,7 +559,7 @@
       "target": "comb:instance_array_top:y_bus[1]:alias",
       "sourceHandle": "out:_1_",
       "targetHandle": "port:y_arr",
-      "path": "M 1687 124 L 1804 124 L 1804 268 L 1896 268"
+      "path": "M 1680 120 L 1704 120 L 1769 120 Q 1776 113 1783 120 L 1800 120 L 1800 264 L 1872 264 L 1896 264"
     },
     {
       "id": "edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_",
@@ -567,7 +567,7 @@
       "target": "comb:instance_array_top:y_bus[2]:alias",
       "sourceHandle": "out:_2_",
       "targetHandle": "port:y_arr",
-      "path": "M 1687 172 L 1896 172"
+      "path": "M 1680 168 L 1704 168 L 1769 168 Q 1776 161 1783 168 L 1793 168 Q 1800 161 1807 168 L 1872 168 L 1896 168"
     },
     {
       "id": "edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_",
@@ -575,7 +575,7 @@
       "target": "comb:instance_array_top:y_bus[3]:alias",
       "sourceHandle": "out:_3_",
       "targetHandle": "port:y_arr",
-      "path": "M 1687 220 L 1804 220 L 1804 76 L 1896 76"
+      "path": "M 1680 216 L 1704 216 L 1769 216 Q 1776 209 1783 216 L 1800 216 L 1800 175 Q 1807 168 1800 161 L 1800 72 L 1872 72 L 1896 72"
     },
     {
       "id": "edge:comb:instance_array_top:y_bus_0_:alias:bus_comp:instance_array_top:y_bus:y_bus_0_",
