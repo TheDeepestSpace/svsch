@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>11/11</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">90% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>9/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>11/11</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -101,57 +101,57 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { diagramSizing } from './constants';
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >registerPortTop(</span>
+export function registerPortTop(
   role: 'd' | 'q' | 'clock' | 'reset' | 'rv',
   nodeHeight: number,
   _hasReset: boolean,
   _hasRv: boolean,
 ): number {
-  const grid = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize;</span>
-<span class="cstat-no" title="statement not covered" >  if (role === 'd' || role === 'q') {</span>
-<span class="cstat-no" title="statement not covered" >    return diagramSizing.nodeHeaderHeight;</span>
+  const grid = diagramSizing.gridSize;
+  if (role === 'd' || role === 'q') {
+    return diagramSizing.nodeHeaderHeight;
   }
-<span class="cstat-no" title="statement not covered" >  if (role === 'clock') {</span>
-<span class="cstat-no" title="statement not covered" >    return diagramSizing.nodeHeaderHeight + grid;</span>
+  if (role === 'clock') {
+    return diagramSizing.nodeHeaderHeight + grid;
   }
-<span class="cstat-no" title="statement not covered" >  if (role === 'rv') {</span>
-<span class="cstat-no" title="statement not covered" >    return diagramSizing.nodeHeaderHeight + grid * 2;</span>
+  if (role === 'rv') {
+    return diagramSizing.nodeHeaderHeight + grid * 2;
   }
-<span class="cstat-no" title="statement not covered" >  return nodeHeight - grid;</span>
+  return nodeHeight - grid;
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >registerExtraInputPortTop(</span>
+export function registerExtraInputPortTop(
   index: number,
   nodeHeight: number,
   hasRv: boolean,
 ): number {
-  const grid = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize;</span>
-  const offset = <span class="cstat-no" title="statement not covered" >hasRv ? 3 : 2;</span>
-<span class="cstat-no" title="statement not covered" >  return Math.min(diagramSizing.nodeHeaderHeight + grid * (index + offset), nodeHeight - grid);</span>
+  const grid = diagramSizing.gridSize;
+  const offset = hasRv ? 3 : <span class="branch-1 cbranch-no" title="branch not covered" >2;</span>
+  return Math.min(diagramSizing.nodeHeaderHeight + grid * (index + offset), nodeHeight - grid);
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -160,7 +160,7 @@ export function <span class="fstat-no" title="function not covered" >registerExt
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-26T04:42:01.939Z
+                at 2026-09-01T03:01:37.348Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
