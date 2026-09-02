@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-02 04:04:38</td>
+            <td class="headerValue">2026-09-02 04:06:41</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">18</td>
@@ -60,17 +60,17 @@
       <td>
 <pre class="sourceHeading">          Line data    Source code</pre>
 <pre class="source">
-<a name="1"><span class="lineNum">       1 </span><span class="lineCov">       3400 : DesignExtractor::DesignExtractor(vpiHandle design) : design_(design) {}</span></a>
+<a name="1"><span class="lineNum">       1 </span><span class="lineCov">       3398 : DesignExtractor::DesignExtractor(vpiHandle design) : design_(design) {}</span></a>
 <a name="2"><span class="lineNum">       2 </span>            : </a>
-<a name="3"><span class="lineNum">       3 </span><span class="lineCov">      19729 : std::string sanitizeId(const std::string&amp; id) {</span></a>
-<a name="4"><span class="lineNum">       4 </span><span class="lineCov">      19729 :     std::string result = id;</span></a>
-<a name="5"><span class="lineNum">       5 </span><span class="lineCov">     893984 :     for (char &amp;c : result) {</span></a>
-<a name="6"><span class="lineNum">       6 </span><span class="lineCov">     874255 :         unsigned char value = static_cast&lt;unsigned char&gt;(c);</span></a>
-<a name="7"><span class="lineNum">       7 </span><span class="lineCov">     874255 :         if (!std::isalnum(value) &amp;&amp; c != '_' &amp;&amp; c != '$' &amp;&amp; c != '.' &amp;&amp; c != '-' &amp;&amp; c != ':') {</span></a>
-<a name="8"><span class="lineNum">       8 </span><span class="lineCov">      22031 :             c = '_';</span></a>
+<a name="3"><span class="lineNum">       3 </span><span class="lineCov">      19727 : std::string sanitizeId(const std::string&amp; id) {</span></a>
+<a name="4"><span class="lineNum">       4 </span><span class="lineCov">      19727 :     std::string result = id;</span></a>
+<a name="5"><span class="lineNum">       5 </span><span class="lineCov">     893936 :     for (char &amp;c : result) {</span></a>
+<a name="6"><span class="lineNum">       6 </span><span class="lineCov">     874209 :         unsigned char value = static_cast&lt;unsigned char&gt;(c);</span></a>
+<a name="7"><span class="lineNum">       7 </span><span class="lineCov">     874209 :         if (!std::isalnum(value) &amp;&amp; c != '_' &amp;&amp; c != '$' &amp;&amp; c != '.' &amp;&amp; c != '-' &amp;&amp; c != ':') {</span></a>
+<a name="8"><span class="lineNum">       8 </span><span class="lineCov">      22021 :             c = '_';</span></a>
 <a name="9"><span class="lineNum">       9 </span>            :         }</a>
 <a name="10"><span class="lineNum">      10 </span>            :     }</a>
-<a name="11"><span class="lineNum">      11 </span><span class="lineCov">      19729 :     return result;</span></a>
+<a name="11"><span class="lineNum">      11 </span><span class="lineCov">      19727 :     return result;</span></a>
 <a name="12"><span class="lineNum">      12 </span>            : }</a>
 <a name="13"><span class="lineNum">      13 </span>            : </a>
 <a name="14"><span class="lineNum">      14 </span><span class="lineCov">          2 : bool looksNamedLiteral(const std::string&amp; label) {</span></a>
@@ -79,12 +79,12 @@
 <a name="17"><span class="lineNum">      17 </span><span class="lineCov">          2 :     return std::isalpha(first) || label[0] == '_' || label[0] == '$';</span></a>
 <a name="18"><span class="lineNum">      18 </span>            : }</a>
 <a name="19"><span class="lineNum">      19 </span>            : </a>
-<a name="20"><span class="lineNum">      20 </span><span class="lineCov">     233966 : std::string trimCopy(const std::string&amp; value) {</span></a>
-<a name="21"><span class="lineNum">      21 </span><span class="lineCov">     233966 :     size_t start = 0;</span></a>
-<a name="22"><span class="lineNum">      22 </span><span class="lineCov">     265568 :     while (start &lt; value.size() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(value[start]))) start++;</span></a>
-<a name="23"><span class="lineNum">      23 </span><span class="lineCov">     233966 :     size_t end = value.size();</span></a>
-<a name="24"><span class="lineNum">      24 </span><span class="lineCov">     259036 :     while (end &gt; start &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(value[end - 1]))) end--;</span></a>
-<a name="25"><span class="lineNum">      25 </span><span class="lineCov">     233966 :     return value.substr(start, end - start);</span></a>
+<a name="20"><span class="lineNum">      20 </span><span class="lineCov">     233960 : std::string trimCopy(const std::string&amp; value) {</span></a>
+<a name="21"><span class="lineNum">      21 </span><span class="lineCov">     233960 :     size_t start = 0;</span></a>
+<a name="22"><span class="lineNum">      22 </span><span class="lineCov">     265558 :     while (start &lt; value.size() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(value[start]))) start++;</span></a>
+<a name="23"><span class="lineNum">      23 </span><span class="lineCov">     233960 :     size_t end = value.size();</span></a>
+<a name="24"><span class="lineNum">      24 </span><span class="lineCov">     259030 :     while (end &gt; start &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(value[end - 1]))) end--;</span></a>
+<a name="25"><span class="lineNum">      25 </span><span class="lineCov">     233960 :     return value.substr(start, end - start);</span></a>
 <a name="26"><span class="lineNum">      26 </span>            : }</a>
 <a name="27"><span class="lineNum">      27 </span>            : </a>
 <a name="28"><span class="lineNum">      28 </span>            : // Evaluate the small constant-expression subset used by unpacked array bounds.</a>
@@ -277,26 +277,26 @@
 <a name="215"><span class="lineNum">     215 </span>            : // zero at elaboration time. A constant single-bit range (&quot;[0:0]&quot;, &quot;[3:3]&quot;)</a>
 <a name="216"><span class="lineNum">     216 </span>            : // stays false. Mirrors widthIsPotentiallyMultiBit in src/ir/edgeStyle.ts so</a>
 <a name="217"><span class="lineNum">     217 </span>            : // the backend's stacked-vs-thick classification agrees with the frontend's.</a>
-<a name="218"><span class="lineNum">     218 </span><span class="lineCov">     100879 : bool widthIsPotentiallyMultiBit(const std::string&amp; width) {</span></a>
-<a name="219"><span class="lineNum">     219 </span><span class="lineCov">     100879 :     if (width.empty() || width == &quot;interface&quot;) return false;</span></a>
-<a name="220"><span class="lineNum">     220 </span><span class="lineCov">      52975 :     static const std::regex rangeRe(R&quot;(^\s*\[\s*([^:\[\]]+?)\s*:\s*([^:\[\]]+?)\s*\]\s*$)&quot;);</span></a>
-<a name="221"><span class="lineNum">     221 </span><span class="lineCov">      52975 :     std::smatch m;</span></a>
-<a name="222"><span class="lineNum">     222 </span><span class="lineCov">      52975 :     if (!std::regex_match(width, m, rangeRe)) {</span></a>
+<a name="218"><span class="lineNum">     218 </span><span class="lineCov">     100863 : bool widthIsPotentiallyMultiBit(const std::string&amp; width) {</span></a>
+<a name="219"><span class="lineNum">     219 </span><span class="lineCov">     100863 :     if (width.empty() || width == &quot;interface&quot;) return false;</span></a>
+<a name="220"><span class="lineNum">     220 </span><span class="lineCov">      52972 :     static const std::regex rangeRe(R&quot;(^\s*\[\s*([^:\[\]]+?)\s*:\s*([^:\[\]]+?)\s*\]\s*$)&quot;);</span></a>
+<a name="221"><span class="lineNum">     221 </span><span class="lineCov">      52972 :     std::smatch m;</span></a>
+<a name="222"><span class="lineNum">     222 </span><span class="lineCov">      52972 :     if (!std::regex_match(width, m, rangeRe)) {</span></a>
 <a name="223"><span class="lineNum">     223 </span>            :         // Multi-dimensional packed ranges (e.g. [7:0][3:0]) are always multi-bit.</a>
 <a name="224"><span class="lineNum">     224 </span><span class="lineNoCov">          0 :         return width.find(&quot;][&quot;) != std::string::npos;</span></a>
 <a name="225"><span class="lineNum">     225 </span>            :     }</a>
 <a name="226"><span class="lineNum">     226 </span>            :     try {</a>
 <a name="227"><span class="lineNum">     227 </span>            :         size_t msb_pos, lsb_pos;</a>
-<a name="228"><span class="lineNum">     228 </span><span class="lineCov">      53815 :         int msb = std::stoi(m[1].str(), &amp;msb_pos);</span></a>
-<a name="229"><span class="lineNum">     229 </span><span class="lineCov">      52135 :         int lsb = std::stoi(m[2].str(), &amp;lsb_pos);</span></a>
-<a name="230"><span class="lineNum">     230 </span><span class="lineCov">      52135 :         if (msb_pos == m[1].str().size() &amp;&amp; lsb_pos == m[2].str().size()) {</span></a>
-<a name="231"><span class="lineNum">     231 </span><span class="lineCov">      52135 :             return msb != lsb;</span></a>
+<a name="228"><span class="lineNum">     228 </span><span class="lineCov">      53812 :         int msb = std::stoi(m[1].str(), &amp;msb_pos);</span></a>
+<a name="229"><span class="lineNum">     229 </span><span class="lineCov">      52132 :         int lsb = std::stoi(m[2].str(), &amp;lsb_pos);</span></a>
+<a name="230"><span class="lineNum">     230 </span><span class="lineCov">      52132 :         if (msb_pos == m[1].str().size() &amp;&amp; lsb_pos == m[2].str().size()) {</span></a>
+<a name="231"><span class="lineNum">     231 </span><span class="lineCov">      52132 :             return msb != lsb;</span></a>
 <a name="232"><span class="lineNum">     232 </span>            :         }</a>
 <a name="233"><span class="lineNum">     233 </span><span class="lineCov">        840 :     } catch (...) {</span></a>
 <a name="234"><span class="lineNum">     234 </span>            :         // Fall through: non-numeric range, treated as potentially multi-bit below.</a>
 <a name="235"><span class="lineNum">     235 </span><span class="lineCov">        840 :     }</span></a>
 <a name="236"><span class="lineNum">     236 </span><span class="lineCov">        840 :     return true;</span></a>
-<a name="237"><span class="lineNum">     237 </span><span class="lineCov">      52975 : }</span></a>
+<a name="237"><span class="lineNum">     237 </span><span class="lineCov">      52972 : }</span></a>
 <a name="238"><span class="lineNum">     238 </span>            : </a>
 <a name="239"><span class="lineNum">     239 </span><span class="lineCov">       6626 : int rangeWidthInBits(const std::string&amp; width) {</span></a>
 <a name="240"><span class="lineNum">     240 </span><span class="lineCov">       6626 :     if (width.size() &lt; 3 || width.front() != '[' || width.back() != ']') return 1;</span></a>
@@ -311,14 +311,14 @@
 <a name="249"><span class="lineNum">     249 </span><span class="lineNoCov">          0 :     }</span></a>
 <a name="250"><span class="lineNum">     250 </span>            : }</a>
 <a name="251"><span class="lineNum">     251 </span>            : </a>
-<a name="252"><span class="lineNum">     252 </span><span class="lineCov">     740830 : std::ifstream DesignExtractor::openSourceFile(const std::string&amp; source_file) const {</span></a>
-<a name="253"><span class="lineNum">     253 </span><span class="lineCov">     740830 :     if (source_file.empty()) return std::ifstream();</span></a>
-<a name="254"><span class="lineNum">     254 </span><span class="lineCov">     740830 :     std::string path = source_file;</span></a>
-<a name="255"><span class="lineNum">     255 </span><span class="lineCov">     740830 :     if (path.length() &gt; 0 &amp;&amp; path[0] != '/' &amp;&amp; !workspace_root.empty()) {</span></a>
+<a name="252"><span class="lineNum">     252 </span><span class="lineCov">     740703 : std::ifstream DesignExtractor::openSourceFile(const std::string&amp; source_file) const {</span></a>
+<a name="253"><span class="lineNum">     253 </span><span class="lineCov">     740703 :     if (source_file.empty()) return std::ifstream();</span></a>
+<a name="254"><span class="lineNum">     254 </span><span class="lineCov">     740703 :     std::string path = source_file;</span></a>
+<a name="255"><span class="lineNum">     255 </span><span class="lineCov">     740703 :     if (path.length() &gt; 0 &amp;&amp; path[0] != '/' &amp;&amp; !workspace_root.empty()) {</span></a>
 <a name="256"><span class="lineNum">     256 </span><span class="lineNoCov">          0 :         path = workspace_root + &quot;/&quot; + path;</span></a>
 <a name="257"><span class="lineNum">     257 </span>            :     }</a>
-<a name="258"><span class="lineNum">     258 </span><span class="lineCov">     740830 :     return std::ifstream(path);</span></a>
-<a name="259"><span class="lineNum">     259 </span><span class="lineCov">     740830 : }</span></a>
+<a name="258"><span class="lineNum">     258 </span><span class="lineCov">     740703 :     return std::ifstream(path);</span></a>
+<a name="259"><span class="lineNum">     259 </span><span class="lineCov">     740703 : }</span></a>
 </pre>
       </td>
     </tr>
