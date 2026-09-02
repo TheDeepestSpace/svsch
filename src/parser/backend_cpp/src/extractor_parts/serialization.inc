@@ -517,6 +517,9 @@ json DesignExtractor::extract(const std::string& targetModule) {
             if (!e.aliasNames.empty()) {
                 j_edge_meta["aliasNames"] = e.aliasNames;
             }
+            if (e.combFeedback) {
+                j_edge_meta["combFeedback"] = true;
+            }
             if (!j_edge_meta.empty()) {
                 j_edge["metadata"] = j_edge_meta;
             }
