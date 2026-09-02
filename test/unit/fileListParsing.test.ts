@@ -21,7 +21,7 @@ async function writeFakeSurelog(filePath: string, argvLogFile: string): Promise<
 const fs = require('fs');
 const path = require('path');
 const args = process.argv.slice(2);
-fs.appendFileSync(${JSON.stringify(argvLogFile)}, JSON.stringify(args) + '\\n');
+fs.appendFileSync(${JSON.stringify(argvLogFile)}, JSON.stringify({ args, cwd: process.cwd() }) + '\\n');
 const outDir = args[args.indexOf('-o') + 1];
 fs.mkdirSync(path.join(outDir, 'slpp_unit'), { recursive: true });
 fs.writeFileSync(path.join(outDir, 'slpp_unit', 'surelog.uhdm'), 'fake-uhdm');
@@ -119,10 +119,48 @@ describe('svsch.fileList', () => {
       });
 
       expect(graph.diagnostics).toHaveLength(0);
-      const invocation = JSON.parse((await fs.readFile(argvLog, 'utf-8')).trim());
+      const { args: invocation, cwd } = JSON.parse((await fs.readFile(argvLog, 'utf-8')).trim());
       expect(invocation).toContain('-f');
       expect(invocation[invocation.indexOf('-f') + 1]).toBe(fileListPath);
       expect(invocation).not.toContain(topFile);
+      // Surelog resolves relative paths inside a `-f` filelist against its own process cwd, not
+      // against the filelist's location, so it must be spawned from the filelist's directory.
+      expect(cwd).toBe(path.dirname(fileListPath));
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('spawns Surelog from the filelist directory even when workspace root differs', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'svsch-filelist-'));
+    try {
+      const projectDir = path.join(tmpDir, 'project');
+      await fs.mkdir(projectDir, { recursive: true });
+      await fs.writeFile(path.join(projectDir, 'top.sv'), 'module top(); endmodule\n');
+
+      const fileListPath = path.join(projectDir, 'project.f');
+      // Relative to the filelist's own directory, not to workspaceRoot or process.cwd().
+      await fs.writeFile(fileListPath, 'top.sv\n');
+
+      const argvLog = path.join(tmpDir, 'argv.log');
+      const fakeSurelog = path.join(tmpDir, 'fake-surelog.js');
+      const fakeBackend = path.join(tmpDir, 'fake-backend.js');
+      await writeFakeSurelog(fakeSurelog, argvLog);
+      await writeFakeBackend(fakeBackend);
+
+      const graph = await buildDesignGraph({
+        workspaceRoot: tmpDir,
+        projectFolder: '.',
+        backend: 'uhdm',
+        veriblePath: 'verible-verilog-syntax',
+        surelogPath: fakeSurelog,
+        backendPath: fakeBackend,
+        fileList: 'project/project.f',
+      });
+
+      expect(graph.diagnostics).toHaveLength(0);
+      const { cwd } = JSON.parse((await fs.readFile(argvLog, 'utf-8')).trim());
+      expect(cwd).toBe(projectDir);
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
@@ -155,8 +193,10 @@ describe('svsch.fileList', () => {
         defines: { FOO: '1' },
       });
 
-      const invocation: string[] = JSON.parse((await fs.readFile(argvLog, 'utf-8')).trim());
-      expect(invocation.some((a) => a.startsWith('-I') && a.endsWith('include'))).toBe(true);
+      const { args: invocation } = JSON.parse((await fs.readFile(argvLog, 'utf-8')).trim());
+      expect(invocation.some((a: string) => a.startsWith('-I') && a.endsWith('include'))).toBe(
+        true,
+      );
       expect(invocation).toContain('+define+FOO=1');
       expect(invocation).toContain('-f');
     } finally {

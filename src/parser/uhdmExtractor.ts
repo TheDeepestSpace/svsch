@@ -110,13 +110,14 @@ async function runSurelog(
   args: string[],
   sourceFiles: string[],
   onProgress?: (message: string, increment: number) => void,
+  cwd?: string,
 ): Promise<void> {
   const basenames = sourceFiles.map((f) => path.basename(f));
   const seen = new Set<string>();
   let reportedPct = 0;
 
   return new Promise((resolve, reject) => {
-    const proc = spawn(surelogPath, args);
+    const proc = spawn(surelogPath, args, cwd ? { cwd } : undefined);
     const stderrChunks: Buffer[] = [];
     const stdoutChunks: Buffer[] = [];
     let buf = '';
@@ -261,10 +262,21 @@ export async function extractDesignWithUhdm(
 
       onProgress?.('Elaborating project...', 0);
 
-      await runSurelog(surelogPath, surelogArgs, files, (msg, inc) => {
-        surelogReportedPct += inc;
-        onProgress?.(msg, inc);
-      });
+      // Surelog resolves relative paths inside a `-f` filelist against its own process cwd,
+      // not against the filelist's location. Run it from the filelist's directory so those
+      // paths resolve the same way parseFileList (backend.ts) already resolves them.
+      const surelogCwd = fileListPath ? path.dirname(fileListPath) : undefined;
+
+      await runSurelog(
+        surelogPath,
+        surelogArgs,
+        files,
+        (msg, inc) => {
+          surelogReportedPct += inc;
+          onProgress?.(msg, inc);
+        },
+        surelogCwd,
+      );
 
       // Ensure we've consumed Surelog's 80% budget before moving on
       const surelogRemainder = 80 - surelogReportedPct;
