@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-01 03:21:43</td>
+            <td class="headerValue">2026-09-02 02:24:45</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">11</td>
@@ -107,9 +107,9 @@
 <a name="45"><span class="lineNum">      45 </span><span class="lineNoCov">          0 :     return declared.empty() ? width : declared;</span></a>
 <a name="46"><span class="lineNum">      46 </span><span class="lineCov">       1196 : }</span></a>
 <a name="47"><span class="lineNum">      47 </span>            : </a>
-<a name="48"><span class="lineNum">      48 </span><span class="lineCov">      22011 : void DesignExtractor::collectTaskFunctions(vpiHandle module_handle, const std::string&amp; module_name) {</span></a>
-<a name="49"><span class="lineNum">      49 </span><span class="lineCov">      22011 :     vpiHandle itr = vpi_iterate(vpiTaskFunc, module_handle);</span></a>
-<a name="50"><span class="lineNum">      50 </span><span class="lineCov">      22011 :     if (!itr) return;</span></a>
+<a name="48"><span class="lineNum">      48 </span><span class="lineCov">      22263 : void DesignExtractor::collectTaskFunctions(vpiHandle module_handle, const std::string&amp; module_name) {</span></a>
+<a name="49"><span class="lineNum">      49 </span><span class="lineCov">      22263 :     vpiHandle itr = vpi_iterate(vpiTaskFunc, module_handle);</span></a>
+<a name="50"><span class="lineNum">      50 </span><span class="lineCov">      22263 :     if (!itr) return;</span></a>
 <a name="51"><span class="lineNum">      51 </span><span class="lineCov">        400 :     while (vpiHandle callable = vpi_scan(itr)) {</span></a>
 <a name="52"><span class="lineNum">      52 </span><span class="lineCov">        200 :         const int type = vpi_get(vpiType, callable);</span></a>
 <a name="53"><span class="lineNum">      53 </span><span class="lineCov">        200 :         if (type == vpiFunction || type == vpiTask) {</span></a>
