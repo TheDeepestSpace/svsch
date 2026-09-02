@@ -1,9 +1,21 @@
 void DesignExtractor::buildEdges(Module& mod) {
     // Collect stacked signals: outputs of isArrayNode nodes. Scalar controls can still
     // be promoted into stacked inputs when they target array-capable nodes.
+    //
+    // A breakout bus node (kind "bus", aggregateKind "array", role != "composition",
+    // e.g. `logic y_arr [3:0]` fed by an instance array) is the one exception: its
+    // whole-array bundle arrives on an *input* port, and its *output* ports are the
+    // already-disambiguated per-element taps (`y_arr[0]`, `y_arr[1]`, ...) — each one
+    // names a single resolved net, not a bundle of N array elements. Registers, muxes,
+    // ports, and composition bus nodes are the opposite: their output ports carry the
+    // same signal name repeated across N elements, which is genuinely a bundle and
+    // must stay stacked.
     std::set<std::string> stacked_signals;
     for (const auto& n : mod.nodes) {
         if (!n.metadata.isArrayNode) continue;
+        bool isArrayBreakoutBus =
+            n.kind == "bus" && n.metadata.aggregateKind == "array" && n.metadata.role != "composition";
+        if (isArrayBreakoutBus) continue;
         for (const auto& p : n.ports) {
             if (p.direction == "output") stacked_signals.insert(p.signal);
         }
@@ -155,7 +167,40 @@ void DesignExtractor::buildEdges(Module& mod) {
                     return false;
                 };
 
-                e.isStacked = stacked_signals.count(signal) > 0
+                // A breakout tap whose own net is multi-bit (e.g. `wire [7:0] a
+                // [0:1]`) is one wide wire per element, not a bundle of scalar
+                // lanes — it shouldn't be marked stacked just because it's an
+                // array-node output. This only applies to edges *fanning out*
+                // of a breakout node (`d` is the breakout): the hub edge
+                // *feeding* a breakout node (`l` is the breakout) still
+                // carries N distinct array elements bundled onto one wire and
+                // stays stacked regardless of per-element width.
+                //
+                // A breakout node's own ports (both its "whole array" hub
+                // port and its per-element tap ports) don't reliably carry
+                // the per-element declared width — UHDM reports them blank
+                // or "[0:0]". The one place that width is reliably known is
+                // the module boundary port sharing the node's underlying
+                // signal name, when one exists.
+                auto breakout_element_width = [&](const std::pair<std::string, std::string>& endpoint) -> std::string {
+                    for (const auto& n : mod.nodes) {
+                        if (n.id != endpoint.first) continue;
+                        if (n.kind != "bus" || n.metadata.aggregateKind != "array") return "";
+                        for (const auto& p : mod.ports) {
+                            if (p.name == n.metadata.expression) return p.width;
+                        }
+                        return "";
+                    }
+                    return "";
+                };
+
+                bool multiBitElement = widthIsPotentiallyMultiBit(edge_width);
+                if (is_array_breakout(d)) {
+                    std::string elemWidth = breakout_element_width(d);
+                    if (!elemWidth.empty()) multiBitElement = widthIsPotentiallyMultiBit(elemWidth);
+                }
+
+                e.isStacked = (stacked_signals.count(signal) > 0 && !multiBitElement)
                     || is_array_composition(d)
                     || is_array_breakout(l)
                     || has_array_alias(signal);
@@ -212,6 +257,104 @@ void DesignExtractor::buildEdges(Module& mod) {
     synthesizeBusCompositionNodes(mod);
     unifyNetPropagation(mod);
     markDeclaredNetEdges(mod);
+    markCombFeedbackEdges(mod);
+}
+
+// Flags edges that close a purely combinational cycle (e.g. the cross-coupled
+// wires of a structural NAND SR latch: `assign q = ~(s_n & qn); assign
+// qn = ~(r_n & q);`). Registers and latches legitimately sit inside feedback
+// paths — state elements break the loop — so any cycle passing through them
+// (or through an opaque instance, or the module boundary) is not flagged; only
+// loops made entirely of combinational nodes are. Detection is SCC-based:
+// an edge is feedback iff both endpoints are combinational and strongly
+// connected within the comb-only subgraph.
+void DesignExtractor::markCombFeedbackEdges(Module& mod) {
+    // Aggregate hub nodes (interface/struct/bus) bundle many distinct fields:
+    // a write into the hub plus a read out of it forms a graph cycle without
+    // any real signal loop, so they break paths here just like state elements.
+    // (Conservative: a genuine loop routed through an aggregate goes unflagged
+    // rather than risking false positives on every interface/bus hub.)
+    auto breaks_loop = [](const std::string& kind) {
+        return kind == "register" || kind == "latch" || kind == "instance" ||
+               kind == "interface" || kind == "struct" || kind == "bus";
+    };
+    std::map<std::string, size_t> comb_index;
+    for (const auto& n : mod.nodes) {
+        if (breaks_loop(n.kind)) continue;
+        comb_index.emplace(n.id, comb_index.size());
+    }
+    if (comb_index.empty()) return;
+
+    std::vector<std::vector<size_t>> adj(comb_index.size());
+    bool has_intra_comb_edge = false;
+    for (const auto& e : mod.edges) {
+        auto s = comb_index.find(e.source);
+        auto t = comb_index.find(e.target);
+        if (s == comb_index.end() || t == comb_index.end()) continue;
+        adj[s->second].push_back(t->second);
+        has_intra_comb_edge = true;
+    }
+    if (!has_intra_comb_edge) return;
+
+    // Iterative Tarjan SCC (explicit stack; module graphs can be deep).
+    std::vector<int> scc_of(comb_index.size(), -1);
+    std::vector<int> low(comb_index.size(), -1), num(comb_index.size(), -1);
+    std::vector<bool> on_stack(comb_index.size(), false);
+    std::vector<size_t> scc_stack;
+    int next_num = 0, next_scc = 0;
+    struct Frame { size_t v; size_t child; };
+    for (size_t root = 0; root < comb_index.size(); ++root) {
+        if (num[root] != -1) continue;
+        std::vector<Frame> call_stack{{root, 0}};
+        num[root] = low[root] = next_num++;
+        scc_stack.push_back(root);
+        on_stack[root] = true;
+        while (!call_stack.empty()) {
+            Frame& f = call_stack.back();
+            if (f.child < adj[f.v].size()) {
+                size_t w = adj[f.v][f.child++];
+                if (num[w] == -1) {
+                    num[w] = low[w] = next_num++;
+                    scc_stack.push_back(w);
+                    on_stack[w] = true;
+                    call_stack.push_back({w, 0});
+                } else if (on_stack[w]) {
+                    low[f.v] = std::min(low[f.v], num[w]);
+                }
+            } else {
+                if (low[f.v] == num[f.v]) {
+                    size_t w;
+                    do {
+                        w = scc_stack.back();
+                        scc_stack.pop_back();
+                        on_stack[w] = false;
+                        scc_of[w] = next_scc;
+                    } while (w != f.v);
+                    ++next_scc;
+                }
+                size_t v = f.v;
+                call_stack.pop_back();
+                if (!call_stack.empty()) {
+                    low[call_stack.back().v] = std::min(low[call_stack.back().v], low[v]);
+                }
+            }
+        }
+    }
+
+    std::vector<size_t> scc_size(next_scc, 0);
+    for (int scc : scc_of) ++scc_size[scc];
+
+    for (auto& e : mod.edges) {
+        auto s = comb_index.find(e.source);
+        auto t = comb_index.find(e.target);
+        if (s == comb_index.end() || t == comb_index.end()) continue;
+        if (scc_of[s->second] != scc_of[t->second]) continue;
+        // Same SCC: part of a cycle if the SCC is nontrivial, or a self-loop
+        // (a node feeding itself, e.g. `assign q = en ? d : q;`).
+        if (scc_size[scc_of[s->second]] > 1 || s->second == t->second) {
+            e.combFeedback = true;
+        }
+    }
 }
 
 // Fills in declaredNetName, for edges collapseAliasCombNodes didn't already

@@ -153,11 +153,20 @@ export async function buildViewModel(
       ? { nodes: initialPositioned, movedNodeIds: new Set<string>() }
       : packGenerateRegionSiblings(armRegions, initialPositioned, moduleLayout);
   // A pristine layout (nothing dragged, nothing released back to Auto Layout
-  // yet — see mergeRelayoutSelection/mergeNodePositions, both of which always
-  // write a `moduleLayout.nodes` entry) is the only state this "free preset"
-  // columnizing applies to; touching the diagram at all opts a module out
-  // until a full Reset clears moduleLayout.nodes and restores it.
-  const isPristineLayout = Object.keys(moduleLayout.nodes).length === 0;
+  // yet) is the only state this "free preset" columnizing applies to;
+  // touching the diagram at all opts a module out until a full Reset clears
+  // moduleLayout.nodes and restores it. This can no longer check for
+  // `moduleLayout.nodes` being empty: mergeNodeSnapshot now populates it with
+  // unfixed positions on every render as a durability snapshot, so presence
+  // alone no longer means "touched". It can't check for `fixed` alone either:
+  // mergeRelayoutSelection ("Auto Layout") deliberately writes released nodes
+  // with `fixed: false` rather than deleting them, so a module that's had
+  // Auto Layout run on it (but nothing pinned) must still count as touched.
+  // The distinguishing signal is whether `fixed` was ever explicitly set —
+  // mergeNodeSnapshot's entries always omit the key entirely.
+  const isPristineLayout = !Object.values(moduleLayout.nodes).some(
+    (node) => node.fixed !== undefined,
+  );
   const positioned = isPristineLayout
     ? columnizeFullyCutBoundaryPorts(designModule, activeCuts, packedGenerateLayout.nodes)
     : packedGenerateLayout.nodes;
@@ -246,7 +255,8 @@ export async function buildViewModel(
           result.routes.get(edge.id) ??
           (edgeTouchesMovedNode(edge, packedGenerateLayout.movedNodeIds)
             ? undefined
-            : elkLayout.routes.get(edge.id)),
+            : elkLayout.routes.get(edge.id)) ??
+          moduleLayout.edges?.[edge.id]?.routeSnapshot,
       })),
       ...cutProjection.edges.map((edge) => ({
         ...edge,
@@ -1292,6 +1302,10 @@ function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string
 
 function isCutLabelNodeId(id: string): boolean {
   return id.startsWith('cut-label:');
+}
+
+function isCutStubEdgeId(id: string): boolean {
+  return id.startsWith('cut-stub:');
 }
 
 function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
@@ -2450,6 +2464,11 @@ function elkLeadLengthForPort(side: ElkPortSide, portId?: string): number {
   return diagramSizing.edgeLeadLength;
 }
 
+function leafBounds(node: DiagramNode, position: { x: number; y: number }): NodeBounds {
+  const dimensions = resolvedNodeDimensions(node);
+  return { x: position.x, y: position.y, width: dimensions.width, height: dimensions.height };
+}
+
 function alignSimpleLeafNodes(
   nodes: DiagramNode[],
   edges: DiagramEdge[],
@@ -2457,6 +2476,27 @@ function alignSimpleLeafNodes(
   moduleLayout: SavedModuleLayout,
 ): void {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
+  // A leaf port is normally aligned to sit right beside the single node that
+  // drives or reads it. But when ELK's own (already non-overlapping) layer
+  // assignment puts that peer far away — e.g. a structural feedback loop,
+  // where cycle-breaking can land the peer in a much earlier layer — sliding
+  // the port straight onto the peer's row can drop it on top of an unrelated
+  // node that ELK placed in between. Guard the realignment with a collision
+  // check against every other node's current bounds and skip it when it
+  // would introduce an overlap, leaving ELK's own placement in effect.
+  const wouldOverlapOtherNode = (
+    node: DiagramNode,
+    candidate: { x: number; y: number },
+  ): boolean => {
+    const candidateBounds = leafBounds(node, candidate);
+    return nodes.some((other) => {
+      if (other.id === node.id) return false;
+      const otherPosition = positions.get(other.id);
+      if (!otherPosition) return false;
+      return boundsOverlap(candidateBounds, leafBounds(other, otherPosition));
+    });
+  };
 
   for (const node of nodes) {
     if (moduleLayout.nodes[node.id]?.fixed || node.kind !== 'port') {
@@ -2521,7 +2561,7 @@ function alignSimpleLeafNodes(
       );
       const verticalGap =
         diagramSizing.gridSize * (peerSide === 'NORTH' ? 3 + sideIndex * 2 : 2 + sideIndex * 2);
-      positions.set(node.id, {
+      const candidate = {
         x: snapToGrid(peerPosition.x + peerOffset.x - ownOffset.x - ownLeadOffset),
         y: snapToGrid(
           peerSide === 'NORTH'
@@ -2529,14 +2569,20 @@ function alignSimpleLeafNodes(
             : peerPosition.y + peerOffset.y + verticalGap,
           node.kind,
         ),
-      });
+      };
+      if (!wouldOverlapOtherNode(node, candidate)) {
+        positions.set(node.id, candidate);
+      }
       continue;
     }
 
-    positions.set(node.id, {
+    const candidate = {
       ...nodePosition,
       y: snapToGrid(peerPosition.y + peerOffset.y - ownOffset.y, node.kind),
-    });
+    };
+    if (!wouldOverlapOtherNode(node, candidate)) {
+      positions.set(node.id, candidate);
+    }
   }
 }
 
@@ -3763,6 +3809,27 @@ export function mergeFirstOpenNetCuts(
   return edges.reduce((acc, edge) => mergeNetCutState(acc, moduleName, edge, designModule), layout);
 }
 
+/**
+ * Marks that the first-open auto net-cut decision has run for this module,
+ * whether or not it found anything to cut. This is the explicit signal
+ * callers must check instead of "no saved layout exists" — full-render
+ * snapshots (mergeNodeSnapshot) make that condition true almost immediately,
+ * well before a module has genuinely been opened and decided on.
+ */
+export function markFirstOpenHandled(layout: SavedLayout, moduleName: string): SavedLayout {
+  const existing: SavedModuleLayout = layout.modules[moduleName] ?? { nodes: {} };
+  if (existing.firstOpenHandled) {
+    return layout;
+  }
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: { ...existing, firstOpenHandled: true },
+    },
+  };
+}
+
 /** Nets that form the computed default for a module with no saved layout. */
 export function firstOpenAutoCutEdges(
   designModule: DesignModule,
@@ -4029,6 +4096,85 @@ export function mergeNodePositions(
   next.modules[moduleName] = {
     ...existing,
     nodes: mergedNodes,
+  };
+  return next;
+}
+
+/**
+ * Full-render safety net: records every node's just-resolved position (not
+ * only the ones the user has explicitly pinned) so a module that's been
+ * looked at, but never dragged, still has a local record to recover from
+ * after a crash. Unlike mergeNodePositions, this never marks anything
+ * `fixed` — it only ever supplies a fallback position, never overriding Auto
+ * Layout on the next render (see the `saved?.fixed` check in buildViewModel).
+ * A node already pinned (`fixed: true`) is left untouched; synthetic net-cut
+ * label nodes are skipped entirely — those are only ever meaningful once
+ * pinned (see mergeNodePositions).
+ */
+export function mergeNodeSnapshot(
+  layout: SavedLayout,
+  moduleName: string,
+  nodes: PositionedNode[],
+): SavedLayout {
+  const next: SavedLayout = {
+    version: 1,
+    modules: { ...layout.modules },
+  };
+  const existing: SavedModuleLayout = next.modules[moduleName] ?? { nodes: {} };
+  const mergedNodes: SavedModuleLayout['nodes'] = {};
+
+  for (const [id, value] of Object.entries(existing.nodes)) {
+    if (value.fixed) {
+      mergedNodes[id] = value;
+    }
+  }
+
+  for (const node of nodes) {
+    if (mergedNodes[node.id]?.fixed || isCutLabelNodeId(node.id)) {
+      continue;
+    }
+    mergedNodes[node.id] = snapPosition(node.position, node.kind, structRole(node));
+  }
+
+  next.modules[moduleName] = {
+    ...existing,
+    nodes: mergedNodes,
+  };
+  return next;
+}
+
+/**
+ * Edge counterpart to mergeNodeSnapshot: records every rendered edge's
+ * just-computed route into `routeSnapshot`, never into `routePoints` — a
+ * user-fixed `routePoints` entry (see mergeEdgeRoutePoints) always wins and
+ * is left untouched, and `routeSnapshot` is only ever consulted in
+ * buildViewModel as the last-resort fallback when neither libavoid nor ELK
+ * produced a route this render. A cut-net stub edge is always a synthetic,
+ * per-render straight line (see makeCutStubEdge), never something worth
+ * snapshotting.
+ */
+export function mergeEdgeSnapshot(
+  layout: SavedLayout,
+  moduleName: string,
+  edges: DiagramEdge[],
+): SavedLayout {
+  const next: SavedLayout = {
+    version: 1,
+    modules: { ...layout.modules },
+  };
+  const existing: SavedModuleLayout = next.modules[moduleName] ?? { nodes: {} };
+  const mergedEdges: NonNullable<SavedModuleLayout['edges']> = { ...(existing.edges ?? {}) };
+
+  for (const edge of edges) {
+    if (isCutStubEdgeId(edge.id) || !edge.routePoints) continue;
+    const saved = mergedEdges[edge.id];
+    if (saved?.routePoints) continue;
+    mergedEdges[edge.id] = { ...saved, routeSnapshot: edge.routePoints };
+  }
+
+  next.modules[moduleName] = {
+    ...existing,
+    edges: Object.keys(mergedEdges).length > 0 ? mergedEdges : undefined,
   };
   return next;
 }

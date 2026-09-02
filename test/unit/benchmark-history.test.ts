@@ -5,6 +5,7 @@ import {
   computeMonthTicks,
   computeMovingAverages,
   mergeBenchmarkHistory,
+  renderHistoryTrendChart,
 } from '../../scripts/render-benchmark-charts.mjs';
 
 function benchmarkEntry(commitId: string, date: number, values: number[]) {
@@ -212,6 +213,76 @@ describe('computeMonthTicks', () => {
     const dateMs = new Date('2026-06-15T00:00:00.000Z').getTime();
     expect(computeMonthTicks(dateMs, dateMs)).toEqual([
       { dateMs: Date.UTC(2026, 5, 1), label: 'Jun' },
+    ]);
+  });
+});
+
+describe('renderHistoryTrendChart milestones', () => {
+  const entryA = {
+    sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    elaborationAvgMs: 120,
+    renderingAvgMs: 80,
+  };
+  const entryB = {
+    sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    elaborationAvgMs: 110,
+    renderingAvgMs: 90,
+  };
+  const currentRunAverages = { elaborationAvgMs: 100, renderingAvgMs: 70 };
+
+  it('draws a dashed marker and label for a milestone matching a history sha', () => {
+    const svg = renderHistoryTrendChart({
+      title: 'test',
+      history: [entryA, entryB],
+      currentRunAverages,
+      milestones: [{ sha: entryB.sha, label: 'Coverage instrumentation introduced' }],
+    });
+    expect(svg).toContain('stroke-dasharray="3,3"');
+    expect(svg).toContain('Coverage instrumentation introduced');
+  });
+
+  it('omits the marker when no milestone matches a history sha', () => {
+    const svg = renderHistoryTrendChart({
+      title: 'test',
+      history: [entryA, entryB],
+      currentRunAverages,
+      milestones: [{ sha: 'unknown-sha', label: 'Should not appear' }],
+    });
+    expect(svg).not.toContain('stroke-dasharray="3,3"');
+    expect(svg).not.toContain('Should not appear');
+  });
+
+  it('defaults to no markers when milestones is omitted', () => {
+    const svg = renderHistoryTrendChart({ title: 'test', history: [entryA], currentRunAverages });
+    expect(svg).not.toContain('stroke-dasharray="3,3"');
+  });
+});
+
+describe('computeHistoryTrendData with a custom series', () => {
+  const CUSTOM_SERIES = [{ key: 'durationSec', color: '#000000', label: 'Duration' }];
+  const historyEntry = {
+    sha: 'cccccccccccccccccccccccccccccccccccccccc',
+    date: '2026-01-01T00:00:00.000Z',
+    durationSec: 500,
+  };
+
+  it('only copies the given series keys onto each point (not the whole entry)', () => {
+    const currentDateMs = new Date('2026-01-02T00:00:00.000Z').getTime();
+    const points = computeHistoryTrendData(
+      [historyEntry],
+      { dateMs: currentDateMs, durationSec: 480 },
+      CUSTOM_SERIES,
+    );
+    expect(points).toEqual([
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
+      { dateMs: currentDateMs, durationSec: 480, isCurrent: true },
+    ]);
+  });
+
+  it('omits the preview point entirely when currentPoint is nullish', () => {
+    const points = computeHistoryTrendData([historyEntry], undefined, CUSTOM_SERIES);
+    expect(points).toEqual([
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
     ]);
   });
 });

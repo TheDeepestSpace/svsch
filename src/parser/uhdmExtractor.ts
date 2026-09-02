@@ -3,6 +3,7 @@ import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
+import { threadId } from 'node:worker_threads';
 import type {
   DesignGraph,
   DesignModule,
@@ -18,12 +19,43 @@ import type {
   SourceRange,
 } from '../ir/types';
 import { edgeId, stableId } from '../ir/ids';
-import { annotateWireStyles } from '../ir/edgeStyle';
+import { annotateWireStyles, widthIsPotentiallyMultiBit } from '../ir/edgeStyle';
 import { orderGraphModules } from './moduleOrdering';
 import { extractDesignFromText } from './textExtractor';
 import { logger } from '../logger';
 
 const execFileAsync = promisify(execFile);
+
+// Set only by CI coverage jobs, pointing at a scratch directory to collect
+// per-invocation gcov output. Unset in production, so normal spawns are
+// untouched.
+const backendCoverageRoot = process.env.SVSCH_BACKEND_GCOV_ROOT;
+let backendInvocationCounter = 0;
+
+// Unit/BDD/visual CI jobs run many concurrent workers, each spawning its own
+// backend subprocess against the same coverage-instrumented binary. Without
+// isolation, concurrent processes would race writing the same .gcda files.
+// Giving every single invocation its own GCOV_PREFIX subdirectory (keyed by
+// pid + thread id + a per-module counter, so it's unique across worker
+// processes, worker threads, and concurrent calls within one thread) makes
+// each write target distinct — no invocation ever shares a target with
+// another, so there's nothing to race on. The collect_backend_coverage CI
+// job is responsible for merging these many per-invocation directories back
+// into one coverage report.
+function backendExecOptions(): { maxBuffer: number; env?: NodeJS.ProcessEnv } {
+  const options = { maxBuffer: 100 * 1024 * 1024 };
+  if (!backendCoverageRoot) {
+    return options;
+  }
+  const invocationId = `${process.pid}-${threadId}-${backendInvocationCounter++}`;
+  return {
+    ...options,
+    env: {
+      ...process.env,
+      GCOV_PREFIX: path.join(backendCoverageRoot, invocationId),
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // UHDM cache helpers
@@ -248,9 +280,7 @@ export async function extractDesignWithUhdm(
     }
     backendArgs.push(workspaceRoot);
 
-    const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, {
-      maxBuffer: 100 * 1024 * 1024,
-    });
+    const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, backendExecOptions());
     if (stderr) {
       logger.error(`Backend Stderr: ${stderr}`);
     }
@@ -297,12 +327,12 @@ export async function extractDesignWithUhdm(
         (sourceNode?.kind === 'bus' &&
           sourceNode.metadata?.aggregateKind === 'array' &&
           sourceNode.metadata?.role === 'composition');
+      const targetIsArrayBreakout =
+        targetNode?.kind === 'bus' &&
+        targetNode.metadata?.aggregateKind === 'array' &&
+        targetNode.metadata?.role !== 'composition';
       const targetIsArray =
-        targetNode?.isArrayNode ||
-        targetNode?.metadata?.isArrayNode ||
-        (targetNode?.kind === 'bus' &&
-          targetNode.metadata?.aggregateKind === 'array' &&
-          targetNode.metadata?.role !== 'composition');
+        targetNode?.isArrayNode || targetNode?.metadata?.isArrayNode || targetIsArrayBreakout;
 
       if (sourceIsArray || targetIsArray) {
         const sourcePort = sourceNode?.ports.find((p) => p.id === edge.sourcePort);
@@ -315,8 +345,46 @@ export async function extractDesignWithUhdm(
           targetNode?.kind === 'bus' &&
           (targetPort?.label?.includes('[') || targetPort?.name?.includes('['))
         );
+        // A breakout tap whose own net is multi-bit (e.g. `wire [7:0] a
+        // [0:1]`) is one wide wire per element, not a bundle of scalar
+        // lanes — don't force it stacked just because it fans out of a
+        // breakout bus node. This only applies to edges *leaving* a
+        // breakout node: the hub edge *feeding* a breakout node still
+        // carries N distinct array elements bundled onto one wire and
+        // stays stacked regardless of per-element width, same as other
+        // array-flagged nodes (registers, muxes, ports, and composition
+        // bus nodes), which represent N distinct same-named elements.
+        const sourceIsArrayBreakout =
+          sourceNode?.kind === 'bus' &&
+          sourceNode.metadata?.aggregateKind === 'array' &&
+          sourceNode.metadata?.role !== 'composition';
+        let breakoutTapIsMultiBit = false;
+        if (sourceIsArrayBreakout) {
+          // The tap's own width (and, for taps feeding a mux selector, the
+          // consumer's declared width) are often unreliable placeholders
+          // ("[0:0]") — UHDM doesn't carry the per-element width on either
+          // side. The hub edge feeding this same breakout node from its
+          // source signal does carry the correct element width, so use it
+          // both to decide stacking here and to correct the tap edge's own
+          // width for downstream thick-wire rendering.
+          const hubEdge = module.edges.find((e) => e.target === sourceNode.id);
+          const elementWidth = hubEdge?.width;
+          if (elementWidth && elementWidth !== '[0:0]') {
+            if (!edge.width || edge.width === '[0:0]') {
+              edge.width = elementWidth;
+            }
+            // The breakout node's own tap port (rendered as the node's port
+            // lead) carries the same unreliable placeholder width as the
+            // edge did — correct it too so the lead line renders with the
+            // same thickness as the wire now leaving it.
+            if (sourcePort && (!sourcePort.width || sourcePort.width === '[0:0]')) {
+              sourcePort.width = elementWidth;
+            }
+            breakoutTapIsMultiBit = widthIsPotentiallyMultiBit(elementWidth);
+          }
+        }
 
-        if (!sourceIsScalarTap && !targetIsScalarTap) {
+        if (!sourceIsScalarTap && !targetIsScalarTap && !breakoutTapIsMultiBit) {
           edge.isStacked = true;
         }
       }
@@ -950,7 +1018,11 @@ function mergeBusNodesFromSourceGraph(
           target: mappedTarget,
           sourcePort: mappedSourcePort,
           targetPort: mappedTargetPort,
-          id: edgeId(mappedSource, mappedTarget, edge.signal || Math.random().toString()),
+          // `edge.id` is already unique within sourceModule.edges, so it's a stable
+          // disambiguator when there's no declared signal name to key on — using
+          // Math.random() here made this merge (and anything keyed off the result,
+          // like a saved edge route) non-deterministic across otherwise-identical runs.
+          id: edgeId(mappedSource, mappedTarget, edge.signal || edge.id),
         });
       }
     }
@@ -2228,6 +2300,42 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
       );
       if (sourcePort?.width) {
         edge.width = sourcePort.width;
+      }
+    }
+
+    // The backend stamps combFeedback on edges that close a purely
+    // combinational cycle (no register/latch in the loop) — e.g. a
+    // cross-coupled NAND SR latch. Surface one warning per independent loop,
+    // mirroring the inferred-latch warning above; the loop still renders as a
+    // normal cyclic (feedback) edge.
+    {
+      const feedbackEdges = module.edges.filter((edge) => edge.metadata?.combFeedback);
+      const loopOf = new Map<string, string>();
+      const findLoop = (id: string): string => {
+        let root = id;
+        while (loopOf.get(root) !== root) root = loopOf.get(root)!;
+        return root;
+      };
+      for (const edge of feedbackEdges) {
+        for (const id of [edge.source, edge.target]) {
+          if (!loopOf.has(id)) loopOf.set(id, id);
+        }
+        loopOf.set(findLoop(edge.source), findLoop(edge.target));
+      }
+      const loops = new Map<string, DiagramEdge[]>();
+      for (const edge of feedbackEdges) {
+        const root = findLoop(edge.source);
+        loops.set(root, [...(loops.get(root) ?? []), edge]);
+      }
+      for (const loopEdges of loops.values()) {
+        const signals = [...new Set(loopEdges.map((edge) => edge.signal).filter(Boolean))];
+        graph.diagnostics.push({
+          severity: 'warning',
+          message:
+            `${modName} has a combinational feedback loop` +
+            (signals.length ? ` through ${signals.join(', ')}` : ''),
+          source: loopEdges[0].sourceRange,
+        });
       }
     }
 
