@@ -387,10 +387,10 @@ jobs:
       # Needed to delete the per-shard artifacts below once they're merged.
       actions: write
     concurrency:
-      # Two runs on the same ref (e.g. a retriggered master push) could both
-      # auto-push to gh-pages; serialize per-ref so they don't race (PRs/other
-      # branches never push, so this doesn't cost them any parallelism).
-      group: gh-pages-publish-${{ github.ref }}
+      # Shared across every job/workflow that pushes to gh-pages (see
+      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
+      # serialized repo-wide, not just within this workflow/ref (#380).
+      group: gh-pages-publish
       cancel-in-progress: false
     steps:
       - *checkout_step
