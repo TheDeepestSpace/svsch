@@ -53,6 +53,20 @@ Then(
 // ---------------------------------------------------------------------------
 
 Given(
+  'svsch.fileList is set to {string}',
+  async function (this: BddWorld, relativePath: string) {
+    await this.evaluateInVSCode(
+      (_vscode, arg) => {
+        return (_vscode as any).workspace
+          .getConfiguration('svsch')
+          .update('fileList', arg, (_vscode as any).ConfigurationTarget.Workspace);
+      },
+      relativePath,
+    );
+  },
+);
+
+Given(
   'I disable clock and reset cuts using this setting:',
   async function (this: BddWorld, docString: string) {
     const [key, value] = Object.entries(JSON.parse(`{${docString.trim()}}`))[0];

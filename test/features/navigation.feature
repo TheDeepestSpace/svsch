@@ -22,6 +22,22 @@ Feature: Navigation
     Then I should not see an inverter node
     And there should be a connection between "i" and "o"
 
+  Scenario: Restricting compiled sources to a Surelog filelist skips files not listed
+    Given I have the following files in my workspace:
+      | file      | content |
+      | top.sv    | module top(input i, output o); A a_inst(i, o); endmodule |
+      | a.sv      | module A(input i, output o); assign o = i; endmodule |
+      | unused.sv | module Unused(); endmodule |
+    And I have a file "project.f" in my workspace:
+      """
+      top.sv
+      a.sv
+      """
+    And svsch.fileList is set to "project.f"
+    When I open the "top" module in SVSCH
+    Then the module dropdown should contain "top", "A" in that order
+    And the module dropdown should not contain "Unused"
+
   Scenario: Navigating to IO port declarations
     Given I have the following files in my workspace:
       | file   | content |
