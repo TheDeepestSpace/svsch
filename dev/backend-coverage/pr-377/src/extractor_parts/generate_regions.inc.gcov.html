@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-01 19:30:45</td>
+            <td class="headerValue">2026-09-02 01:27:19</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">44</td>
@@ -1007,14 +1007,14 @@
 <a name="945"><span class="lineNum">     945 </span><span class="lineCov">        474 :     pushUnique(region.nodeIds, node.id);</span></a>
 <a name="946"><span class="lineNum">     946 </span><span class="lineCov">       1105 : }</span></a>
 <a name="947"><span class="lineNum">     947 </span>            : </a>
-<a name="948"><span class="lineNum">     948 </span><span class="lineCov">      21767 : void DesignExtractor::tagGenerateRegionEdges(Module&amp; mod) {</span></a>
+<a name="948"><span class="lineNum">     948 </span><span class="lineCov">      21766 : void DesignExtractor::tagGenerateRegionEdges(Module&amp; mod) {</span></a>
 <a name="949"><span class="lineNum">     949 </span>            :     struct RegionTag {</a>
 <a name="950"><span class="lineNum">     950 </span>            :         std::string id;</a>
 <a name="951"><span class="lineNum">     951 </span>            :         std::string activeState;</a>
 <a name="952"><span class="lineNum">     952 </span>            :     };</a>
 <a name="953"><span class="lineNum">     953 </span>            : </a>
-<a name="954"><span class="lineNum">     954 </span><span class="lineCov">      21767 :     std::map&lt;std::string, RegionTag&gt; regionByNode;</span></a>
-<a name="955"><span class="lineNum">     955 </span><span class="lineCov">      23427 :     for (const auto&amp; region : mod.generateRegions) {</span></a>
+<a name="954"><span class="lineNum">     954 </span><span class="lineCov">      21766 :     std::map&lt;std::string, RegionTag&gt; regionByNode;</span></a>
+<a name="955"><span class="lineNum">     955 </span><span class="lineCov">      23426 :     for (const auto&amp; region : mod.generateRegions) {</span></a>
 <a name="956"><span class="lineNum">     956 </span><span class="lineCov">       3372 :         for (const auto&amp; nodeId : region.nodeIds) {</span></a>
 <a name="957"><span class="lineNum">     957 </span><span class="lineCov">       1712 :             if (!nodeId.empty() &amp;&amp; !regionByNode.count(nodeId)) {</span></a>
 <a name="958"><span class="lineNum">     958 </span><span class="lineCov">       1712 :                 regionByNode[nodeId] = {region.id, region.activeState};</span></a>
@@ -1022,13 +1022,13 @@
 <a name="960"><span class="lineNum">     960 </span>            :         }</a>
 <a name="961"><span class="lineNum">     961 </span>            :     }</a>
 <a name="962"><span class="lineNum">     962 </span>            : </a>
-<a name="963"><span class="lineNum">     963 </span><span class="lineCov">      83571 :     for (const auto&amp; node : mod.nodes) {</span></a>
-<a name="964"><span class="lineNum">     964 </span><span class="lineCov">      61804 :         if (!node.metadata.generateRegionId.empty() &amp;&amp; !regionByNode.count(node.id)) {</span></a>
+<a name="963"><span class="lineNum">     963 </span><span class="lineCov">      83568 :     for (const auto&amp; node : mod.nodes) {</span></a>
+<a name="964"><span class="lineNum">     964 </span><span class="lineCov">      61802 :         if (!node.metadata.generateRegionId.empty() &amp;&amp; !regionByNode.count(node.id)) {</span></a>
 <a name="965"><span class="lineNum">     965 </span><span class="lineNoCov">          0 :             regionByNode[node.id] = {node.metadata.generateRegionId, node.metadata.generateActiveState};</span></a>
 <a name="966"><span class="lineNum">     966 </span>            :         }</a>
 <a name="967"><span class="lineNum">     967 </span>            :     }</a>
 <a name="968"><span class="lineNum">     968 </span>            : </a>
-<a name="969"><span class="lineNum">     969 </span><span class="lineCov">     137169 :     for (auto&amp; edge : mod.edges) {</span></a>
+<a name="969"><span class="lineNum">     969 </span><span class="lineCov">     137168 :     for (auto&amp; edge : mod.edges) {</span></a>
 <a name="970"><span class="lineNum">     970 </span><span class="lineCov">     115402 :         auto sourceRegion = regionByNode.find(edge.source);</span></a>
 <a name="971"><span class="lineNum">     971 </span><span class="lineCov">     115402 :         auto targetRegion = regionByNode.find(edge.target);</span></a>
 <a name="972"><span class="lineNum">     972 </span><span class="lineCov">     115402 :         if (sourceRegion != regionByNode.end()) {</span></a>
@@ -1039,7 +1039,7 @@
 <a name="977"><span class="lineNum">     977 </span><span class="lineCov">       1663 :             edge.generateActiveState = targetRegion-&gt;second.activeState;</span></a>
 <a name="978"><span class="lineNum">     978 </span>            :         }</a>
 <a name="979"><span class="lineNum">     979 </span>            :     }</a>
-<a name="980"><span class="lineNum">     980 </span><span class="lineCov">      21767 : }</span></a>
+<a name="980"><span class="lineNum">     980 </span><span class="lineCov">      21766 : }</span></a>
 </pre>
       </td>
     </tr>
