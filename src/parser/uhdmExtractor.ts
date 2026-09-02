@@ -74,9 +74,14 @@ async function computeFingerprint(
   files: string[],
   includePaths: string[],
   defines: Record<string, string>,
+  fileListPath?: string,
 ): Promise<CacheFingerprint> {
+  // Track the filelist's own mtime too (in addition to its listed sources' mtimes) so that
+  // editing directives inside it (e.g. -I/+define+) that don't change the listed sources
+  // still invalidates the cache, not just edits to the listed sources themselves.
+  const fingerprintedFiles = fileListPath ? [...files, fileListPath] : files;
   const entries = await Promise.all(
-    files.map(async (f) => ({
+    fingerprintedFiles.map(async (f) => ({
       path: f,
       mtime: (await fs.stat(f)).mtimeMs,
     })),
@@ -192,6 +197,7 @@ export async function extractDesignWithUhdm(
   defines?: Record<string, string>,
   moduleName?: string,
   onProgress?: (message: string, increment: number) => void,
+  fileListPath?: string,
 ): Promise<DesignGraph> {
   const cacheDir = path.join(workspaceRoot, '.svsch', 'uhdm_cache');
   const fingerprintFile = path.join(cacheDir, 'fingerprint.json');
@@ -202,6 +208,7 @@ export async function extractDesignWithUhdm(
     files,
     includePaths ?? [],
     defines ?? {},
+    fileListPath,
   );
 
   // Concurrent calls for the same cacheDir (e.g. a spurious watcher-triggered rebuild racing
@@ -246,7 +253,11 @@ export async function extractDesignWithUhdm(
         }
       }
 
-      surelogArgs.push(...files);
+      if (fileListPath) {
+        surelogArgs.push('-f', fileListPath);
+      } else {
+        surelogArgs.push(...files);
+      }
 
       onProgress?.('Elaborating project...', 0);
 

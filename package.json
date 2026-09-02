@@ -60,6 +60,11 @@
           "default": "",
           "description": "Workspace-relative folder containing SystemVerilog/Verilog sources."
         },
+        "svsch.fileList": {
+          "type": "string",
+          "default": "",
+          "description": "Workspace-relative path to a Surelog filelist (.f file) passed to Surelog via -f. When set, this overrides svsch.projectFolder's directory walk entirely: only the files listed in the filelist are compiled. Auto-detection of header include directories no longer applies in this mode, so you must supply your own -I/+incdir+ (via svsch.includePaths or directives inside the filelist itself)."
+        },
         "svsch.veriblePath": {
           "type": "string",
           "default": "verible-verilog-syntax",
