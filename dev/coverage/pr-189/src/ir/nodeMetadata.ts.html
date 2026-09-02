@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">69.69% </span>
+                <span class="strong">72.72% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>23/33</span>
+                <span class='fraction'>24/33</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">67.1% </span>
+                <span class="strong">68.42% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>51/76</span>
+                <span class='fraction'>52/76</span>
             </div>
         
             
@@ -185,13 +185,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-yes">135x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
@@ -199,8 +199,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -208,7 +208,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2293x</span>
+<span class="cline-any cline-yes">2460x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -216,7 +216,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2323x</span>
+<span class="cline-any cline-yes">2490x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -240,11 +240,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1167x</span>
+<span class="cline-any cline-yes">1192x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1167x</span>
+<span class="cline-any cline-yes">1192x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -255,7 +255,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13118x</span>
+<span class="cline-any cline-yes">13990x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -283,7 +283,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5051x</span>
+<span class="cline-any cline-yes">5116x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -306,7 +306,7 @@ export function nodeOperation(node: DiagramNode): string | undefined {
 /** Gate body shape ('and' | 'or' | 'xor') independent of whether the output is negated. */
 export function gateBodyOperation(node: DiagramNode): 'and' | 'or' | 'xor' {
   const op = nodeOperation(node);
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (op === 'nand') <span class="cstat-no" title="statement not covered" >return 'and';</span>
+  if (op === 'nand') return 'and';
   <span class="missing-if-branch" title="if path not taken" >I</span>if (op === 'nor') <span class="cstat-no" title="statement not covered" >return 'or';</span>
   <span class="missing-if-branch" title="if path not taken" >I</span>if (op === 'xnor') <span class="cstat-no" title="statement not covered" >return 'xor';</span>
   <span class="missing-if-branch" title="else path not taken" >E</span>if (op === 'and' || <span class="branch-1 cbranch-no" title="branch not covered" >op === 'or' || <span class="branch-2 cbranch-no" title="branch not covered" >o</span>p === 'xor') r</span>eturn op;
@@ -415,7 +415,7 @@ export function <span class="fstat-no" title="function not covered" >nodeArraySi
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-01T03:42:40.604Z
+                at 2026-09-02T02:11:14.389Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
