@@ -73,6 +73,16 @@ Given('I record the workspace directory state', async function (this: BddWorld) 
 // When steps
 // ---------------------------------------------------------------------------
 
+// Moves the (currently sole, active) diagram webview into a new editor
+// group below the current one, so a subsequently opened source file lands
+// in the original top group instead of tabbing over the diagram — keeping
+// both visible at once rather than one hiding the other.
+When('I arrange the diagram and the editor side by side', async function (this: BddWorld) {
+  await this.evaluateInVSCode(async (vscode) => {
+    await vscode.commands.executeCommand('workbench.action.moveEditorToBelowGroup');
+  });
+});
+
 When(
   'I select the source text {string} in {string}',
   async function (this: BddWorld, sourceText: string, filename: string) {

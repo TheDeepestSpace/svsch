@@ -8,6 +8,7 @@ Feature: Navigation
       | file   | content |
       | top.sv | module top(a, b);\n  input logic a;\n  output logic b;\n  assign b = a;\nendmodule |
     When I open the "top" module in SVSCH
+    And I arrange the diagram and the editor side by side
     And I select the source text "input logic a" in "top.sv"
     Then the port node "a" should be highlighted
     When I select the source text "module top" in "top.sv"
