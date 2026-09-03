@@ -38,6 +38,24 @@ Feature: Navigation
     Then the module dropdown should contain "top", "A" in that order
     And the module dropdown should not contain "Unused"
 
+  Scenario: When both svsch.fileList and svsch.projectFolder are set, the filelist takes priority
+    Given I have the following files in my workspace:
+      | file           | content |
+      | listed/top.sv  | module top(input i, output o); A a_inst(i, o); endmodule |
+      | listed/a.sv    | module A(input i, output o); assign o = i; endmodule |
+      | other/rogue.sv | module Rogue(); endmodule |
+    And I have a file "listed/project.f" in my workspace:
+      """
+      top.sv
+      a.sv
+      """
+    And svsch.fileList is set to "listed/project.f"
+    When I open the "top" module in SVSCH
+    And svsch.projectFolder is set to "other"
+    And I reload the diagram
+    Then the module dropdown should contain "top", "A" in that order
+    And the module dropdown should not contain "Rogue"
+
   Scenario: Navigating to IO port declarations
     Given I have the following files in my workspace:
       | file   | content |
