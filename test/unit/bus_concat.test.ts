@@ -657,6 +657,11 @@ describe('parser: concatenation as bus composition', () => {
       expect(
         comp?.ports.find((p) => p.direction === 'input' && p.connectedSignal === 'r[3:2]'),
       ).toMatchObject({ name: '[3:2]', width: '[1:0]' });
+      expect(comp?.ports.filter((p) => p.direction === 'input').map((p) => p.label)).toEqual([
+        '[3:2]',
+        '[1]',
+        '[0]',
+      ]);
     },
   );
 
@@ -680,12 +685,10 @@ describe('parser: concatenation as bus composition', () => {
       name: 'bus_in',
       width: '[3:0]',
     });
-    expect(
-      bus?.ports
-        .filter((p) => p.direction === 'output')
-        .map((p) => p.label)
-        .sort(),
-    ).toEqual(['[0]', '[1]']);
+    expect(bus?.ports.filter((p) => p.direction === 'output').map((p) => p.label)).toEqual([
+      '[1]',
+      '[0]',
+    ]);
     expect(bus?.ports.filter((p) => p.direction === 'output')).toHaveLength(2);
     expect(
       mod.edges.some(
