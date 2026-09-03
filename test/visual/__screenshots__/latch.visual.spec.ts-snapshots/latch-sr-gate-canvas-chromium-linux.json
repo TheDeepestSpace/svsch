@@ -1,0 +1,194 @@
+{
+  "nodes": [
+    {
+      "id": "gate:sr_latch_gate:q:nand",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 48
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:sr_latch_gate:qn:nand",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 72
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:qn",
+            "name": "qn",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:sr_latch_gate:q",
+      "type": "hdl",
+      "position": {
+        "x": 984,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:sr_latch_gate:qn",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:qn",
+            "name": "qn",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:sr_latch_gate:r_n",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:r_n",
+            "name": "r_n",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:sr_latch_gate:s_n",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:s_n",
+            "name": "s_n",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:gate:sr_latch_gate:q:nand:gate:sr_latch_gate:qn:nand:q",
+      "source": "gate:sr_latch_gate:q:nand",
+      "target": "gate:sr_latch_gate:qn:nand",
+      "sourceHandle": "out:q",
+      "targetHandle": "port:in1",
+      "path": "M 768 96 L 792 96 L 816 96 L 816 216 L 336 216 L 336 144 L 360 144"
+    },
+    {
+      "id": "edge:gate:sr_latch_gate:q:nand:port:sr_latch_gate:q:q",
+      "source": "gate:sr_latch_gate:q:nand",
+      "target": "port:sr_latch_gate:q",
+      "sourceHandle": "out:q",
+      "targetHandle": "port:q",
+      "path": "M 768 96 L 792 96 L 960 96 L 984 96"
+    },
+    {
+      "id": "edge:gate:sr_latch_gate:qn:nand:gate:sr_latch_gate:q:nand:qn",
+      "source": "gate:sr_latch_gate:qn:nand",
+      "target": "gate:sr_latch_gate:q:nand",
+      "sourceHandle": "out:qn",
+      "targetHandle": "port:in1",
+      "path": "M 456 120 L 480 120 L 648 120 L 672 120"
+    },
+    {
+      "id": "edge:gate:sr_latch_gate:qn:nand:port:sr_latch_gate:qn:qn",
+      "source": "gate:sr_latch_gate:qn:nand",
+      "target": "port:sr_latch_gate:qn",
+      "sourceHandle": "out:qn",
+      "targetHandle": "port:qn",
+      "path": "M 456 120 L 480 120 L 648 120 L 648 192 L 672 192"
+    },
+    {
+      "id": "edge:port:sr_latch_gate:r_n:gate:sr_latch_gate:qn:nand:r_n",
+      "source": "port:sr_latch_gate:r_n",
+      "target": "gate:sr_latch_gate:qn:nand",
+      "sourceHandle": "port:r_n",
+      "targetHandle": "port:in0",
+      "path": "M 144 96 L 168 96 L 336 96 L 360 96"
+    },
+    {
+      "id": "edge:port:sr_latch_gate:s_n:gate:sr_latch_gate:q:nand:s_n",
+      "source": "port:sr_latch_gate:s_n",
+      "target": "gate:sr_latch_gate:q:nand",
+      "sourceHandle": "port:s_n",
+      "targetHandle": "port:in0",
+      "path": "M 456 48 L 480 48 L 576 48 L 576 72 L 648 72 L 672 72"
+    }
+  ]
+}

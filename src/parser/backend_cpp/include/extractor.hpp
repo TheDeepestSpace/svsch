@@ -196,6 +196,10 @@ struct Edge {
     // (which may differ from `signal`); otherwise it's `signal` itself, when
     // `signal` is itself a declared name. Empty when no declared name is known.
     std::string declaredNetName;
+    // This edge closes a purely combinational cycle (e.g. the cross-coupled
+    // wires of a structural NAND SR latch) — a loop through comb/gate drivers
+    // with no register or latch breaking it. Clocked feedback stays false.
+    bool combFeedback = false;
 };
 
 struct GenerateRegion {
@@ -374,6 +378,7 @@ private:
     void synthesizeBusCompositionNodes(Module& mod);
     void unifyNetPropagation(Module& mod);
     void markDeclaredNetEdges(Module& mod);
+    void markCombFeedbackEdges(Module& mod);
     std::string resolveSignalWidth(const Module& mod, const std::string& signal, const std::string& fallback_width);
 
     std::string getOrPromoteExpr(vpiHandle expr, Module& mod, const std::string& preferred_name = "", bool is_procedural = false, const std::map<std::string, LoweredValue>& current_drivers = {});

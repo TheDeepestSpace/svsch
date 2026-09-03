@@ -351,6 +351,12 @@ export interface DiagramEdgeMetadata {
    * declaration order.
    */
   aliasNames?: string[];
+  /**
+   * This edge closes a purely combinational cycle (e.g. the cross-coupled
+   * wires of a structural NAND SR latch) — a loop through comb/gate drivers
+   * with no register or latch breaking it. Clocked feedback is never flagged.
+   */
+  combFeedback?: boolean;
 }
 
 export interface DiagramEdge {
