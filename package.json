@@ -116,7 +116,7 @@
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
     "compile:backend:coverage": "mkdir -p src/parser/backend_cpp/build-coverage && cd src/parser/backend_cpp/build-coverage && cmake .. -G Ninja -DENABLE_COVERAGE=ON && ninja svsch_backend",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
-    "release": "SURELOG_AUTO_INSTALL=1 npm run compile && npx changeset publish",
+    "release": "SURELOG_AUTO_INSTALL=1 npm run compile && npx changeset publish && (npx ovsx publish -p $OVSX_PAT || echo 'Open VSX skipped')",
     "watch": "node scripts/copy-diagram-css.js --watch & vite build --watch & tsc -watch -p tsconfig.extension.json",
     "lint": "npm run lint:tsc && npm run lint:eslint",
     "lint:tsc": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
