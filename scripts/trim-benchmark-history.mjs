@@ -20,6 +20,15 @@ const DATA_FILE = 'dev/bench/data.js';
 // from. See computeBenchmarkHistory/mergeBenchmarkHistory in
 // render-benchmark-charts.mjs.
 const HISTORY_AVERAGES_FILE = 'dev/bench/history-averages.json';
+// One-off annotations for discontinuities in the trend (see
+// renderHistoryTrendChart in render-benchmark-charts.mjs) — e.g. the backend
+// binary gaining coverage instrumentation and becoming permanently slower.
+// Sourced from MILESTONES_SEED_FILE (tracked in the main repo, so adding one
+// is a normal PR) and copied here, stamped with the sha of the first master
+// push that sees it, exactly once per label — every push after that is a
+// no-op since the label is already recorded.
+const MILESTONES_FILE = 'dev/bench/milestones.json';
+const MILESTONES_SEED_FILE = 'scripts/benchmark-milestones-seed.json';
 const PREFIX = 'window.BENCHMARK_DATA = ';
 const NETWORK_TIMEOUT_MS = 60_000;
 
@@ -61,6 +70,20 @@ function trimToRetention(data) {
   return dropped;
 }
 
+// New (not yet recorded on gh-pages) entries from MILESTONES_SEED_FILE,
+// stamped with this run's commit sha — on a master-push job this is the
+// merge commit that just landed the seed entry, so the very first push to
+// see a given label is exactly the one that introduced it.
+function newMilestones(existingMilestones) {
+  const seedPath = path.resolve(MILESTONES_SEED_FILE);
+  if (!fs.existsSync(seedPath)) return [];
+  const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+  const recordedLabels = new Set(existingMilestones.map((m) => m.label));
+  const sha = git(['rev-parse', 'HEAD']).trim();
+  const date = new Date().toISOString();
+  return seed.filter((m) => !recordedLabels.has(m.label)).map((m) => ({ ...m, sha, date }));
+}
+
 async function main() {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-trim-'));
   try {
@@ -85,8 +108,18 @@ async function main() {
       const addedAverages = mergedAverages.length - existingAverages.length;
 
       const dropped = trimToRetention(data);
-      if (dropped === 0 && addedAverages === 0) {
-        console.log(`${DATA_FILE} already within retention (<=${MAX_ENTRIES_PER_SUITE} entries/suite) and no new averages to record; nothing to do.`);
+
+      const milestonesPath = path.join(worktreeDir, MILESTONES_FILE);
+      const existingMilestones = fs.existsSync(milestonesPath)
+        ? JSON.parse(fs.readFileSync(milestonesPath, 'utf8'))
+        : [];
+      const added = newMilestones(existingMilestones);
+      const mergedMilestones = [...existingMilestones, ...added];
+
+      if (dropped === 0 && addedAverages === 0 && added.length === 0) {
+        console.log(
+          `${DATA_FILE} already within retention (<=${MAX_ENTRIES_PER_SUITE} entries/suite) and no new averages or milestones to record; nothing to do.`,
+        );
         return;
       }
 
@@ -99,13 +132,25 @@ async function main() {
         fs.writeFileSync(historyAveragesPath, JSON.stringify(mergedAverages), 'utf8');
         changedFiles.push(HISTORY_AVERAGES_FILE);
       }
+      if (added.length > 0) {
+        fs.mkdirSync(path.dirname(milestonesPath), { recursive: true });
+        fs.writeFileSync(milestonesPath, JSON.stringify(mergedMilestones), 'utf8');
+        changedFiles.push(MILESTONES_FILE);
+      }
 
       const messageParts = [];
       if (dropped > 0) {
-        messageParts.push(`trim ${DATA_FILE} to last ${MAX_ENTRIES_PER_SUITE} entries/suite (-${dropped})`);
+        messageParts.push(
+          `trim ${DATA_FILE} to last ${MAX_ENTRIES_PER_SUITE} entries/suite (-${dropped})`,
+        );
       }
       if (addedAverages > 0) {
         messageParts.push(`record ${addedAverages} new average(s) in ${HISTORY_AVERAGES_FILE}`);
+      }
+      if (added.length > 0) {
+        messageParts.push(
+          `record ${added.length} new milestone(s) in ${MILESTONES_FILE}: ${added.map((m) => m.label).join(', ')}`,
+        );
       }
 
       git(['add', ...changedFiles], { cwd: worktreeDir });

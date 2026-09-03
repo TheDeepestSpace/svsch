@@ -18,11 +18,6 @@
             "direction": "input"
           },
           {
-            "id": "out:instr_6:0_",
-            "name": "instr[6:0]",
-            "direction": "output"
-          },
-          {
             "id": "out:instr_11:7_",
             "name": "instr[11:7]",
             "direction": "output"
@@ -30,6 +25,11 @@
           {
             "id": "out:instr_10:5_",
             "name": "instr[10:5]",
+            "direction": "output"
+          },
+          {
+            "id": "out:instr_6:0_",
+            "name": "instr[6:0]",
             "direction": "output"
           }
         ]
@@ -60,7 +60,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 36
+        "y": 132
       },
       "width": 144,
       "height": 24,
@@ -80,7 +80,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 132
+        "y": 84
       },
       "width": 168,
       "height": 24,
@@ -100,7 +100,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 84
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -123,7 +123,7 @@
       "target": "port:bus_three_taps:opcode",
       "sourceHandle": "out:instr_6:0_",
       "targetHandle": "port:opcode",
-      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
+      "path": "M 528 144 L 552 144 L 720 144 L 744 144"
     },
     {
       "id": "edge:bus:bus_three_taps:instr:port:bus_three_taps:overlap:overlap",
@@ -131,7 +131,7 @@
       "target": "port:bus_three_taps:overlap",
       "sourceHandle": "out:instr_10:5_",
       "targetHandle": "port:overlap",
-      "path": "M 528 144 L 552 144 L 720 144 L 744 144"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     },
     {
       "id": "edge:bus:bus_three_taps:instr:port:bus_three_taps:rd:rd",
@@ -139,7 +139,7 @@
       "target": "port:bus_three_taps:rd",
       "sourceHandle": "out:instr_11:7_",
       "targetHandle": "port:rd",
-      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
+      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
     },
     {
       "id": "edge:port:bus_three_taps:instr:bus:bus_three_taps:instr:instr",

@@ -18,13 +18,13 @@
             "direction": "input"
           },
           {
-            "id": "out:bus_in_0_",
-            "name": "bus_in[0]",
+            "id": "out:bus_in_1_",
+            "name": "bus_in[1]",
             "direction": "output"
           },
           {
-            "id": "out:bus_in_1_",
-            "name": "bus_in[1]",
+            "id": "out:bus_in_0_",
+            "name": "bus_in[0]",
             "direction": "output"
           }
         ]
@@ -35,7 +35,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 36
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -55,7 +55,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 84
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -98,7 +98,7 @@
       "target": "port:top:a",
       "sourceHandle": "out:bus_in_0_",
       "targetHandle": "port:a",
-      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     },
     {
       "id": "edge:bus:top:bus_in:port:top:b:b",
@@ -106,7 +106,7 @@
       "target": "port:top:b",
       "sourceHandle": "out:bus_in_1_",
       "targetHandle": "port:b",
-      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
+      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
     },
     {
       "id": "edge:port:top:bus_in:bus:top:bus_in:bus_in",

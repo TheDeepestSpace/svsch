@@ -14,6 +14,13 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    concurrency:
+      # Shared across every job/workflow that pushes to gh-pages (see
+      # ci.yml's merge_visual_reports, ci-duration.yml) so pushes are
+      # serialized repo-wide instead of racing this job's own ad-hoc
+      # retry loop against theirs (#380).
+      group: gh-pages-publish
+      cancel-in-progress: false
     steps:
       - name: Checkout gh-pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
