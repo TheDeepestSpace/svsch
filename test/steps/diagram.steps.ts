@@ -81,6 +81,8 @@ When('I arrange the diagram and the editor side by side', async function (this: 
   await this.evaluateInVSCode(async (vscode) => {
     await vscode.commands.executeCommand('workbench.action.moveEditorToBelowGroup');
   });
+  await this._revealPanel();
+  await this.takeScreenshot('Diagram and editor side by side');
 });
 
 When(
@@ -3330,6 +3332,7 @@ Then('the port node {string} should be highlighted', async function (this: BddWo
       { timeout: 10_000 },
     )
     .toBe(true);
+  await this.takeScreenshot(`Highlighted port node ${name}`);
 });
 
 Then('no diagram nodes should be highlighted', async function (this: BddWorld) {
