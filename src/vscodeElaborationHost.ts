@@ -64,6 +64,7 @@ function createParserOptions(
     listOnly: request.listOnly,
     overlays: request.live ? openHdlDocumentOverlays(workspaceRoot, projectFolder) : undefined,
     includeExternalDiagnostics: request.moduleName ? false : !request.live,
+    fileList: config.get<string>('fileList') || undefined,
   };
 }
 
