@@ -32,9 +32,8 @@ const { cases } = yaml.load(
 // Selection → highlight is pure extension/webview logic with no VS Code API
 // surface that varies across the supported builds, so running the sweep on
 // every version would only re-prove the same mapping at 3× the suite cost.
-// Pin it to the oldest supported build (the compatibility floor) and keep it
-// out of the per-version screenshot/versioning scheme entirely — all
-// assertions here are declarative, no baselines.
+// Pin it to the oldest supported build (the compatibility floor) — one set of
+// baseline screenshots in version control instead of one per version.
 const versions: string[] = JSON.parse(
   fs.readFileSync(path.join(root, 'vscode-versions.json'), 'utf8'),
 );
@@ -85,6 +84,9 @@ test('highlights the declared diagram nodes for each selected source construct',
         await openSystemModule(workbox, webview, evaluateInVSCode, highlightCase.module);
         await selectSourceText(evaluateInVSCode, highlightCase.file, highlightCase.select);
         await assertHighlightedNodes(webview, highlightCase);
+        // Capture the moment the assertion above confirms: source selected on
+        // the right, matching diagram node(s) highlighted on the left.
+        await expect(workbox).toHaveScreenshot(`${highlightCase.id}.png`);
       });
     }
   } finally {
