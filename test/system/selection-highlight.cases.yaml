@@ -7,7 +7,10 @@
 #   id      unique slug
 #   module  module to open in the SVSCH diagram (from test/fixtures)
 #   file    workspace-relative path of the file to select text in
-#   select  exact text to select (first occurrence in the file)
+#   select  exact text to select (first occurrence in the file); a list
+#           exercises multiple selections against the same `expect` (e.g. an
+#           ideal selection plus non-ideal/partial ones), each getting its
+#           own screenshot
 #   expect  highlighted-node specs; each needs `kind`, `label` optional
 #           (several kinds — gate, alu, comb, … — always carry an empty label)
 #   exclusive  when false, extra highlighted nodes beyond `expect` are
@@ -63,10 +66,21 @@ cases:
     expect:
       - kind: mux
 
+  # Source-range intersection doesn't require an exact selection: any
+  # selection overlapping the gate's source range resolves to it, so a
+  # ragged selection (missing an operand, cut mid-operator, only whitespace
+  # trailing the last operand, or just a leading fragment) still highlights
+  # the same node as the ideal, full-expression selection.
   - id: gate-and-chain
     module: logical_gate_chains
     file: fixtures/logical_gate_chains.sv
-    select: 'a && b && c && d'
+    select:
+      - 'a && b && c && d' # ideal
+      - '&& b && c && d' # missing leading operand
+      - 'a && b && c &&' # missing trailing operand
+      - 'a && b && c &' # cut mid-operator
+      - 'a && b && c ' # trailing whitespace only, no operator
+      - 'a && b' # leading fragment only
     expect:
       - kind: gate
 

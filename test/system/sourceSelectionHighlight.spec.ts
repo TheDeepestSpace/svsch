@@ -19,7 +19,7 @@ interface HighlightCase {
   id: string;
   module: string;
   file: string;
-  select: string;
+  select: string | string[];
   exclusive?: boolean;
   expect: HighlightExpectation[];
 }
@@ -82,11 +82,22 @@ test('highlights the declared diagram nodes for each selected source construct',
     for (const highlightCase of cases) {
       await test.step(highlightCase.id, async () => {
         await openSystemModule(workbox, webview, evaluateInVSCode, highlightCase.module);
-        await selectSourceText(evaluateInVSCode, highlightCase.file, highlightCase.select);
-        await assertHighlightedNodes(webview, highlightCase);
-        // Capture the moment the assertion above confirms: source selected on
-        // the right, matching diagram node(s) highlighted on the left.
-        await expect(workbox).toHaveScreenshot(`${highlightCase.id}.png`);
+        // A single case may list several selections (e.g. an ideal one plus
+        // non-ideal/partial ones) that must all resolve to the same `expect`
+        // — each gets its own screenshot, the first keeping the bare
+        // `${id}.png` name so existing baselines stay put.
+        const selections = Array.isArray(highlightCase.select)
+          ? highlightCase.select
+          : [highlightCase.select];
+        for (const [index, sourceText] of selections.entries()) {
+          await selectSourceText(evaluateInVSCode, highlightCase.file, sourceText);
+          await assertHighlightedNodes(webview, highlightCase);
+          // Capture the moment the assertion above confirms: source selected
+          // on the right, matching diagram node(s) highlighted on the left.
+          const screenshotName =
+            index === 0 ? `${highlightCase.id}.png` : `${highlightCase.id}--${index}.png`;
+          await expect(workbox).toHaveScreenshot(screenshotName);
+        }
       });
     }
   } finally {
