@@ -13,10 +13,11 @@ permissions:
   contents: read
 
 concurrency:
-  # Multiple CI runs on master can complete close together; serialize their
-  # gh-pages pushes rather than relying solely on record-ci-duration.mjs's
-  # own retry-on-push-race loop.
-  group: gh-pages-publish-ci-duration
+  # Shared across every job/workflow that pushes to gh-pages (see ci.yml's
+  # merge_visual_reports, cleanup-video-galleries.yml) so pushes are
+  # serialized repo-wide rather than relying solely on
+  # record-ci-duration.mjs's own retry-on-push-race loop (#380).
+  group: gh-pages-publish
   cancel-in-progress: false
 
 jobs:
