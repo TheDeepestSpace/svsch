@@ -73,13 +73,24 @@ Given('I record the workspace directory state', async function (this: BddWorld) 
 // When steps
 // ---------------------------------------------------------------------------
 
-// Moves the (currently sole, active) diagram webview into a new editor
-// group below the current one, so a subsequently opened source file lands
-// in the original top group instead of tabbing over the diagram — keeping
-// both visible at once rather than one hiding the other.
+// `moveEditorToBelowGroup` is a relative "move the active editor" command
+// that turned out to be a silent no-op for the diagram webview in this
+// sandbox (verified: the resulting screenshot showed a single, unsplit
+// group). `vscode.setEditorLayout` instead directly sets the desired grid
+// state, so it doesn't depend on the diagram panel being resolved as "the
+// active editor" the way a relative move does. Orientation 0 lays the two
+// groups out as stacked rows (a horizontal divider, top/bottom) rather than
+// side-by-side columns — see the "3 columns" case for orientation 1 in
+// https://github.com/microsoft/vscode/blob/main/src/vs/workbench/services/editor/test/browser/editorGroupsService.test.ts.
+// The pre-existing diagram editor is preserved in the first (top) group,
+// leaving the second (bottom, ViewColumn.Two) group empty for the source
+// file opened by the next step.
 When('I arrange the diagram and the editor side by side', async function (this: BddWorld) {
   await this.evaluateInVSCode(async (vscode) => {
-    await vscode.commands.executeCommand('workbench.action.moveEditorToBelowGroup');
+    await vscode.commands.executeCommand('vscode.setEditorLayout', {
+      orientation: 0,
+      groups: [{}, {}],
+    });
   });
   await this._revealPanel();
   await this.takeScreenshot('Diagram and editor side by side');
@@ -106,7 +117,10 @@ When(
           document.positionAt(offset + selection.sourceText.length),
         );
         await vscode.window.showTextDocument(document, {
-          viewColumn: vscode.ViewColumn.One,
+          // The diagram occupies the first (top) group after the
+          // side-by-side arrange step; target the second (bottom) group so
+          // the source file doesn't tab over it.
+          viewColumn: vscode.ViewColumn.Two,
           selection: range,
         });
       },
