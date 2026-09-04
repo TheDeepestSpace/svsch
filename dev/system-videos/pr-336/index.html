@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>System videos · PR #336</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0 auto; max-width: 1500px; padding: 2rem; }
+    header { display: flex; gap: 1rem; align-items: end; justify-content: space-between; flex-wrap: wrap; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1rem; margin: .25rem 0 .5rem; }
+    .summary, .feature { color: #777; }
+    input, select { min-width: min(14rem, 100%); padding: .7rem; font: inherit; }
+    .controls { display: flex; gap: .5rem; flex-wrap: wrap; }
+    main { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .card { border: 1px solid #8886; border-radius: .5rem; overflow: hidden; background: #8881; border-left-width: 4px; }
+    .card[data-status="new"] { border-left-color: #2ea043; background: rgba(46, 160, 67, .12); }
+    .card[data-status="modified"] { border-left-color: #d29922; background: rgba(210, 153, 34, .12); }
+    .card[data-status="removed"] { border-left-color: #cf222e; background: rgba(207, 34, 46, .12); }
+    video { display: block; width: 100%; aspect-ratio: 32 / 23; background: #111; }
+    .removed-placeholder { display: flex; align-items: center; justify-content: center; text-align: center; aspect-ratio: 32 / 23; background: rgba(207, 34, 46, .2); color: #cf222e; font-size: .85rem; padding: 1rem; }
+    .details { padding: .8rem; }
+    .feature { font-size: .8rem; }
+    .bad { color: #d33; }
+    .badge { display: inline-block; margin-left: .5rem; padding: .1rem .4rem; border-radius: .25rem; font-size: .65rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; }
+    .badge-new { background: #2ea043; color: #fff; }
+    .badge-modified { background: #d29922; color: #1a1a1a; }
+    .badge-removed { background: #cf222e; color: #fff; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>System test videos · PR #336</h1>
+      <p class="summary">42 videos · 14.0 MiB · commit <a href="https://github.com/TheDeepestSpace/svsch/commit/bfaa45e0fcf689e9315f9c0aeaa09bd7c611fd6e">bfaa45e0</a></p>
+    </div>
+    <div class="controls">
+      <input id="filter" type="search" placeholder="Filter scenarios" aria-label="Filter scenarios">
+      <select id="statusFilter" aria-label="Filter by change status">
+        <option value="all">All</option>
+        <option value="new">New</option>
+        <option value="modified">Modified</option>
+        <option value="unchanged">Unchanged</option>
+        <option value="removed">Removed</option>
+      </select>
+    </div>
+  </header>
+  <main><article class="card" data-search="vs code 1.122.1 expands ten nested levels down to an and gate and captures the final view passed" data-status="unchanged">
+  <video controls preload="none" src="videos/04-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>expands ten nested levels down to an AND gate and captures the final view</h2>
+    <p>passed · 38.6s · 0.5 MiB</p>
+    <a href="videos/04-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 flags a module port dragged into a generate block passed" data-status="unchanged">
+  <video controls preload="none" src="videos/03-flags-a-module-port-dragged-into-a-generate-block.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>flags a module port dragged into a generate block</h2>
+    <p>passed · 25.8s · 0.3 MiB</p>
+    <a href="videos/03-flags-a-module-port-dragged-into-a-generate-block.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 hides the block-selection toolbar when only a cut net label is selected passed" data-status="unchanged">
+  <video controls preload="none" src="videos/14-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>hides the block-selection toolbar when only a cut net label is selected</h2>
+    <p>passed · 25.5s · 0.3 MiB</p>
+    <a href="videos/14-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 opens svsch diagram and captures screenshot + output logs passed" data-status="unchanged">
+  <video controls preload="none" src="videos/07-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>opens svsch diagram and captures screenshot + output logs</h2>
+    <p>passed · 32.4s · 0.4 MiB</p>
+    <a href="videos/07-opens-svsch-diagram-and-captures-screenshot-output-logs.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 preserves moved node positions after editing a connection route passed" data-status="unchanged">
+  <video controls preload="none" src="videos/09-preserves-moved-node-positions-after-editing-a-connection-route.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>preserves moved node positions after editing a connection route</h2>
+    <p>passed · 26.6s · 0.3 MiB</p>
+    <a href="videos/09-preserves-moved-node-positions-after-editing-a-connection-route.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 renders a resized node at its grown size when exporting the diagram as svg passed" data-status="unchanged">
+  <video controls preload="none" src="videos/01-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>renders a resized node at its grown size when exporting the diagram as SVG</h2>
+    <p>passed · 26.7s · 0.3 MiB</p>
+    <a href="videos/01-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the bottom side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/02-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the bottom side and preserves it after reload</h2>
+    <p>passed · 28.0s · 0.4 MiB</p>
+    <a href="videos/02-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the bottom-left corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/11-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the bottom-left corner and preserves it after reload</h2>
+    <p>passed · 28.1s · 0.4 MiB</p>
+    <a href="videos/11-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the bottom-right corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/10-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the bottom-right corner and preserves it after reload</h2>
+    <p>passed · 27.7s · 0.3 MiB</p>
+    <a href="videos/10-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the left side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/08-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the left side and preserves it after reload</h2>
+    <p>passed · 28.3s · 0.4 MiB</p>
+    <a href="videos/08-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the right side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/13-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the right side and preserves it after reload</h2>
+    <p>passed · 27.9s · 0.3 MiB</p>
+    <a href="videos/13-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the top side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/06-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the top side and preserves it after reload</h2>
+    <p>passed · 27.7s · 0.3 MiB</p>
+    <a href="videos/06-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the top-left corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/12-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the top-left corner and preserves it after reload</h2>
+    <p>passed · 27.8s · 0.4 MiB</p>
+    <a href="videos/12-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.122.1 resizes a register from the top-right corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/05-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.122.1</p>
+    <h2>resizes a register from the top-right corner and preserves it after reload</h2>
+    <p>passed · 27.7s · 0.3 MiB</p>
+    <a href="videos/05-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 expands ten nested levels down to an and gate and captures the final view passed" data-status="unchanged">
+  <video controls preload="none" src="videos/27-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>expands ten nested levels down to an AND gate and captures the final view</h2>
+    <p>passed · 36.7s · 0.5 MiB</p>
+    <a href="videos/27-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 flags a module port dragged into a generate block passed" data-status="unchanged">
+  <video controls preload="none" src="videos/18-flags-a-module-port-dragged-into-a-generate-block.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>flags a module port dragged into a generate block</h2>
+    <p>passed · 24.0s · 0.3 MiB</p>
+    <a href="videos/18-flags-a-module-port-dragged-into-a-generate-block.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 hides the block-selection toolbar when only a cut net label is selected passed" data-status="unchanged">
+  <video controls preload="none" src="videos/21-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>hides the block-selection toolbar when only a cut net label is selected</h2>
+    <p>passed · 23.3s · 0.3 MiB</p>
+    <a href="videos/21-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 opens svsch diagram and captures screenshot + output logs passed" data-status="unchanged">
+  <video controls preload="none" src="videos/25-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>opens svsch diagram and captures screenshot + output logs</h2>
+    <p>passed · 28.7s · 0.4 MiB</p>
+    <a href="videos/25-opens-svsch-diagram-and-captures-screenshot-output-logs.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 preserves moved node positions after editing a connection route passed" data-status="unchanged">
+  <video controls preload="none" src="videos/20-preserves-moved-node-positions-after-editing-a-connection-route.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>preserves moved node positions after editing a connection route</h2>
+    <p>passed · 24.3s · 0.3 MiB</p>
+    <a href="videos/20-preserves-moved-node-positions-after-editing-a-connection-route.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 renders a resized node at its grown size when exporting the diagram as svg passed" data-status="unchanged">
+  <video controls preload="none" src="videos/23-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>renders a resized node at its grown size when exporting the diagram as SVG</h2>
+    <p>passed · 24.1s · 0.3 MiB</p>
+    <a href="videos/23-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the bottom side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/16-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the bottom side and preserves it after reload</h2>
+    <p>passed · 25.8s · 0.4 MiB</p>
+    <a href="videos/16-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the bottom-left corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/15-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the bottom-left corner and preserves it after reload</h2>
+    <p>passed · 25.7s · 0.3 MiB</p>
+    <a href="videos/15-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the bottom-right corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/26-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the bottom-right corner and preserves it after reload</h2>
+    <p>passed · 25.7s · 0.3 MiB</p>
+    <a href="videos/26-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the left side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/28-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the left side and preserves it after reload</h2>
+    <p>passed · 26.2s · 0.3 MiB</p>
+    <a href="videos/28-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the right side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/19-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the right side and preserves it after reload</h2>
+    <p>passed · 25.6s · 0.3 MiB</p>
+    <a href="videos/19-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the top side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/24-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the top side and preserves it after reload</h2>
+    <p>passed · 25.8s · 0.3 MiB</p>
+    <a href="videos/24-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the top-left corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/17-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the top-left corner and preserves it after reload</h2>
+    <p>passed · 25.9s · 0.3 MiB</p>
+    <a href="videos/17-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.90.0 resizes a register from the top-right corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/22-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.90.0</p>
+    <h2>resizes a register from the top-right corner and preserves it after reload</h2>
+    <p>passed · 26.0s · 0.4 MiB</p>
+    <a href="videos/22-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 expands ten nested levels down to an and gate and captures the final view passed" data-status="unchanged">
+  <video controls preload="none" src="videos/29-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>expands ten nested levels down to an AND gate and captures the final view</h2>
+    <p>passed · 30.5s · 0.5 MiB</p>
+    <a href="videos/29-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 flags a module port dragged into a generate block passed" data-status="unchanged">
+  <video controls preload="none" src="videos/31-flags-a-module-port-dragged-into-a-generate-block.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>flags a module port dragged into a generate block</h2>
+    <p>passed · 18.8s · 0.3 MiB</p>
+    <a href="videos/31-flags-a-module-port-dragged-into-a-generate-block.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 hides the block-selection toolbar when only a cut net label is selected passed" data-status="unchanged">
+  <video controls preload="none" src="videos/36-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>hides the block-selection toolbar when only a cut net label is selected</h2>
+    <p>passed · 18.4s · 0.2 MiB</p>
+    <a href="videos/36-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 opens svsch diagram and captures screenshot + output logs passed" data-status="unchanged">
+  <video controls preload="none" src="videos/37-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>opens svsch diagram and captures screenshot + output logs</h2>
+    <p>passed · 23.8s · 0.3 MiB</p>
+    <a href="videos/37-opens-svsch-diagram-and-captures-screenshot-output-logs.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 preserves moved node positions after editing a connection route passed" data-status="unchanged">
+  <video controls preload="none" src="videos/38-preserves-moved-node-positions-after-editing-a-connection-route.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>preserves moved node positions after editing a connection route</h2>
+    <p>passed · 19.4s · 0.3 MiB</p>
+    <a href="videos/38-preserves-moved-node-positions-after-editing-a-connection-route.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 renders a resized node at its grown size when exporting the diagram as svg passed" data-status="unchanged">
+  <video controls preload="none" src="videos/34-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>renders a resized node at its grown size when exporting the diagram as SVG</h2>
+    <p>passed · 18.7s · 0.2 MiB</p>
+    <a href="videos/34-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the bottom side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/42-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the bottom side and preserves it after reload</h2>
+    <p>passed · 20.2s · 0.3 MiB</p>
+    <a href="videos/42-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the bottom-left corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/32-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the bottom-left corner and preserves it after reload</h2>
+    <p>passed · 20.3s · 0.3 MiB</p>
+    <a href="videos/32-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the bottom-right corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/39-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the bottom-right corner and preserves it after reload</h2>
+    <p>passed · 20.3s · 0.3 MiB</p>
+    <a href="videos/39-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the left side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/35-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the left side and preserves it after reload</h2>
+    <p>passed · 20.0s · 0.3 MiB</p>
+    <a href="videos/35-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the right side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/40-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the right side and preserves it after reload</h2>
+    <p>passed · 20.2s · 0.3 MiB</p>
+    <a href="videos/40-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the top side and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/33-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the top side and preserves it after reload</h2>
+    <p>passed · 20.1s · 0.3 MiB</p>
+    <a href="videos/33-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the top-left corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/30-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the top-left corner and preserves it after reload</h2>
+    <p>passed · 20.2s · 0.3 MiB</p>
+    <a href="videos/30-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article>
+<article class="card" data-search="vs code 1.91.0 resizes a register from the top-right corner and preserves it after reload passed" data-status="unchanged">
+  <video controls preload="none" src="videos/41-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"></video>
+  <div class="details">
+    <p class="feature">VS Code 1.91.0</p>
+    <h2>resizes a register from the top-right corner and preserves it after reload</h2>
+    <p>passed · 20.3s · 0.3 MiB</p>
+    <a href="videos/41-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm">open video</a>
+  </div>
+</article></main>
+  <script>
+    const filter = document.querySelector('#filter');
+    const statusFilter = document.querySelector('#statusFilter');
+    const cards = [...document.querySelectorAll('.card')];
+    function applyFilters() {
+      const query = filter.value.trim().toLowerCase();
+      const status = statusFilter.value;
+      for (const card of cards) {
+        const matchesQuery = card.dataset.search.includes(query);
+        const matchesStatus = status === 'all' || card.dataset.status === status;
+        card.hidden = !(matchesQuery && matchesStatus);
+      }
+    }
+    filter.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+  </script>
+</body>
+</html>
