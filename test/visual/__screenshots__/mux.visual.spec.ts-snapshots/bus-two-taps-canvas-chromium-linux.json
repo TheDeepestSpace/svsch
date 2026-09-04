@@ -18,13 +18,13 @@
             "direction": "input"
           },
           {
-            "id": "out:instr_6:0_",
-            "name": "instr[6:0]",
+            "id": "out:instr_30_",
+            "name": "instr[30]",
             "direction": "output"
           },
           {
-            "id": "out:instr_30_",
-            "name": "instr[30]",
+            "id": "out:instr_6:0_",
+            "name": "instr[6:0]",
             "direction": "output"
           }
         ]
@@ -35,7 +35,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 84
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -75,7 +75,7 @@
       "type": "hdl",
       "position": {
         "x": 744,
-        "y": 36
+        "y": 84
       },
       "width": 144,
       "height": 24,
@@ -98,7 +98,7 @@
       "target": "port:bus_two_taps:flag",
       "sourceHandle": "out:instr_30_",
       "targetHandle": "port:flag",
-      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
+      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
     },
     {
       "id": "edge:bus:bus_two_taps:instr:port:bus_two_taps:opcode:opcode",
@@ -106,7 +106,7 @@
       "target": "port:bus_two_taps:opcode",
       "sourceHandle": "out:instr_6:0_",
       "targetHandle": "port:opcode",
-      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     },
     {
       "id": "edge:port:bus_two_taps:instr:bus:bus_two_taps:instr:instr",

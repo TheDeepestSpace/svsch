@@ -1578,6 +1578,9 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(bus?.ports.find((port) => port.name.endsWith('[6:0]'))?.width).toBe('[6:0]');
     expect(bus?.ports.find((port) => port.name.endsWith('[30]'))?.width).toBe('[0:0]');
     expect(
+      bus?.ports.filter((port) => port.direction === 'output').map((port) => port.label),
+    ).toEqual(['[30]', '[14:12]', '[6:0]']);
+    expect(
       busSlices.nodes.find((node) => node.id === 'reg:bus_slices:funct3_q')?.metadata?.width,
     ).toBe('[2:0]');
 

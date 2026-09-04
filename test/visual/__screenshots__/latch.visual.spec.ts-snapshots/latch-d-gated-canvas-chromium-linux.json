@@ -1,0 +1,415 @@
+{
+  "nodes": [
+    {
+      "id": "cut-label:gate:d_latch_gated:r_n:nand:out:r_n:sink:edge:gate:d_latch_gated:r_n:nand:gate:d_latch_gated:qn:nand:r_n",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 72
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:gate:d_latch_gated:r_n:nand:out:r_n:source",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 336
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:gate:d_latch_gated:s_n:nand:out:s_n:sink:edge:gate:d_latch_gated:s_n:nand:gate:d_latch_gated:q:nand:s_n",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 72
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:gate:d_latch_gated:s_n:nand:out:s_n:source",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 288
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:d_latch_gated:q:nand",
+      "type": "hdl",
+      "position": {
+        "x": 576,
+        "y": 72
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:d_latch_gated:qn:nand",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 72
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:qn",
+            "name": "qn",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:d_latch_gated:r_n:nand",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 312
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:r_n",
+            "name": "r_n",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:d_latch_gated:s_n:nand",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 264
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:s_n",
+            "name": "s_n",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inverter:d_latch_gated:r_n_in0:expr",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 192
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "in:d",
+            "name": "d",
+            "direction": "input"
+          },
+          {
+            "id": "out:r_n_in0",
+            "name": "r_n_in0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:d_latch_gated:d",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 276
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:d",
+            "name": "d",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:d_latch_gated:en",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 372
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:en",
+            "name": "en",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:d_latch_gated:q",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:d_latch_gated:qn",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:qn",
+            "name": "qn",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "cut-stub:gate:d_latch_gated:r_n:nand:out:r_n:sink:edge:gate:d_latch_gated:r_n:nand:gate:d_latch_gated:qn:nand:r_n",
+      "source": "cut-label:gate:d_latch_gated:r_n:nand:out:r_n:sink:edge:gate:d_latch_gated:r_n:nand:gate:d_latch_gated:qn:nand:r_n",
+      "target": "gate:d_latch_gated:qn:nand",
+      "sourceHandle": "cut",
+      "targetHandle": "port:in0",
+      "path": "M 120 96 L 120 96 L 144 96"
+    },
+    {
+      "id": "cut-stub:gate:d_latch_gated:r_n:nand:out:r_n:source",
+      "source": "gate:d_latch_gated:r_n:nand",
+      "target": "cut-label:gate:d_latch_gated:r_n:nand:out:r_n:source",
+      "sourceHandle": "out:r_n",
+      "targetHandle": "cut",
+      "path": "M 864 360 L 888 360 L 888 360"
+    },
+    {
+      "id": "cut-stub:gate:d_latch_gated:s_n:nand:out:s_n:sink:edge:gate:d_latch_gated:s_n:nand:gate:d_latch_gated:q:nand:s_n",
+      "source": "cut-label:gate:d_latch_gated:s_n:nand:out:s_n:sink:edge:gate:d_latch_gated:s_n:nand:gate:d_latch_gated:q:nand:s_n",
+      "target": "gate:d_latch_gated:q:nand",
+      "sourceHandle": "cut",
+      "targetHandle": "port:in0",
+      "path": "M 552 96 L 552 96 L 576 96"
+    },
+    {
+      "id": "cut-stub:gate:d_latch_gated:s_n:nand:out:s_n:source",
+      "source": "gate:d_latch_gated:s_n:nand",
+      "target": "cut-label:gate:d_latch_gated:s_n:nand:out:s_n:source",
+      "sourceHandle": "out:s_n",
+      "targetHandle": "cut",
+      "path": "M 456 312 L 480 312 L 480 312"
+    },
+    {
+      "id": "edge:gate:d_latch_gated:q:nand:gate:d_latch_gated:qn:nand:q",
+      "source": "gate:d_latch_gated:q:nand",
+      "target": "gate:d_latch_gated:qn:nand",
+      "sourceHandle": "out:q",
+      "targetHandle": "port:in1",
+      "path": "M 672 120 L 696 120 L 696 192 L 528 192 L 528 168 L 336 168 L 336 192 L 0 192 L 0 144 L 120 144 L 144 144"
+    },
+    {
+      "id": "edge:gate:d_latch_gated:q:nand:port:d_latch_gated:q:q",
+      "source": "gate:d_latch_gated:q:nand",
+      "target": "port:d_latch_gated:q",
+      "sourceHandle": "out:q",
+      "targetHandle": "port:q",
+      "path": "M 672 120 L 696 120 L 864 120 L 888 120"
+    },
+    {
+      "id": "edge:gate:d_latch_gated:qn:nand:gate:d_latch_gated:q:nand:qn",
+      "source": "gate:d_latch_gated:qn:nand",
+      "target": "gate:d_latch_gated:q:nand",
+      "sourceHandle": "out:qn",
+      "targetHandle": "port:in1",
+      "path": "M 240 120 L 264 120 L 432 120 L 432 144 L 552 144 L 576 144"
+    },
+    {
+      "id": "edge:gate:d_latch_gated:qn:nand:port:d_latch_gated:qn:qn",
+      "source": "gate:d_latch_gated:qn:nand",
+      "target": "port:d_latch_gated:qn",
+      "sourceHandle": "out:qn",
+      "targetHandle": "port:qn",
+      "path": "M 240 120 L 264 120 L 432 120 L 432 48 L 456 48 L 480 48"
+    },
+    {
+      "id": "edge:inverter:d_latch_gated:r_n_in0:expr:gate:d_latch_gated:r_n:nand:r_n_in0",
+      "source": "inverter:d_latch_gated:r_n_in0:expr",
+      "target": "gate:d_latch_gated:r_n:nand",
+      "sourceHandle": "out:r_n_in0",
+      "targetHandle": "port:in0",
+      "path": "M 462.797 216 L 480 216 L 672 216 L 672 336 L 744 336 L 768 336"
+    },
+    {
+      "id": "edge:port:d_latch_gated:d:gate:d_latch_gated:s_n:nand:d",
+      "source": "port:d_latch_gated:d",
+      "target": "gate:d_latch_gated:s_n:nand",
+      "sourceHandle": "port:d",
+      "targetHandle": "port:in0",
+      "path": "M 144 288 L 168 288 L 336 288 L 360 288"
+    },
+    {
+      "id": "edge:port:d_latch_gated:d:inverter:d_latch_gated:r_n_in0:expr:d",
+      "source": "port:d_latch_gated:d",
+      "target": "inverter:d_latch_gated:r_n_in0:expr",
+      "sourceHandle": "port:d",
+      "targetHandle": "in:d",
+      "path": "M 144 288 L 168 288 L 336 288 L 336 216 L 408 216 L 432 216"
+    },
+    {
+      "id": "edge:port:d_latch_gated:en:gate:d_latch_gated:r_n:nand:en",
+      "source": "port:d_latch_gated:en",
+      "target": "gate:d_latch_gated:r_n:nand",
+      "sourceHandle": "port:en",
+      "targetHandle": "port:in1",
+      "path": "M 144 384 L 168 384 L 744 384 L 768 384"
+    },
+    {
+      "id": "edge:port:d_latch_gated:en:gate:d_latch_gated:s_n:nand:en",
+      "source": "port:d_latch_gated:en",
+      "target": "gate:d_latch_gated:s_n:nand",
+      "sourceHandle": "port:en",
+      "targetHandle": "port:in1",
+      "path": "M 144 384 L 168 384 L 336 384 L 336 336 L 360 336"
+    }
+  ]
+}

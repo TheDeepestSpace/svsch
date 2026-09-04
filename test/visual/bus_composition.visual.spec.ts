@@ -264,10 +264,21 @@ test.describe('Bus Composition Visual Rendering', () => {
       );
 
       expect(arrayBreakout).toBeDefined();
+      expect(
+        arrayBreakout?.ports
+          .filter((port) => port.direction === 'output')
+          .map((port) => port.label),
+      ).toEqual(['[3]', '[2]', '[1]', '[0]']);
 
       const busBreakoutNode = page.locator('.hdl-bus-array-breakout');
       await expect(busBreakoutNode).toBeVisible();
       await expect(busBreakoutNode.locator('.svsch-bus-tap')).toHaveCount(4);
+      await expect(busBreakoutNode.locator('.svsch-bus-tap-label')).toHaveText([
+        '[3]',
+        '[2]',
+        '[1]',
+        '[0]',
+      ]);
 
       await expectGraphAndScreenshot(page, 'array-stack-breakout-canvas.png', {
         clip: await paddedGraphClip(page),
