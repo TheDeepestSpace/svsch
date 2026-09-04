@@ -6,4 +6,15 @@ runs:
   steps:
     - name: Run npm audit
       shell: bash
-      run: npm audit --audit-level=low
+      run: |
+        max_attempts=3
+        attempt=1
+        until npm audit --audit-level=low; do
+          exit_code=$?
+          if [ "$attempt" -ge "$max_attempts" ]; then
+            exit "$exit_code"
+          fi
+          echo "npm audit failed (attempt $attempt/$max_attempts), retrying in 30s..."
+          attempt=$((attempt + 1))
+          sleep 30
+        done
