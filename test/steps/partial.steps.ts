@@ -25,6 +25,14 @@ function cutNetLabelNodes(webviewPage: FrameLocator, label: string) {
   });
 }
 
+// The currently-active panel's real (non-label) block count — unlike
+// partialPaneBlockCount below, this assumes the world is already switched to
+// the pane of interest (see "I switch to the partial diagram panel") rather
+// than scanning every outer iframe for the partial shell.
+async function activePaneBlockCount(world: BddWorld): Promise<number> {
+  return world.webviewPage.locator('.react-flow__node:not([data-node-kind="netLabel"])').count();
+}
+
 // The number of real (non-label) blocks currently rendered in the partial
 // pane, or null while no partial pane webview exists yet. Scans the outer
 // webview iframes the same way findPanelFrameIndex does, without disturbing
@@ -142,5 +150,61 @@ Then(
     await expect(labelNode).toBeVisible();
     await labelNode.hover({ force: true });
     await expect(labelNode.locator('.hdl-net-label-extend')).toBeVisible();
+  },
+);
+
+// Repeatedly clicks whatever cut net label happens to be first, until none
+// remain — i.e. every wire the source module has gets manually extended back
+// in, one node at a time. Deliberately doesn't address labels by name: cut
+// nets sourced from a mux or literal (as opposed to a port/instance/register/
+// latch) get an anonymous "NET_n" fallback label (see defaultNetCutLabel in
+// mergeLayout.ts) whose exact text and numbering shift as the partial grows,
+// so asserting against it here would be asserting an implementation detail
+// rather than the feature. Each successful extend adds exactly one new real
+// block (the far end of that label's own edge — see extendNet in
+// partialDiagramPanel.ts), which is what the block-count poll below waits on.
+When('I extend every cut net in the partial diagram', async function (this: BddWorld) {
+  const netLabels = this.webviewPage.locator('[data-node-kind="netLabel"]');
+  const maxExtends = 40;
+  for (let i = 0; i < maxExtends; i++) {
+    if ((await netLabels.count()) === 0) break;
+    const blocksBefore = await activePaneBlockCount(this);
+    const label = netLabels.first();
+    await label.hover({ force: true });
+    const extend = label.locator('.hdl-net-label-extend');
+    await expect(extend).toBeVisible();
+    await extend.click();
+    await expect
+      .poll(() => activePaneBlockCount(this), { timeout: 10_000 })
+      .toBeGreaterThan(blocksBefore);
+  }
+  // Clear the hover so the following screenshot isn't captured mid-reveal.
+  await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
+  await expect(netLabels).toHaveCount(0, { timeout: 10_000 });
+  await this.takeScreenshot('After extending every cut net in the partial diagram');
+});
+
+Then('I should not see any cut net labels in the partial diagram', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('[data-node-kind="netLabel"]')).toHaveCount(0);
+});
+
+// The partial pane's toolbar mirrors the main diagram's (see DiagramToolbar
+// in main.tsx — only the module select and Export SVG are gated off for
+// partial), so "Auto Layout All" is available and releases every real block
+// for one ELK pass exactly like it does on the main diagram. Unlike the main
+// diagram's generic "I click {string} in the diagram toolbar" step, this
+// can't poll the saved-layout file for a diff: the partial pane's layout
+// lives only in the extension host's memory and is never written to disk
+// (see PartialDiagramPanel) — the round trip is given time to settle instead.
+When(
+  'I click "Auto Layout All" in the partial diagram toolbar',
+  async function (this: BddWorld) {
+    await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
+    const button = this.webviewPage.locator('.toolbar button', { hasText: 'Auto Layout All' });
+    await expect(button).toBeVisible();
+    await button.click();
+    await this.workbox.waitForTimeout(1000);
+    await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 10_000 });
+    await this.takeScreenshot('After clicking Auto Layout All in the partial diagram');
   },
 );
