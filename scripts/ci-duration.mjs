@@ -7,6 +7,7 @@ import {
   renderHistoryTrendChart,
   mergeBenchmarkHistory,
 } from './render-benchmark-charts.mjs';
+import { renderDashboardPage } from './dashboard-page-shell.mjs';
 
 // gh-pages paths for the CI workflow wall-clock-duration history (#282) —
 // kept alongside dev/bench (the diagram-generation benchmarks) but in its
@@ -78,42 +79,13 @@ export function renderCiDurationTrendChart({ history, currentPoint, currentLabel
 // generator rather than reusing it. The trend chart here is already a
 // static SVG (see renderCiDurationTrendChart), so the "viewer" is just this
 // page embedding it.
-export const INDEX_HTML = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
-    <style>
-      html {
-        font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-        -webkit-font-smoothing: antialiased;
-        background-color: #fff;
-        font-size: 16px;
-      }
-      body {
-        color: #4a4a4a;
-        margin: 8px;
-      }
-      h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
-      }
-      img {
-        max-width: 100%;
-      }
-      .small {
-        font-size: 0.75rem;
-      }
-    </style>
-    <title>CI Duration</title>
-  </head>
-  <body>
-    <h1>CI workflow duration</h1>
-    <p class="small">Wall-clock duration of the CI workflow's push-to-master runs. Raw data: <a href="history.json">history.json</a>.</p>
-    <img src="trend.svg" alt="CI workflow duration trend" />
-  </body>
-</html>
-`;
+export const INDEX_HTML = renderDashboardPage({
+  title: 'CI Duration',
+  heading: 'CI workflow duration',
+  description:
+    'Wall-clock duration of the CI workflow\'s push-to-master runs. Raw data: <a href="history.json">history.json</a>.',
+  bodyHtml: '<img src="trend.svg" alt="CI workflow duration trend" />',
+});
 
 function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
