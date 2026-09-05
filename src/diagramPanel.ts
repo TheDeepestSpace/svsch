@@ -171,6 +171,15 @@ export class DiagramPanel {
    */
   onAddToPartial?: (module: DesignModule, nodeIds: string[]) => Promise<void> | void;
 
+  /**
+   * Delegate fired when the main panel stops showing `moduleName` — either
+   * navigating to another module or closing the panel entirely. Set by
+   * extension.ts to close the partial pane (issue #408): v1 scopes one
+   * partial pane to one module, so it can't survive its source module going
+   * out of view.
+   */
+  onLeaveModule?: (moduleName: string) => void;
+
   private panel?: vscode.WebviewPanel;
   private readonly elaborationInvalidationDisposable: Disposable;
   private rebuildVersion = 0;
@@ -388,6 +397,9 @@ export class DiagramPanel {
   dispose(): void {
     this.elaborationInvalidationDisposable.dispose();
     this.panel = undefined;
+    if (this.currentModule) {
+      this.onLeaveModule?.(this.currentModule);
+    }
     this.onDispose();
   }
 
@@ -398,6 +410,9 @@ export class DiagramPanel {
     }
     if (message.type === 'openModule') {
       if (this.graph?.modules[message.moduleName]) {
+        if (this.currentModule && this.currentModule !== message.moduleName) {
+          this.onLeaveModule?.(this.currentModule);
+        }
         this.currentModule = message.moduleName;
         const module = this.graph.modules[message.moduleName];
         if (isListOnlyPlaceholder(module)) {

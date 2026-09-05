@@ -41,6 +41,13 @@ export function activate(context: vscode.ExtensionContext): void {
       panel.onAddToPartial = async (module, nodeIds) => {
         await getPartialPanel().addNodes(module, nodeIds);
       };
+      // v1 scopes the partial pane to one module (issue #403); once the main
+      // panel leaves that module, the pane no longer applies. Check the
+      // existing `partialPanel` variable rather than `getPartialPanel()`, so
+      // navigating away doesn't spuriously create a pane that was never open.
+      panel.onLeaveModule = () => {
+        partialPanel?.close();
+      };
     }
     return panel;
   };

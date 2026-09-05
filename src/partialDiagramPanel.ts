@@ -109,6 +109,17 @@ export class PartialDiagramPanel {
     this.onDispose();
   }
 
+  /**
+   * Closes the pane programmatically (e.g. the main panel navigated away
+   * from the module the pane is scoped to — v1 only supports one partial
+   * pane per module, see issue #408). Disposing the real webview panel
+   * cascades into `dispose()` via `onDidDispose`, same as the user closing
+   * the tab by hand.
+   */
+  close(): void {
+    this.panel?.dispose();
+  }
+
   private ensurePanel(): void {
     if (this.panel) {
       return;

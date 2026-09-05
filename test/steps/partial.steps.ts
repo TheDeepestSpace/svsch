@@ -92,6 +92,10 @@ Then('there should be exactly one partial diagram panel', async function (this: 
   await expect(this.workbox.locator(PARTIAL_TAB_SELECTOR)).toHaveCount(1);
 });
 
+Then('the SVSCH partial diagram panel is closed', async function (this: BddWorld) {
+  await expect(this.workbox.locator(PARTIAL_TAB_SELECTOR)).toHaveCount(0);
+});
+
 When('I switch to the partial diagram panel', async function (this: BddWorld) {
   await this.switchToPanel('partial');
   // Wait for content: the partial always holds at least the block it was
