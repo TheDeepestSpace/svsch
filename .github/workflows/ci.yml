@@ -1168,8 +1168,14 @@ jobs:
     # into the combined PR stats comment below — mirrors
     # report_benchmark_stats above, run at the same point in the workflow
     # graph so the "so far" preview covers a comparable share of the run.
-    needs: [prep, build_ci_image, merge_visual_reports, test_system]
+    #
+    # Chained after report_benchmark_stats (see report_backend_coverage_stats'
+    # comment above) so both never become ready for the gh-pages-publish
+    # concurrency group at the same instant as report_memory_stats below.
+    needs:
+      [prep, build_ci_image, merge_visual_reports, test_system, report_benchmark_stats]
     if: >
+      always() &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
@@ -1235,8 +1241,22 @@ jobs:
     # shard/leg across all three profiled suites (visual, BDD, system), not
     # just visual+system like those two, since it's the only one of the
     # three that also covers BDD.
-    needs: [prep, build_ci_image, merge_visual_reports, merge_bdd_reports, test_system]
+    #
+    # Chained after report_ci_duration_stats (see report_backend_coverage_stats'
+    # comment above) so the three gh-pages-publish jobs gated on
+    # merge_visual_reports/test_system don't all queue for the concurrency
+    # group in the same instant.
+    needs:
+      [
+        prep,
+        build_ci_image,
+        merge_visual_reports,
+        merge_bdd_reports,
+        test_system,
+        report_ci_duration_stats,
+      ]
     if: >
+      always() &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
@@ -1354,8 +1374,19 @@ jobs:
     # for report_pr_stats to fold into the combined PR stats comment below —
     # mirrors report_coverage_stats above, for the C++ backend's gcov/lcov
     # data instead of vitest's.
-    needs: [prep, build_ci_image, collect_backend_coverage]
+    #
+    # Chained after report_coverage_stats (rather than running in parallel)
+    # so the two never queue for the gh-pages-publish concurrency group at
+    # the same instant — GitHub Actions only keeps one pending job per group
+    # and cancels the previous pending job when a new one arrives, so 3+
+    # simultaneous claimants cause cascading cancellations instead of
+    # queueing (#421/#422 follow-up). `always()` lets this still run if
+    # report_coverage_stats's own push failed, matching the existing
+    # tolerance for a missing coverage artifact below.
+    needs:
+      [prep, build_ci_image, collect_backend_coverage, report_coverage_stats]
     if: >
+      always() &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
