@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.68% </span>
+                <span class="strong">87.6% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>840/958</span>
+                <span class='fraction'>841/960</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">79.64% </span>
+                <span class="strong">79.48% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>806/1012</span>
+                <span class='fraction'>810/1019</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.4% </span>
+                <span class="strong">89.3% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>734/821</span>
+                <span class='fraction'>735/823</span>
             </div>
         
             
@@ -2444,7 +2444,20 @@
 <a name='L2379'></a><a href='#L2379'>2379</a>
 <a name='L2380'></a><a href='#L2380'>2380</a>
 <a name='L2381'></a><a href='#L2381'>2381</a>
-<a name='L2382'></a><a href='#L2382'>2382</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">23x</span>
+<a name='L2382'></a><a href='#L2382'>2382</a>
+<a name='L2383'></a><a href='#L2383'>2383</a>
+<a name='L2384'></a><a href='#L2384'>2384</a>
+<a name='L2385'></a><a href='#L2385'>2385</a>
+<a name='L2386'></a><a href='#L2386'>2386</a>
+<a name='L2387'></a><a href='#L2387'>2387</a>
+<a name='L2388'></a><a href='#L2388'>2388</a>
+<a name='L2389'></a><a href='#L2389'>2389</a>
+<a name='L2390'></a><a href='#L2390'>2390</a>
+<a name='L2391'></a><a href='#L2391'>2391</a>
+<a name='L2392'></a><a href='#L2392'>2392</a>
+<a name='L2393'></a><a href='#L2393'>2393</a>
+<a name='L2394'></a><a href='#L2394'>2394</a>
+<a name='L2395'></a><a href='#L2395'>2395</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">23x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2592,7 +2605,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">186x</span>
-<span class="cline-any cline-yes">2135x</span>
+<span class="cline-any cline-yes">2099x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">186x</span>
@@ -4755,6 +4768,19 @@
 <span class="cline-any cline-yes">2346x</span>
 <span class="cline-any cline-yes">22x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2346x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -7141,6 +7167,19 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
           source: node.source,
         });
       }
+&nbsp;
+      // Mirrors the inferred-latch warning above: the backend synthesizes a
+      // register-kind node standing in for a declared array/memory that's
+      // read somewhere but never procedurally written, so its "in" port has
+      // a source to connect to instead of dangling. Surface why that stand-in
+      // exists rather than leaving it looking like an ordinary register.
+      <span class="missing-if-branch" title="if path not taken" >I</span>if (node.kind === 'register' &amp;&amp; node.metadata?.isArrayNode &amp;&amp; node.metadata?.inferred) {
+<span class="cstat-no" title="statement not covered" >        graph.diagnostics.push({</span>
+          severity: 'warning',
+          message: `${modName}.${node.label}: ${node.metadata.reason ?? 'declared but never written'}`,
+          source: node.source,
+        });
+      }
     }
 &nbsp;
     for (const edge of module.edges) {
@@ -7213,7 +7252,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-04T02:23:03.824Z
+                at 2026-09-05T21:17:35.873Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
