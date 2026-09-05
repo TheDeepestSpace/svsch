@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-05 11:11:08</td>
+            <td class="headerValue">2026-09-05 11:43:16</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">37</td>
@@ -1874,28 +1874,28 @@
 <a name="1812"><span class="lineNum">    1812 </span><span class="lineNoCov">          0 :     }</span></a>
 <a name="1813"><span class="lineNum">    1813 </span><span class="lineNoCov">          0 : }</span></a>
 <a name="1814"><span class="lineNum">    1814 </span>            : </a>
-<a name="1815"><span class="lineNum">    1815 </span><span class="lineCov">     143995 : void DesignExtractor::collectIdentifierHandlesRecursive(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; h) {</span></a>
-<a name="1816"><span class="lineNum">    1816 </span><span class="lineCov">     143995 :     if (!handle) return;</span></a>
-<a name="1817"><span class="lineNum">    1817 </span><span class="lineCov">     143995 :     int type = vpi_get(vpiType, handle);</span></a>
+<a name="1815"><span class="lineNum">    1815 </span><span class="lineCov">     143983 : void DesignExtractor::collectIdentifierHandlesRecursive(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; h) {</span></a>
+<a name="1816"><span class="lineNum">    1816 </span><span class="lineCov">     143983 :     if (!handle) return;</span></a>
+<a name="1817"><span class="lineNum">    1817 </span><span class="lineCov">     143983 :     int type = vpi_get(vpiType, handle);</span></a>
 <a name="1818"><span class="lineNum">    1818 </span>            :     </a>
-<a name="1819"><span class="lineNum">    1819 </span><span class="lineCov">     143995 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == 44 || type == vpiBitSelect || type == vpiPartSelect || type == vpiParameter || vpi_get(vpiLocalParam, handle)) {</span></a>
-<a name="1820"><span class="lineNum">    1820 </span><span class="lineCov">     101235 :         h.push_back(handle);</span></a>
+<a name="1819"><span class="lineNum">    1819 </span><span class="lineCov">     143983 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == 44 || type == vpiBitSelect || type == vpiPartSelect || type == vpiParameter || vpi_get(vpiLocalParam, handle)) {</span></a>
+<a name="1820"><span class="lineNum">    1820 </span><span class="lineCov">     101225 :         h.push_back(handle);</span></a>
 <a name="1821"><span class="lineNum">    1821 </span>            :     }</a>
 <a name="1822"><span class="lineNum">    1822 </span>            : </a>
 <a name="1823"><span class="lineNum">    1823 </span>            :     // Recurse into properties</a>
-<a name="1824"><span class="lineNum">    1824 </span><span class="lineCov">    1727940 :     for (int prop : {vpiStmt, vpiElseStmt, vpiCondition, vpiRhs, vpiLhs, vpiIndex, vpiLeftRange, vpiRightRange, vpiArgument, vpiForInitStmt, vpiForIncStmt}) {</span></a>
-<a name="1825"><span class="lineNum">    1825 </span><span class="lineCov">    1583945 :         vpiHandle p = vpi_handle(prop, handle);</span></a>
-<a name="1826"><span class="lineNum">    1826 </span><span class="lineCov">    1583945 :         if (p &amp;&amp; p != handle) collectIdentifierHandlesRecursive(p, h);</span></a>
+<a name="1824"><span class="lineNum">    1824 </span><span class="lineCov">    1727796 :     for (int prop : {vpiStmt, vpiElseStmt, vpiCondition, vpiRhs, vpiLhs, vpiIndex, vpiLeftRange, vpiRightRange, vpiArgument, vpiForInitStmt, vpiForIncStmt}) {</span></a>
+<a name="1825"><span class="lineNum">    1825 </span><span class="lineCov">    1583813 :         vpiHandle p = vpi_handle(prop, handle);</span></a>
+<a name="1826"><span class="lineNum">    1826 </span><span class="lineCov">    1583813 :         if (p &amp;&amp; p != handle) collectIdentifierHandlesRecursive(p, h);</span></a>
 <a name="1827"><span class="lineNum">    1827 </span>            :     }</a>
 <a name="1828"><span class="lineNum">    1828 </span>            : </a>
 <a name="1829"><span class="lineNum">    1829 </span>            :     // Recurse into iterators</a>
-<a name="1830"><span class="lineNum">    1830 </span><span class="lineCov">     719975 :     for (int iter_type : {vpiOperand, vpiStmt, vpiCaseItem, vpiArgument}) {</span></a>
-<a name="1831"><span class="lineNum">    1831 </span><span class="lineCov">     575980 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
-<a name="1832"><span class="lineNum">    1832 </span><span class="lineCov">     575980 :         if (itr) {</span></a>
-<a name="1833"><span class="lineNum">    1833 </span><span class="lineCov">      68755 :             while (vpiHandle s = vpi_scan(itr)) {</span></a>
-<a name="1834"><span class="lineNum">    1834 </span><span class="lineCov">      43936 :                 if (s != handle) collectIdentifierHandlesRecursive(s, h);</span></a>
-<a name="1835"><span class="lineNum">    1835 </span><span class="lineCov">      43936 :             }</span></a>
-<a name="1836"><span class="lineNum">    1836 </span><span class="lineCov">      24819 :             vpi_release_handle(itr);</span></a>
+<a name="1830"><span class="lineNum">    1830 </span><span class="lineCov">     719915 :     for (int iter_type : {vpiOperand, vpiStmt, vpiCaseItem, vpiArgument}) {</span></a>
+<a name="1831"><span class="lineNum">    1831 </span><span class="lineCov">     575932 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
+<a name="1832"><span class="lineNum">    1832 </span><span class="lineCov">     575932 :         if (itr) {</span></a>
+<a name="1833"><span class="lineNum">    1833 </span><span class="lineCov">      68751 :             while (vpiHandle s = vpi_scan(itr)) {</span></a>
+<a name="1834"><span class="lineNum">    1834 </span><span class="lineCov">      43934 :                 if (s != handle) collectIdentifierHandlesRecursive(s, h);</span></a>
+<a name="1835"><span class="lineNum">    1835 </span><span class="lineCov">      43934 :             }</span></a>
+<a name="1836"><span class="lineNum">    1836 </span><span class="lineCov">      24817 :             vpi_release_handle(itr);</span></a>
 <a name="1837"><span class="lineNum">    1837 </span>            :         }</a>
 <a name="1838"><span class="lineNum">    1838 </span>            :     }</a>
 <a name="1839"><span class="lineNum">    1839 </span>            : }</a>
@@ -1916,12 +1916,12 @@
 <a name="1854"><span class="lineNum">    1854 </span>            :     }</a>
 <a name="1855"><span class="lineNum">    1855 </span>            : }</a>
 <a name="1856"><span class="lineNum">    1856 </span>            : </a>
-<a name="1857"><span class="lineNum">    1857 </span><span class="lineCov">      96663 : bool DesignExtractor::isParameterHandle(vpiHandle handle) {</span></a>
-<a name="1858"><span class="lineNum">    1858 </span><span class="lineCov">      96663 :     if (!handle) return false;</span></a>
-<a name="1859"><span class="lineNum">    1859 </span><span class="lineCov">      96663 :     vpiHandle actual = unwrapRef(handle);</span></a>
-<a name="1860"><span class="lineNum">    1860 </span><span class="lineCov">      96663 :     if (!actual) actual = handle;</span></a>
-<a name="1861"><span class="lineNum">    1861 </span><span class="lineCov">      96663 :     int type = vpi_get(vpiType, actual);</span></a>
-<a name="1862"><span class="lineNum">    1862 </span><span class="lineCov">      96663 :     return type == vpiParameter || vpi_get(vpiLocalParam, actual);</span></a>
+<a name="1857"><span class="lineNum">    1857 </span><span class="lineCov">      96653 : bool DesignExtractor::isParameterHandle(vpiHandle handle) {</span></a>
+<a name="1858"><span class="lineNum">    1858 </span><span class="lineCov">      96653 :     if (!handle) return false;</span></a>
+<a name="1859"><span class="lineNum">    1859 </span><span class="lineCov">      96653 :     vpiHandle actual = unwrapRef(handle);</span></a>
+<a name="1860"><span class="lineNum">    1860 </span><span class="lineCov">      96653 :     if (!actual) actual = handle;</span></a>
+<a name="1861"><span class="lineNum">    1861 </span><span class="lineCov">      96653 :     int type = vpi_get(vpiType, actual);</span></a>
+<a name="1862"><span class="lineNum">    1862 </span><span class="lineCov">      96653 :     return type == vpiParameter || vpi_get(vpiLocalParam, actual);</span></a>
 <a name="1863"><span class="lineNum">    1863 </span>            : }</a>
 <a name="1864"><span class="lineNum">    1864 </span>            : </a>
 <a name="1865"><span class="lineNum">    1865 </span><span class="lineCov">       1449 : std::string DesignExtractor::normalizedParameterName(vpiHandle handle) {</span></a>
@@ -1948,18 +1948,18 @@
 <a name="1886"><span class="lineNum">    1886 </span><span class="lineNoCov">          0 :     return getSourceInfo(handle);</span></a>
 <a name="1887"><span class="lineNum">    1887 </span>            : }</a>
 <a name="1888"><span class="lineNum">    1888 </span>            : </a>
-<a name="1889"><span class="lineNum">    1889 </span><span class="lineCov">      95350 : std::vector&lt;ParameterRef&gt; DesignExtractor::collectParameterRefs(vpiHandle handle, const Module&amp; mod) {</span></a>
-<a name="1890"><span class="lineNum">    1890 </span><span class="lineCov">      95350 :     std::vector&lt;ParameterRef&gt; refs;</span></a>
-<a name="1891"><span class="lineNum">    1891 </span><span class="lineCov">      95350 :     if (!handle) return refs;</span></a>
+<a name="1889"><span class="lineNum">    1889 </span><span class="lineCov">      95340 : std::vector&lt;ParameterRef&gt; DesignExtractor::collectParameterRefs(vpiHandle handle, const Module&amp; mod) {</span></a>
+<a name="1890"><span class="lineNum">    1890 </span><span class="lineCov">      95340 :     std::vector&lt;ParameterRef&gt; refs;</span></a>
+<a name="1891"><span class="lineNum">    1891 </span><span class="lineCov">      95340 :     if (!handle) return refs;</span></a>
 <a name="1892"><span class="lineNum">    1892 </span>            : </a>
-<a name="1893"><span class="lineNum">    1893 </span><span class="lineCov">      95350 :     std::vector&lt;vpiHandle&gt; handles;</span></a>
-<a name="1894"><span class="lineNum">    1894 </span><span class="lineCov">      95350 :     collectIdentifierHandlesRecursive(handle, handles);</span></a>
-<a name="1895"><span class="lineNum">    1895 </span><span class="lineCov">      95350 :     std::set&lt;std::string&gt; seen;</span></a>
-<a name="1896"><span class="lineNum">    1896 </span><span class="lineCov">      95350 :     std::set&lt;std::string&gt; module_params;</span></a>
-<a name="1897"><span class="lineNum">    1897 </span><span class="lineCov">     117471 :     for (const auto&amp; param : mod.parameters) module_params.insert(param.name);</span></a>
+<a name="1893"><span class="lineNum">    1893 </span><span class="lineCov">      95340 :     std::vector&lt;vpiHandle&gt; handles;</span></a>
+<a name="1894"><span class="lineNum">    1894 </span><span class="lineCov">      95340 :     collectIdentifierHandlesRecursive(handle, handles);</span></a>
+<a name="1895"><span class="lineNum">    1895 </span><span class="lineCov">      95340 :     std::set&lt;std::string&gt; seen;</span></a>
+<a name="1896"><span class="lineNum">    1896 </span><span class="lineCov">      95340 :     std::set&lt;std::string&gt; module_params;</span></a>
+<a name="1897"><span class="lineNum">    1897 </span><span class="lineCov">     117461 :     for (const auto&amp; param : mod.parameters) module_params.insert(param.name);</span></a>
 <a name="1898"><span class="lineNum">    1898 </span>            : </a>
-<a name="1899"><span class="lineNum">    1899 </span><span class="lineCov">     192013 :     for (vpiHandle h : handles) {</span></a>
-<a name="1900"><span class="lineNum">    1900 </span><span class="lineCov">      96663 :         if (!isParameterHandle(h)) continue;</span></a>
+<a name="1899"><span class="lineNum">    1899 </span><span class="lineCov">     191993 :     for (vpiHandle h : handles) {</span></a>
+<a name="1900"><span class="lineNum">    1900 </span><span class="lineCov">      96653 :         if (!isParameterHandle(h)) continue;</span></a>
 <a name="1901"><span class="lineNum">    1901 </span><span class="lineNoCov">          0 :         std::string name = normalizedParameterName(h);</span></a>
 <a name="1902"><span class="lineNum">    1902 </span><span class="lineNoCov">          0 :         if (name.empty()) continue;</span></a>
 <a name="1903"><span class="lineNum">    1903 </span><span class="lineNoCov">          0 :         if (!module_params.empty() &amp;&amp; module_params.find(name) == module_params.end()) continue;</span></a>
@@ -1975,8 +1975,8 @@
 <a name="1913"><span class="lineNum">    1913 </span><span class="lineNoCov">          0 :         ref.declarationSource = getParameterDeclarationSource(h);</span></a>
 <a name="1914"><span class="lineNum">    1914 </span><span class="lineNoCov">          0 :         refs.push_back(ref);</span></a>
 <a name="1915"><span class="lineNum">    1915 </span><span class="lineNoCov">          0 :     }</span></a>
-<a name="1916"><span class="lineNum">    1916 </span><span class="lineCov">      95350 :     return refs;</span></a>
-<a name="1917"><span class="lineNum">    1917 </span><span class="lineCov">      95350 : }</span></a>
+<a name="1916"><span class="lineNum">    1916 </span><span class="lineCov">      95340 :     return refs;</span></a>
+<a name="1917"><span class="lineNum">    1917 </span><span class="lineCov">      95340 : }</span></a>
 </pre>
       </td>
     </tr>
