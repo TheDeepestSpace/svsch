@@ -160,23 +160,45 @@ Then(
 // latch) get an anonymous "NET_n" fallback label (see defaultNetCutLabel in
 // mergeLayout.ts) whose exact text and numbering shift as the partial grows,
 // so asserting against it here would be asserting an implementation detail
-// rather than the feature. Each successful extend adds exactly one new real
+// rather than the feature. A successful extend either pulls in a new real
 // block (the far end of that label's own edge — see extendNet in
-// partialDiagramPanel.ts), which is what the block-count poll below waits on.
+// partialDiagramPanel.ts) or, when both ends are already included, just ties
+// the net and drops its cut labels — so the poll below waits for either the
+// block count to grow or the set of cut labels to change.
 When('I extend every cut net in the partial diagram', async function (this: BddWorld) {
   const netLabels = this.webviewPage.locator('[data-node-kind="netLabel"]');
+  const labelIdsSnapshot = () =>
+    this.webviewPage.locator('html').evaluate(() =>
+      Array.from(document.querySelectorAll('[data-node-kind="netLabel"]'))
+        .map((el) => el.closest('.react-flow__node')?.getAttribute('data-id') ?? '')
+        .sort()
+        .join('|'),
+    );
   const maxExtends = 40;
   for (let i = 0; i < maxExtends; i++) {
     if ((await netLabels.count()) === 0) break;
     const blocksBefore = await activePaneBlockCount(this);
+    const labelsBefore = await labelIdsSnapshot();
     const label = netLabels.first();
-    await label.hover({ force: true });
     const extend = label.locator('.hdl-net-label-extend');
-    await expect(extend).toBeVisible();
-    await extend.click();
+    await expect(extend).toBeAttached();
+    // A dispatched click rather than a hover + pointer click: mid-rebuild the
+    // growing diagram can push a label outside the viewport, or park another
+    // node or label over its hover pill (which hangs outside the label's own
+    // box, past its right edge — collision resolution only keeps label
+    // *boxes* clear of each other). A real user pans or drags a node aside;
+    // this bulk step is about extends landing, not pointer reachability,
+    // which "I click the extend arrow on the cut net" still covers with a
+    // real hover and click.
+    await extend.dispatchEvent('click');
     await expect
-      .poll(() => activePaneBlockCount(this), { timeout: 10_000 })
-      .toBeGreaterThan(blocksBefore);
+      .poll(
+        async () =>
+          (await activePaneBlockCount(this)) > blocksBefore ||
+          (await labelIdsSnapshot()) !== labelsBefore,
+        { timeout: 10_000 },
+      )
+      .toBe(true);
   }
   // Clear the hover so the following screenshot isn't captured mid-reveal.
   await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });

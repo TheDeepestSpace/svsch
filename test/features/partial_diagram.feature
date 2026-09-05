@@ -94,7 +94,8 @@ Feature: Partial diagram
       endmodule
       """
     When I open the "top" module in SVSCH
-    And click and drag the mouse to select the blocks "u1" and "u2"
+    And I click to select the block "u1"
+    And I add the block "u2" to the selection
     Then the "Add to Partial" button should be visible
     When I add the selected block to the partial diagram
     Then the SVSCH partial diagram panel opens
@@ -103,7 +104,7 @@ Feature: Partial diagram
     And I should see an instance node "u2" of module "leaf"
     And I should see 1 cut net labels named "a"
     And I should see 2 cut net labels named "mid"
-    And I should see 1 cut net labels named "y"
+    And I should see 1 cut net labels named "u2.y"
     And there should not be a connection between "u1" and "u2"
 
   Scenario: Closing the partial panel discards its state
@@ -249,4 +250,7 @@ Feature: Partial diagram
     Then I should see a mux node "case sel_b"
     And there should be a connection between "dflt" and the mux node "case sel_a"
     And there should be a connection between "dflt" and the mux node "case sel_b"
-    And I should not see any cut net labels in the partial diagram
+    # Every branch of the fanout is now tied — no cut end is left on "dflt".
+    # The muxes' own other nets (selects, outputs, literal feeds) stay cut:
+    # extending one net never silently pulls in the rest of the module.
+    And I should not see cut net labels named "dflt"

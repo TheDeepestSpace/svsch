@@ -135,11 +135,16 @@ const vscode = getVscodeApi();
 const EDGE_Z_INDEX = 1;
 const ARRAY_NODE_Z_INDEX = 2;
 const BLOCK_NODE_Z_INDEX = 2;
+// Net-cut labels sit above blocks for the same reason their stub edges do:
+// a label lives right at a node's port lead, and a block placed later (the
+// partial pane's extend inserts nodes into an already-rendered diagram) can
+// otherwise mount on top of it, burying the label and its hover actions.
+const NET_LABEL_NODE_Z_INDEX = 3;
 // A cut net's stub wire is always short and runs from a node straight out to
 // its own dangling end, so it never has a real edge's usual clearance from
 // node interiors — draw it (and its hover-only Reroute control) above nodes
-// so it stays visible, and clickable, when it lands close to one.
-const CUT_STUB_EDGE_Z_INDEX = 3;
+// and labels so it stays visible, and clickable, when it lands close to one.
+const CUT_STUB_EDGE_Z_INDEX = 4;
 const GENERATE_REGION_MIN_CONTENT_PADDING = diagramSizing.gridSize * 2;
 
 function generateStateClass(state?: string, prefix = 'generate'): string | undefined {
@@ -1100,7 +1105,11 @@ function DiagramApp(): React.ReactElement {
       position: node.position,
       selected: reselectIds?.has(node.id) ?? undefined,
       className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
-      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
+      zIndex: nodeIsArrayNode(node)
+        ? ARRAY_NODE_Z_INDEX
+        : node.kind === 'netLabel'
+          ? NET_LABEL_NODE_Z_INDEX
+          : BLOCK_NODE_Z_INDEX,
       data: {
         node,
         moduleName: view.moduleName,

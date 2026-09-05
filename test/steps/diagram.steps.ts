@@ -622,6 +622,42 @@ When('I click to select the block {string}', async function (this: BddWorld, nam
   await this.takeScreenshot(`Selected ${name}`);
 });
 
+// Ctrl/Cmd-click adds a block to the current selection without the lasso's
+// geometric slop — a marquee spanning two blocks can also sweep up whatever
+// ports or labels sit near its rectangle, so scenarios that need *exactly*
+// these blocks selected (e.g. multi-block "Add to Partial") build the
+// selection block by block instead. React Flow tracks the multi-selection
+// modifier via its own window-level keydown/keyup listeners, so the real key
+// press has to bracket the real click.
+When('I add the block {string} to the selection', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Block not found: ${name}`);
+  const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for ${name}`);
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await this.workbox.keyboard.down(modifier);
+  try {
+    await this.workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  } finally {
+    await this.workbox.keyboard.up(modifier);
+  }
+
+  await expect
+    .poll(
+      async () => {
+        return this.webviewPage.locator('html').evaluate((_el, targetId) => {
+          const rf = (window as any).reactFlowInstance;
+          const selected = rf.getNodes().filter((n: any) => n.selected);
+          return selected.length > 1 && selected.some((n: any) => n.id === targetId);
+        }, id);
+      },
+      { timeout: 5000 },
+    )
+    .toBe(true);
+
+  await this.takeScreenshot(`Added ${name} to the selection`);
+});
+
 // Three-node variant: the lasso spans the union of all three nodes' bounding
 // boxes, so it still works even when one of them has been deliberately moved
 // off the line between the other two (e.g. testing that Auto Layout has to
