@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-05 16:21:32</td>
+            <td class="headerValue">2026-09-05 21:03:30</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">44</td>
@@ -268,19 +268,19 @@
 <a name="206"><span class="lineNum">     206 </span><span class="lineCov">        139 :     return false;</span></a>
 <a name="207"><span class="lineNum">     207 </span><span class="lineCov">        270 : }</span></a>
 <a name="208"><span class="lineNum">     208 </span>            : </a>
-<a name="209"><span class="lineNum">     209 </span><span class="lineCov">      91692 : void collectActiveGenerateScopeNames(vpiHandle handle, std::set&lt;vpiHandle&gt;&amp; visited, std::set&lt;std::string&gt;&amp; activeScopes, int depth = 0) {</span></a>
-<a name="210"><span class="lineNum">     210 </span><span class="lineCov">      91692 :     if (!handle || depth &gt; 128 || visited.count(handle)) return;</span></a>
-<a name="211"><span class="lineNum">     211 </span><span class="lineCov">      91692 :     visited.insert(handle);</span></a>
+<a name="209"><span class="lineNum">     209 </span><span class="lineCov">      91676 : void collectActiveGenerateScopeNames(vpiHandle handle, std::set&lt;vpiHandle&gt;&amp; visited, std::set&lt;std::string&gt;&amp; activeScopes, int depth = 0) {</span></a>
+<a name="210"><span class="lineNum">     210 </span><span class="lineCov">      91676 :     if (!handle || depth &gt; 128 || visited.count(handle)) return;</span></a>
+<a name="211"><span class="lineNum">     211 </span><span class="lineCov">      91676 :     visited.insert(handle);</span></a>
 <a name="212"><span class="lineNum">     212 </span>            : </a>
-<a name="213"><span class="lineNum">     213 </span><span class="lineCov">      91692 :     const int type = vpi_get(vpiType, handle);</span></a>
-<a name="214"><span class="lineNum">     214 </span><span class="lineCov">      91692 :     if (type == vpiGenScopeArray || type == vpiGenScope) {</span></a>
+<a name="213"><span class="lineNum">     213 </span><span class="lineCov">      91676 :     const int type = vpi_get(vpiType, handle);</span></a>
+<a name="214"><span class="lineNum">     214 </span><span class="lineCov">      91676 :     if (type == vpiGenScopeArray || type == vpiGenScope) {</span></a>
 <a name="215"><span class="lineNum">     215 </span><span class="lineCov">       1276 :         std::string full = fullBlockLabelForStmt(handle);</span></a>
 <a name="216"><span class="lineNum">     216 </span><span class="lineCov">       1276 :         if (!full.empty()) activeScopes.insert(full);</span></a>
 <a name="217"><span class="lineNum">     217 </span><span class="lineCov">       1276 :     }</span></a>
 <a name="218"><span class="lineNum">     218 </span>            : </a>
-<a name="219"><span class="lineNum">     219 </span><span class="lineCov">     275076 :     for (int iter_type : {vpiGenScopeArray, vpiGenScope}) {</span></a>
-<a name="220"><span class="lineNum">     220 </span><span class="lineCov">     183384 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
-<a name="221"><span class="lineNum">     221 </span><span class="lineCov">     183384 :         if (!itr) continue;</span></a>
+<a name="219"><span class="lineNum">     219 </span><span class="lineCov">     275028 :     for (int iter_type : {vpiGenScopeArray, vpiGenScope}) {</span></a>
+<a name="220"><span class="lineNum">     220 </span><span class="lineCov">     183352 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
+<a name="221"><span class="lineNum">     221 </span><span class="lineCov">     183352 :         if (!itr) continue;</span></a>
 <a name="222"><span class="lineNum">     222 </span><span class="lineCov">       2544 :         while (vpiHandle child = vpi_scan(itr)) {</span></a>
 <a name="223"><span class="lineNum">     223 </span><span class="lineCov">       1276 :             collectActiveGenerateScopeNames(child, visited, activeScopes, depth + 1);</span></a>
 <a name="224"><span class="lineNum">     224 </span><span class="lineCov">       1276 :         }</span></a>
@@ -380,8 +380,8 @@
 <a name="318"><span class="lineNum">     318 </span>            :     }</a>
 <a name="319"><span class="lineNum">     319 </span><span class="lineCov">        586 : }</span></a>
 <a name="320"><span class="lineNum">     320 </span>            : </a>
-<a name="321"><span class="lineNum">     321 </span><span class="lineCov">      45208 : void applyGenerateActiveStates(Module&amp; mod, const std::set&lt;std::string&gt;&amp; activeScopes) {</span></a>
-<a name="322"><span class="lineNum">     322 </span><span class="lineCov">      45208 :     if (mod.generateRegions.empty()) return;</span></a>
+<a name="321"><span class="lineNum">     321 </span><span class="lineCov">      45200 : void applyGenerateActiveStates(Module&amp; mod, const std::set&lt;std::string&gt;&amp; activeScopes) {</span></a>
+<a name="322"><span class="lineNum">     322 </span><span class="lineCov">      45200 :     if (mod.generateRegions.empty()) return;</span></a>
 <a name="323"><span class="lineNum">     323 </span>            : </a>
 <a name="324"><span class="lineNum">     324 </span><span class="lineCov">       2246 :     for (auto&amp; region : mod.generateRegions) {</span></a>
 <a name="325"><span class="lineNum">     325 </span><span class="lineCov">       1660 :         for (const auto&amp; activeScope : activeScopes) {</span></a>
@@ -413,16 +413,16 @@
 <a name="351"><span class="lineNum">     351 </span>            : </a>
 <a name="352"><span class="lineNum">     352 </span>            : } // namespace</a>
 <a name="353"><span class="lineNum">     353 </span>            : </a>
-<a name="354"><span class="lineNum">     354 </span><span class="lineCov">      45208 : void DesignExtractor::processGenerateRegions(vpiHandle module_handle, Module&amp; mod) {</span></a>
-<a name="355"><span class="lineNum">     355 </span><span class="lineCov">      45208 :     std::set&lt;vpiHandle&gt; visited;</span></a>
-<a name="356"><span class="lineNum">     356 </span><span class="lineCov">      45208 :     std::set&lt;std::string&gt; activeScopes;</span></a>
-<a name="357"><span class="lineNum">     357 </span><span class="lineCov">      45208 :     std::set&lt;vpiHandle&gt; activeVisited;</span></a>
-<a name="358"><span class="lineNum">     358 </span><span class="lineCov">      45208 :     collectActiveGenerateScopeNames(module_handle, activeVisited, activeScopes);</span></a>
-<a name="359"><span class="lineNum">     359 </span><span class="lineCov">      45208 :     collectActiveGenerateScopeNames(design_, activeVisited, activeScopes);</span></a>
+<a name="354"><span class="lineNum">     354 </span><span class="lineCov">      45200 : void DesignExtractor::processGenerateRegions(vpiHandle module_handle, Module&amp; mod) {</span></a>
+<a name="355"><span class="lineNum">     355 </span><span class="lineCov">      45200 :     std::set&lt;vpiHandle&gt; visited;</span></a>
+<a name="356"><span class="lineNum">     356 </span><span class="lineCov">      45200 :     std::set&lt;std::string&gt; activeScopes;</span></a>
+<a name="357"><span class="lineNum">     357 </span><span class="lineCov">      45200 :     std::set&lt;vpiHandle&gt; activeVisited;</span></a>
+<a name="358"><span class="lineNum">     358 </span><span class="lineCov">      45200 :     collectActiveGenerateScopeNames(module_handle, activeVisited, activeScopes);</span></a>
+<a name="359"><span class="lineNum">     359 </span><span class="lineCov">      45200 :     collectActiveGenerateScopeNames(design_, activeVisited, activeScopes);</span></a>
 <a name="360"><span class="lineNum">     360 </span>            : </a>
-<a name="361"><span class="lineNum">     361 </span><span class="lineCov">     135624 :     for (int iter_type : {vpiGenStmt, vpiGenRegion}) {</span></a>
-<a name="362"><span class="lineNum">     362 </span><span class="lineCov">      90416 :         vpiHandle gen_itr = vpi_iterate(iter_type, module_handle);</span></a>
-<a name="363"><span class="lineNum">     363 </span><span class="lineCov">      90416 :         if (!gen_itr) continue;</span></a>
+<a name="361"><span class="lineNum">     361 </span><span class="lineCov">     135600 :     for (int iter_type : {vpiGenStmt, vpiGenRegion}) {</span></a>
+<a name="362"><span class="lineNum">     362 </span><span class="lineCov">      90400 :         vpiHandle gen_itr = vpi_iterate(iter_type, module_handle);</span></a>
+<a name="363"><span class="lineNum">     363 </span><span class="lineCov">      90400 :         if (!gen_itr) continue;</span></a>
 <a name="364"><span class="lineNum">     364 </span>            : </a>
 <a name="365"><span class="lineNum">     365 </span><span class="lineCov">       1180 :         while (vpiHandle gen_handle = vpi_scan(gen_itr)) {</span></a>
 <a name="366"><span class="lineNum">     366 </span><span class="lineCov">        594 :             walkGenerateRegionTree(gen_handle, mod, &quot;&quot;, visited, 0);</span></a>
@@ -430,8 +430,8 @@
 <a name="368"><span class="lineNum">     368 </span><span class="lineCov">        586 :         vpi_release_handle(gen_itr);</span></a>
 <a name="369"><span class="lineNum">     369 </span>            :     }</a>
 <a name="370"><span class="lineNum">     370 </span>            : </a>
-<a name="371"><span class="lineNum">     371 </span><span class="lineCov">      45208 :     applyGenerateActiveStates(mod, activeScopes);</span></a>
-<a name="372"><span class="lineNum">     372 </span><span class="lineCov">      45208 : }</span></a>
+<a name="371"><span class="lineNum">     371 </span><span class="lineCov">      45200 :     applyGenerateActiveStates(mod, activeScopes);</span></a>
+<a name="372"><span class="lineNum">     372 </span><span class="lineCov">      45200 : }</span></a>
 <a name="373"><span class="lineNum">     373 </span>            : </a>
 <a name="374"><span class="lineNum">     374 </span><span class="lineCov">       5270 : void DesignExtractor::walkGenerateRegionTree(vpiHandle handle, Module&amp; mod, const std::string&amp; parentRegionId, std::set&lt;vpiHandle&gt;&amp; visited, int depth) {</span></a>
 <a name="375"><span class="lineNum">     375 </span><span class="lineCov">       5270 :     if (!handle || depth &gt; 128) return;</span></a>
@@ -1007,14 +1007,14 @@
 <a name="945"><span class="lineNum">     945 </span><span class="lineCov">        474 :     pushUnique(region.nodeIds, node.id);</span></a>
 <a name="946"><span class="lineNum">     946 </span><span class="lineCov">       1105 : }</span></a>
 <a name="947"><span class="lineNum">     947 </span>            : </a>
-<a name="948"><span class="lineNum">     948 </span><span class="lineCov">      22039 : void DesignExtractor::tagGenerateRegionEdges(Module&amp; mod) {</span></a>
+<a name="948"><span class="lineNum">     948 </span><span class="lineCov">      22035 : void DesignExtractor::tagGenerateRegionEdges(Module&amp; mod) {</span></a>
 <a name="949"><span class="lineNum">     949 </span>            :     struct RegionTag {</a>
 <a name="950"><span class="lineNum">     950 </span>            :         std::string id;</a>
 <a name="951"><span class="lineNum">     951 </span>            :         std::string activeState;</a>
 <a name="952"><span class="lineNum">     952 </span>            :     };</a>
 <a name="953"><span class="lineNum">     953 </span>            : </a>
-<a name="954"><span class="lineNum">     954 </span><span class="lineCov">      22039 :     std::map&lt;std::string, RegionTag&gt; regionByNode;</span></a>
-<a name="955"><span class="lineNum">     955 </span><span class="lineCov">      23699 :     for (const auto&amp; region : mod.generateRegions) {</span></a>
+<a name="954"><span class="lineNum">     954 </span><span class="lineCov">      22035 :     std::map&lt;std::string, RegionTag&gt; regionByNode;</span></a>
+<a name="955"><span class="lineNum">     955 </span><span class="lineCov">      23695 :     for (const auto&amp; region : mod.generateRegions) {</span></a>
 <a name="956"><span class="lineNum">     956 </span><span class="lineCov">       3372 :         for (const auto&amp; nodeId : region.nodeIds) {</span></a>
 <a name="957"><span class="lineNum">     957 </span><span class="lineCov">       1712 :             if (!nodeId.empty() &amp;&amp; !regionByNode.count(nodeId)) {</span></a>
 <a name="958"><span class="lineNum">     958 </span><span class="lineCov">       1712 :                 regionByNode[nodeId] = {region.id, region.activeState};</span></a>
@@ -1022,24 +1022,24 @@
 <a name="960"><span class="lineNum">     960 </span>            :         }</a>
 <a name="961"><span class="lineNum">     961 </span>            :     }</a>
 <a name="962"><span class="lineNum">     962 </span>            : </a>
-<a name="963"><span class="lineNum">     963 </span><span class="lineCov">      84242 :     for (const auto&amp; node : mod.nodes) {</span></a>
-<a name="964"><span class="lineNum">     964 </span><span class="lineCov">      62203 :         if (!node.metadata.generateRegionId.empty() &amp;&amp; !regionByNode.count(node.id)) {</span></a>
+<a name="963"><span class="lineNum">     963 </span><span class="lineCov">      84234 :     for (const auto&amp; node : mod.nodes) {</span></a>
+<a name="964"><span class="lineNum">     964 </span><span class="lineCov">      62199 :         if (!node.metadata.generateRegionId.empty() &amp;&amp; !regionByNode.count(node.id)) {</span></a>
 <a name="965"><span class="lineNum">     965 </span><span class="lineNoCov">          0 :             regionByNode[node.id] = {node.metadata.generateRegionId, node.metadata.generateActiveState};</span></a>
 <a name="966"><span class="lineNum">     966 </span>            :         }</a>
 <a name="967"><span class="lineNum">     967 </span>            :     }</a>
 <a name="968"><span class="lineNum">     968 </span>            : </a>
-<a name="969"><span class="lineNum">     969 </span><span class="lineCov">     138628 :     for (auto&amp; edge : mod.edges) {</span></a>
-<a name="970"><span class="lineNum">     970 </span><span class="lineCov">     116589 :         auto sourceRegion = regionByNode.find(edge.source);</span></a>
-<a name="971"><span class="lineNum">     971 </span><span class="lineCov">     116589 :         auto targetRegion = regionByNode.find(edge.target);</span></a>
-<a name="972"><span class="lineNum">     972 </span><span class="lineCov">     116589 :         if (sourceRegion != regionByNode.end()) {</span></a>
+<a name="969"><span class="lineNum">     969 </span><span class="lineCov">     138611 :     for (auto&amp; edge : mod.edges) {</span></a>
+<a name="970"><span class="lineNum">     970 </span><span class="lineCov">     116576 :         auto sourceRegion = regionByNode.find(edge.source);</span></a>
+<a name="971"><span class="lineNum">     971 </span><span class="lineCov">     116576 :         auto targetRegion = regionByNode.find(edge.target);</span></a>
+<a name="972"><span class="lineNum">     972 </span><span class="lineCov">     116576 :         if (sourceRegion != regionByNode.end()) {</span></a>
 <a name="973"><span class="lineNum">     973 </span><span class="lineCov">       1712 :             edge.generateRegionId = sourceRegion-&gt;second.id;</span></a>
 <a name="974"><span class="lineNum">     974 </span><span class="lineCov">       1712 :             edge.generateActiveState = sourceRegion-&gt;second.activeState;</span></a>
-<a name="975"><span class="lineNum">     975 </span><span class="lineCov">     114877 :         } else if (targetRegion != regionByNode.end()) {</span></a>
+<a name="975"><span class="lineNum">     975 </span><span class="lineCov">     114864 :         } else if (targetRegion != regionByNode.end()) {</span></a>
 <a name="976"><span class="lineNum">     976 </span><span class="lineCov">       1663 :             edge.generateRegionId = targetRegion-&gt;second.id;</span></a>
 <a name="977"><span class="lineNum">     977 </span><span class="lineCov">       1663 :             edge.generateActiveState = targetRegion-&gt;second.activeState;</span></a>
 <a name="978"><span class="lineNum">     978 </span>            :         }</a>
 <a name="979"><span class="lineNum">     979 </span>            :     }</a>
-<a name="980"><span class="lineNum">     980 </span><span class="lineCov">      22039 : }</span></a>
+<a name="980"><span class="lineNum">     980 </span><span class="lineCov">      22035 : }</span></a>
 </pre>
       </td>
     </tr>
