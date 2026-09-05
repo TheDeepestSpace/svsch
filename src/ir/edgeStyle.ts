@@ -113,11 +113,14 @@ function nodeIsArrayLike(node: DiagramNode): boolean {
  * renderers read a single authoritative flag instead of re-deriving it from
  * widths and type names in every code path.
  *
- * - `edge.metadata.thick`: the wire is (or can be) wider than one bit.
+ * - `edge.metadata.thick`: the wire is (or can be) wider than one bit. This is
+ *   derived per edge from its own width/ports — it never spreads across a
+ *   stacked component, so a single-bit control wire (e.g. a shared `clk`)
+ *   that happens to fan into a wide array node stays thin.
  * - `node.metadata.stackWide`: an array node whose stacked layers spread with
  *   the wide offset. A stacked component qualifies through any port or edge
  *   with a known multi-bit width; the classification then reaches synthesized
- *   mux/register edges whose element widths are missing. Unstacked edges keep
+ *   mux/register nodes whose element widths are missing. Unstacked edges keep
  *   scalarization boundaries from joining components.
  */
 export function annotateWireStyles(module: { nodes: DiagramNode[]; edges: DiagramEdge[] }): void {
@@ -210,15 +213,12 @@ export function annotateWireStyles(module: { nodes: DiagramNode[]; edges: Diagra
       continue;
     }
 
-    for (const edge of componentEdges) {
-      // Aggregate wires retain their dedicated striped style; they still join
-      // the component so width information can cross an array-of-aggregate
-      // node without stamping a contradictory thick-wire classification.
-      if (edge.metadata?.aggregate === undefined) {
-        thickEdges.add(edge);
-        edge.metadata = { ...(edge.metadata ?? {}), thick: true };
-      }
-    }
+    // Only the array nodes' layer spacing spreads across the whole component.
+    // Each edge's own thick-wire classification (computed above from its own
+    // width/ports) is left alone — a stacked component can carry a mix of
+    // wide data edges and narrow control edges (e.g. a shared `clk` fanning
+    // into every element of a wide register array), and only the former
+    // should render as thick wires.
     for (const nodeId of componentNodeIds) {
       const node = nodesById.get(nodeId);
       if (node && nodeIsArrayLike(node)) {

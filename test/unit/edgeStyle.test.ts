@@ -20,7 +20,7 @@ function stackedEdge(id: string, source: string, target: string, width?: string)
 }
 
 describe('annotateWireStyles stacked components', () => {
-  it('propagates a known multi-bit port through a stacked mux chain', () => {
+  it('propagates a known multi-bit port to every array node in a stacked mux chain', () => {
     const nodes = [
       node('source', { portWidth: '[7:0]' }),
       node('first', { array: true }),
@@ -35,11 +35,14 @@ describe('annotateWireStyles stacked components', () => {
 
     annotateWireStyles({ nodes, edges });
 
-    expect(edges.map((edge) => edge.metadata?.thick)).toEqual([true, true, true]);
+    // The layer spacing reaches every array node in the component, but none
+    // of these edges carry their own width, so they stay thin — only the
+    // node's own ports or an edge's own width can make an edge thick.
+    expect(edges.map((edge) => edge.metadata?.thick)).toEqual([undefined, undefined, undefined]);
     expect(nodes.slice(1).map((item) => item.metadata?.stackWide)).toEqual([true, true, true]);
   });
 
-  it('uses a known multi-bit edge to seed the whole stacked component', () => {
+  it('uses a known multi-bit edge to widen node spacing through the stacked component', () => {
     const nodes = [node('first', { array: true }), node('second', { array: true })];
     const edges = [
       stackedEdge('known', 'first', 'second', '[3:0]'),
@@ -48,8 +51,29 @@ describe('annotateWireStyles stacked components', () => {
 
     annotateWireStyles({ nodes, edges });
 
-    expect(edges.map((edge) => edge.metadata?.thick)).toEqual([true, true]);
+    // 'known' is independently thick because of its own width; 'unknown'
+    // never gets a width of its own and must not inherit one.
+    expect(edges.map((edge) => edge.metadata?.thick)).toEqual([true, undefined]);
     expect(nodes.map((item) => item.metadata?.stackWide)).toEqual([true, true]);
+  });
+
+  it('does not widen a single-bit control edge sharing a stacked component with wide data', () => {
+    const nodes = [
+      node('clkSource', {}),
+      node('dataSource', { portWidth: '[7:0]' }),
+      node('registerArray', { array: true }),
+    ];
+    const clk = stackedEdge('clk', 'clkSource', 'registerArray');
+    const data = stackedEdge('data', 'dataSource', 'registerArray');
+    const edges = [clk, data];
+
+    annotateWireStyles({ nodes, edges });
+
+    // The array node's layers still widen, but the single-bit clock wire
+    // feeding it must not be reclassified as a thick/multi-bit wire.
+    expect(nodes[2].metadata?.stackWide).toBe(true);
+    expect(clk.metadata?.thick).toBeUndefined();
+    expect(data.metadata?.thick).toBeUndefined();
   });
 
   it('keeps a single-bit stacked component compact', () => {
@@ -86,7 +110,7 @@ describe('annotateWireStyles stacked components', () => {
 
     annotateWireStyles({ nodes, edges });
 
-    expect(upstream.metadata?.thick).toBe(true);
+    expect(upstream.metadata?.thick).toBeUndefined();
     expect(nodes[1].metadata?.stackWide).toBe(true);
     expect(scalarized.metadata?.thick).toBeUndefined();
     expect(downstream.metadata?.thick).toBeUndefined();
