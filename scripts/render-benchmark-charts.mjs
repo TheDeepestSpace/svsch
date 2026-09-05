@@ -24,6 +24,11 @@ const COLORS = {
   goodText: '#006300',
   critical: '#d03b3b',
   highlight: '#e8890c',
+  // A third categorical line color (mem-profile's visual/system/BDD trend —
+  // see mem-profile.mjs) chosen for max separation from blue/purple above via
+  // the dataviz skill's validator (`validate_palette.js`), since blue+purple
+  // alone already sit right at that validator's normal-vision floor.
+  teal: '#0f9188',
 };
 
 // Bars fill the whole plot width regardless of how many there are — a
@@ -873,6 +878,92 @@ export function renderHistoryTrendChart({
   ${parts.join('\n')}
   ${axisLabelParts.join('\n')}
   ${milestoneLabelParts.join('\n')}
+</svg>`;
+}
+
+const MEM_CHART_WIDTH = 460;
+const MEM_CHART_LEFT_MARGIN = 54;
+const MEM_CHART_RIGHT_MARGIN = 16;
+const MEM_CHART_TOP_MARGIN = 40;
+const MEM_CHART_PANEL_HEIGHT = 150;
+const MEM_CHART_BOTTOM_MARGIN = 26;
+
+// One shard/leg's own raw {t, rss} timeseries (see scripts/mem-poller.mjs) as
+// a small single-line chart — used by the per-PR memory-profile HTML report
+// (#400), one of these per shard/leg, unlike renderHistoryTrendChart above
+// which plots one point per master run across a whole history rather than
+// one point per sample within a single run. Deliberately small/plain (no
+// legend, no moving average, start/end-only x labels) since a report page
+// can embed dozens of these — visible per-shard detail is the point, not a
+// polished standalone chart.
+export function renderMemoryTimeseriesChart({ title, samples, color = COLORS.blue }) {
+  const width = MEM_CHART_WIDTH;
+  const panelHeight = MEM_CHART_PANEL_HEIGHT;
+  const height = MEM_CHART_TOP_MARGIN + panelHeight + MEM_CHART_BOTTOM_MARGIN;
+  const originY = MEM_CHART_TOP_MARGIN + panelHeight;
+  const plotWidth = width - MEM_CHART_LEFT_MARGIN - MEM_CHART_RIGHT_MARGIN;
+
+  if (samples.length === 0) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
+  <text x="16" y="24" font-size="14" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
+  <text x="16" y="${height / 2}" font-size="12" fill="${COLORS.inkMuted}">No samples recorded</text>
+</svg>`;
+  }
+
+  const toMb = (bytes) => bytes / (1024 * 1024);
+  const maxT = Math.max(1, ...samples.map((s) => s.t));
+  const maxMb = Math.max(1, ...samples.map((s) => toMb(s.rss)));
+  const step = niceStep(maxMb);
+  const chartMax = Math.ceil((maxMb * 1.15) / step) * step || step;
+  const scaleY = panelHeight / chartMax;
+  const xFor = (t) => MEM_CHART_LEFT_MARGIN + (t / maxT) * plotWidth;
+  const yFor = (mb) => originY - mb * scaleY;
+
+  const parts = [];
+  for (let tick = 0; tick <= chartMax; tick += step) {
+    const y = originY - tick * scaleY;
+    parts.push(
+      `<line x1="${MEM_CHART_LEFT_MARGIN}" y1="${y}" x2="${MEM_CHART_LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`,
+    );
+    parts.push(
+      `<text x="${MEM_CHART_LEFT_MARGIN - 8}" y="${y + 4}" font-size="10" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`,
+    );
+  }
+  parts.push(
+    `<line x1="${MEM_CHART_LEFT_MARGIN}" y1="${originY}" x2="${MEM_CHART_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`,
+  );
+
+  const path = samples
+    .map((s, i) => `${i === 0 ? 'M' : 'L'} ${xFor(s.t)} ${yFor(toMb(s.rss))}`)
+    .join(' ');
+  parts.push(`<path d="${path}" fill="none" stroke="${color}" stroke-width="2" />`);
+
+  const peakSample = samples.reduce((best, s) => (s.rss > best.rss ? s : best), samples[0]);
+  const peakX = xFor(peakSample.t);
+  const peakY = yFor(toMb(peakSample.rss));
+  parts.push(
+    `<circle cx="${peakX}" cy="${peakY}" r="4" fill="${COLORS.highlight}" stroke="${color}" stroke-width="1.5" />`,
+  );
+  // Flip the label above/below the point depending on how close it sits to
+  // the chart's own top edge, so the peak marker's label doesn't get
+  // clipped when the peak occurs near the top of the panel.
+  const peakLabelY = peakY > MEM_CHART_TOP_MARGIN + 14 ? peakY - 10 : peakY + 16;
+  parts.push(
+    `<text x="${peakX}" y="${peakLabelY}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">peak ${toMb(peakSample.rss).toFixed(0)} MB</text>`,
+  );
+
+  parts.push(
+    `<text x="${MEM_CHART_LEFT_MARGIN}" y="${originY + 16}" font-size="9" text-anchor="start" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">0s</text>`,
+  );
+  parts.push(
+    `<text x="${MEM_CHART_LEFT_MARGIN + plotWidth}" y="${originY + 16}" font-size="9" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${(maxT / 1000).toFixed(0)}s</text>`,
+  );
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
+  <text x="16" y="24" font-size="14" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
+  ${parts.join('\n')}
 </svg>`;
 }
 
