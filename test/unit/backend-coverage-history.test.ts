@@ -3,6 +3,7 @@ import {
   computeBackendCoverageEntry,
   mergeBackendCoverageHistory,
   parseLcovSummaryMetric,
+  renderBackendCoverageSection,
   renderBackendCoverageTrendChart,
 } from '../../scripts/backend-coverage-history.mjs';
 
@@ -90,5 +91,13 @@ describe('renderBackendCoverageTrendChart', () => {
       currentLabel: 'this PR',
     });
     expect(svg).toContain('this PR');
+  });
+});
+
+describe('renderBackendCoverageSection', () => {
+  it('links/embeds via paths relative to dev/, not dev/backend-coverage/', () => {
+    const section = renderBackendCoverageSection();
+    expect(section).toContain('backend-coverage/trend.svg');
+    expect(section).toContain('backend-coverage/index.html');
   });
 });

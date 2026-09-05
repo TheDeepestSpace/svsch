@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { COLORS, renderHistoryTrendChart, mergeBenchmarkHistory } from './render-benchmark-charts.mjs';
+import { renderDashboardPage, renderDashboardSection } from './dashboard-page-shell.mjs';
 
 // gh-pages paths for the C++ backend (gcov/lcov) coverage master-history
 // trend (#412) — mirrors dev/ci-duration/ (scripts/ci-duration.mjs) and
@@ -15,6 +16,11 @@ import { COLORS, renderHistoryTrendChart, mergeBenchmarkHistory } from './render
 export const HISTORY_PATH = 'dev/backend-coverage/history.json';
 export const TREND_SVG_PATH = 'dev/backend-coverage/trend.svg';
 export const INDEX_HTML_PATH = 'dev/backend-coverage/index.html';
+// The combined dev/index.html master dashboard's per-metric section
+// fragment (#413) — joined in by generate-master-dashboard.mjs alongside the
+// other metrics' own. Paths inside it are relative to dev/ (where it ends up
+// embedded), not to dev/backend-coverage/ (where this file itself lives).
+export const SECTION_HTML_PATH = 'dev/backend-coverage/section.html';
 
 const NETWORK_TIMEOUT_MS = 60_000;
 
@@ -89,49 +95,28 @@ export function renderBackendCoverageTrendChart({ history, currentPoint, current
   });
 }
 
-// Minimal static viewer, styled consistently with dev/ci-duration/index.html
-// and dev/mem-profile/index.html (same font stack/muted palette — see their
-// own notes on why they don't reuse github-action-benchmark's dashboard).
-// Hand-rolled the same way those two originally were, rather than importing
-// #411's dashboard-page-shell.mjs — #411 and #412 are independent/parallel
-// PRs, so this can't assume that module has landed yet. Worth revisiting
-// once both have merged.
-export const INDEX_HTML = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
-    <style>
-      html {
-        font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-        -webkit-font-smoothing: antialiased;
-        background-color: #fff;
-        font-size: 16px;
-      }
-      body {
-        color: #4a4a4a;
-        margin: 8px;
-      }
-      h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
-      }
-      img {
-        max-width: 100%;
-      }
-      .small {
-        font-size: 0.75rem;
-      }
-    </style>
-    <title>Backend Coverage</title>
-  </head>
-  <body>
-    <h1>Backend coverage</h1>
-    <p class="small">Lines/functions/branches coverage of the C++ backend (gcov/lcov), per master push. Raw data: <a href="history.json">history.json</a>. Per-PR detail: see that PR's stats comment for a link to its own report.</p>
-    <img src="trend.svg" alt="Backend coverage trend" />
-  </body>
-</html>
-`;
+// Minimal static viewer, using #411's shared dashboard-page-shell.mjs — now
+// that both #411 and #412 have landed, this no longer needs its own inline
+// copy of the template (see git history for the original hand-rolled
+// version, from when #411/#412 were still independent/parallel PRs).
+export const INDEX_HTML = renderDashboardPage({
+  title: 'Backend Coverage',
+  heading: 'Backend coverage',
+  description:
+    'Lines/functions/branches coverage of the C++ backend (gcov/lcov), per master push. Raw data: <a href="history.json">history.json</a>. Per-PR detail: see that PR\'s stats comment for a link to its own report.',
+  bodyHtml: '<img src="trend.svg" alt="Backend coverage trend" />',
+});
+
+// This metric's section on the combined dev/index.html master dashboard
+// (#413) — same trend chart, but linking/embedding via paths relative to
+// dev/ (see SECTION_HTML_PATH above) rather than dev/backend-coverage/.
+export function renderBackendCoverageSection() {
+  return renderDashboardSection({
+    heading: 'Backend coverage',
+    bodyHtml: '<img src="backend-coverage/trend.svg" alt="Backend coverage trend" />',
+    href: 'backend-coverage/index.html',
+  });
+}
 
 function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
@@ -204,8 +189,15 @@ export async function publishBackendCoverageHistory({ freshEntries, githubToken,
         'utf8',
       );
       fs.writeFileSync(path.join(worktreeDir, INDEX_HTML_PATH), INDEX_HTML, 'utf8');
+      fs.writeFileSync(
+        path.join(worktreeDir, SECTION_HTML_PATH),
+        renderBackendCoverageSection(),
+        'utf8',
+      );
 
-      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH], { cwd: worktreeDir });
+      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH, SECTION_HTML_PATH], {
+        cwd: worktreeDir,
+      });
       const message = describeCommit(addedCount);
       git(
         [

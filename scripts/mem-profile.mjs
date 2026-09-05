@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { COLORS, renderHistoryTrendChart, mergeBenchmarkHistory } from './render-benchmark-charts.mjs';
-import { renderDashboardPage } from './dashboard-page-shell.mjs';
+import { renderDashboardPage, renderDashboardSection } from './dashboard-page-shell.mjs';
 
 // gh-pages paths for the memory (RSS) profiling history (#400) — one
 // {sha, date, visualPeakBytes, systemPeakBytes, bddPeakBytes} entry per
@@ -15,6 +15,11 @@ import { renderDashboardPage } from './dashboard-page-shell.mjs';
 export const HISTORY_PATH = 'dev/mem-profile/history.json';
 export const TREND_SVG_PATH = 'dev/mem-profile/trend.svg';
 export const INDEX_HTML_PATH = 'dev/mem-profile/index.html';
+// The combined dev/index.html master dashboard's per-metric section
+// fragment (#413) — joined in by generate-master-dashboard.mjs alongside the
+// other metrics' own. Paths inside it are relative to dev/ (where it ends up
+// embedded), not to dev/mem-profile/ (where this file itself lives).
+export const SECTION_HTML_PATH = 'dev/mem-profile/section.html';
 
 const NETWORK_TIMEOUT_MS = 60_000;
 
@@ -179,6 +184,17 @@ export const INDEX_HTML = renderDashboardPage({
   bodyHtml: '<img src="trend.svg" alt="Memory profiling trend" />',
 });
 
+// This metric's section on the combined dev/index.html master dashboard
+// (#413) — same trend chart, but linking/embedding via paths relative to
+// dev/ (see SECTION_HTML_PATH above) rather than dev/mem-profile/.
+export function renderMemProfileSection() {
+  return renderDashboardSection({
+    heading: 'Memory (RSS) profiling',
+    bodyHtml: '<img src="mem-profile/trend.svg" alt="Memory profiling trend" />',
+    href: 'mem-profile/index.html',
+  });
+}
+
 function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
 }
@@ -250,8 +266,11 @@ export async function publishMemProfileHistory({ freshEntries, githubToken, desc
         'utf8',
       );
       fs.writeFileSync(path.join(worktreeDir, INDEX_HTML_PATH), INDEX_HTML, 'utf8');
+      fs.writeFileSync(path.join(worktreeDir, SECTION_HTML_PATH), renderMemProfileSection(), 'utf8');
 
-      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH], { cwd: worktreeDir });
+      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH, SECTION_HTML_PATH], {
+        cwd: worktreeDir,
+      });
       const message = describeCommit(addedCount);
       git(
         [

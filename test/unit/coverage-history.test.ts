@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeCoverageEntry,
   mergeCoverageHistory,
+  renderCoverageSection,
   renderCoverageTrendChart,
 } from '../../scripts/coverage-history.mjs';
 
@@ -107,5 +108,13 @@ describe('renderCoverageTrendChart', () => {
       currentLabel: 'this PR',
     });
     expect(svg).toContain('this PR');
+  });
+});
+
+describe('renderCoverageSection', () => {
+  it('links/embeds via paths relative to dev/, not dev/coverage/', () => {
+    const section = renderCoverageSection();
+    expect(section).toContain('coverage/trend.svg');
+    expect(section).toContain('coverage/index.html');
   });
 });
