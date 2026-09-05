@@ -25,15 +25,59 @@ function cutNetLabelNodes(webviewPage: FrameLocator, label: string) {
   });
 }
 
+// The number of real (non-label) blocks currently rendered in the partial
+// pane, or null while no partial pane webview exists yet. Scans the outer
+// webview iframes the same way findPanelFrameIndex does, without disturbing
+// the world's active-panel selection.
+async function partialPaneBlockCount(world: BddWorld): Promise<number | null> {
+  const frames = await world.workbox.locator('iframe.webview').count();
+  for (let index = 0; index < frames; index++) {
+    const frame = world.workbox
+      .frameLocator('iframe.webview')
+      .nth(index)
+      .frameLocator('iframe#active-frame');
+    const isPartial = await frame
+      .locator('.shell[data-svsch-partial="true"]')
+      .count()
+      .catch(() => 0);
+    if (isPartial > 0) {
+      return frame
+        .locator('.react-flow__node:not([data-node-kind="netLabel"])')
+        .count()
+        .catch(() => 0);
+    }
+  }
+  return null;
+}
+
 // Clicks the selection toolbar's "Add to Partial" button. Unlike the generic
 // "I click the {string} button" step this doesn't wait for a layout-file
 // write — opening/adding to the partial pane never persists anything.
 When('I add the selected block to the partial diagram', async function (this: BddWorld) {
+  const blocksBefore = (await partialPaneBlockCount(this)) ?? 0;
   const button = this.webviewPage.locator('.svsch-selection-toolbar button', {
     hasText: 'Add to Partial',
   });
   await expect(button).toBeVisible();
   await button.click();
+  // The screenshot below captures the whole workbench, and the click returns
+  // while VS Code is still creating (or re-laying-out) the partial webview —
+  // an immediate capture lands on a blank transient. Wait until the added
+  // block actually rendered in the partial pane.
+  const deadline = Date.now() + 30_000;
+  for (;;) {
+    const blocks = await partialPaneBlockCount(this);
+    if (blocks !== null && blocks > blocksBefore) break;
+    if (Date.now() > deadline) {
+      throw new Error(
+        `Partial pane block count did not increase past ${blocksBefore} after Add to Partial`,
+      );
+    }
+    await this.workbox.waitForTimeout(250);
+  }
+  // Let the editor-split relayout settle so the main pane isn't captured
+  // mid-resize.
+  await this.workbox.waitForTimeout(300);
   await this.takeScreenshot('After clicking Add to Partial');
 });
 

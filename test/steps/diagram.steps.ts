@@ -3851,7 +3851,13 @@ async function checkConnection(
         e.getAttribute('data-id'),
       ),
     );
-  const found = edges.some((id) => id?.includes(sourceId) && id?.includes(targetId));
+  // Cut-stub edges join a block to its cut-net label, not two blocks; their id
+  // embeds the original edge's id (which names both endpoints), so a substring
+  // match over them would report a "connection" between blocks whose shared
+  // net is in fact cut.
+  const found = edges.some(
+    (id) => !id?.startsWith('cut-stub:') && id?.includes(sourceId) && id?.includes(targetId),
+  );
   if (negated && found)
     throw new Error(`Unexpected connection found between ${sourceId} and ${targetId}`);
   if (!negated && !found)
