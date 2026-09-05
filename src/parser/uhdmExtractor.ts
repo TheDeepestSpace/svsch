@@ -74,9 +74,14 @@ async function computeFingerprint(
   files: string[],
   includePaths: string[],
   defines: Record<string, string>,
+  fileListPath?: string,
 ): Promise<CacheFingerprint> {
+  // Track the filelist's own mtime too (in addition to its listed sources' mtimes) so that
+  // editing directives inside it (e.g. -I/+define+) that don't change the listed sources
+  // still invalidates the cache, not just edits to the listed sources themselves.
+  const fingerprintedFiles = fileListPath ? [...files, fileListPath] : files;
   const entries = await Promise.all(
-    files.map(async (f) => ({
+    fingerprintedFiles.map(async (f) => ({
       path: f,
       mtime: (await fs.stat(f)).mtimeMs,
     })),
@@ -105,13 +110,14 @@ async function runSurelog(
   args: string[],
   sourceFiles: string[],
   onProgress?: (message: string, increment: number) => void,
+  cwd?: string,
 ): Promise<void> {
   const basenames = sourceFiles.map((f) => path.basename(f));
   const seen = new Set<string>();
   let reportedPct = 0;
 
   return new Promise((resolve, reject) => {
-    const proc = spawn(surelogPath, args);
+    const proc = spawn(surelogPath, args, cwd ? { cwd } : undefined);
     const stderrChunks: Buffer[] = [];
     const stdoutChunks: Buffer[] = [];
     let buf = '';
@@ -192,6 +198,7 @@ export async function extractDesignWithUhdm(
   defines?: Record<string, string>,
   moduleName?: string,
   onProgress?: (message: string, increment: number) => void,
+  fileListPath?: string,
 ): Promise<DesignGraph> {
   const cacheDir = path.join(workspaceRoot, '.svsch', 'uhdm_cache');
   const fingerprintFile = path.join(cacheDir, 'fingerprint.json');
@@ -202,6 +209,7 @@ export async function extractDesignWithUhdm(
     files,
     includePaths ?? [],
     defines ?? {},
+    fileListPath,
   );
 
   // Concurrent calls for the same cacheDir (e.g. a spurious watcher-triggered rebuild racing
@@ -246,14 +254,29 @@ export async function extractDesignWithUhdm(
         }
       }
 
-      surelogArgs.push(...files);
+      if (fileListPath) {
+        surelogArgs.push('-f', fileListPath);
+      } else {
+        surelogArgs.push(...files);
+      }
 
       onProgress?.('Elaborating project...', 0);
 
-      await runSurelog(surelogPath, surelogArgs, files, (msg, inc) => {
-        surelogReportedPct += inc;
-        onProgress?.(msg, inc);
-      });
+      // Surelog resolves relative paths inside a `-f` filelist against its own process cwd,
+      // not against the filelist's location. Run it from the filelist's directory so those
+      // paths resolve the same way parseFileList (backend.ts) already resolves them.
+      const surelogCwd = fileListPath ? path.dirname(fileListPath) : undefined;
+
+      await runSurelog(
+        surelogPath,
+        surelogArgs,
+        files,
+        (msg, inc) => {
+          surelogReportedPct += inc;
+          onProgress?.(msg, inc);
+        },
+        surelogCwd,
+      );
 
       // Ensure we've consumed Surelog's 80% budget before moving on
       const surelogRemainder = 80 - surelogReportedPct;
@@ -2300,6 +2323,42 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
       );
       if (sourcePort?.width) {
         edge.width = sourcePort.width;
+      }
+    }
+
+    // The backend stamps combFeedback on edges that close a purely
+    // combinational cycle (no register/latch in the loop) — e.g. a
+    // cross-coupled NAND SR latch. Surface one warning per independent loop,
+    // mirroring the inferred-latch warning above; the loop still renders as a
+    // normal cyclic (feedback) edge.
+    {
+      const feedbackEdges = module.edges.filter((edge) => edge.metadata?.combFeedback);
+      const loopOf = new Map<string, string>();
+      const findLoop = (id: string): string => {
+        let root = id;
+        while (loopOf.get(root) !== root) root = loopOf.get(root)!;
+        return root;
+      };
+      for (const edge of feedbackEdges) {
+        for (const id of [edge.source, edge.target]) {
+          if (!loopOf.has(id)) loopOf.set(id, id);
+        }
+        loopOf.set(findLoop(edge.source), findLoop(edge.target));
+      }
+      const loops = new Map<string, DiagramEdge[]>();
+      for (const edge of feedbackEdges) {
+        const root = findLoop(edge.source);
+        loops.set(root, [...(loops.get(root) ?? []), edge]);
+      }
+      for (const loopEdges of loops.values()) {
+        const signals = [...new Set(loopEdges.map((edge) => edge.signal).filter(Boolean))];
+        graph.diagnostics.push({
+          severity: 'warning',
+          message:
+            `${modName} has a combinational feedback loop` +
+            (signals.length ? ` through ${signals.join(', ')}` : ''),
+          source: loopEdges[0].sourceRange,
+        });
       }
     }
 

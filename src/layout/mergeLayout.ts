@@ -2849,6 +2849,11 @@ function elkLeadLengthForPort(side: ElkPortSide, portId?: string): number {
   return diagramSizing.edgeLeadLength;
 }
 
+function leafBounds(node: DiagramNode, position: { x: number; y: number }): NodeBounds {
+  const dimensions = resolvedNodeDimensions(node);
+  return { x: position.x, y: position.y, width: dimensions.width, height: dimensions.height };
+}
+
 function alignSimpleLeafNodes(
   nodes: DiagramNode[],
   edges: DiagramEdge[],
@@ -2856,6 +2861,27 @@ function alignSimpleLeafNodes(
   moduleLayout: SavedModuleLayout,
 ): void {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
+  // A leaf port is normally aligned to sit right beside the single node that
+  // drives or reads it. But when ELK's own (already non-overlapping) layer
+  // assignment puts that peer far away — e.g. a structural feedback loop,
+  // where cycle-breaking can land the peer in a much earlier layer — sliding
+  // the port straight onto the peer's row can drop it on top of an unrelated
+  // node that ELK placed in between. Guard the realignment with a collision
+  // check against every other node's current bounds and skip it when it
+  // would introduce an overlap, leaving ELK's own placement in effect.
+  const wouldOverlapOtherNode = (
+    node: DiagramNode,
+    candidate: { x: number; y: number },
+  ): boolean => {
+    const candidateBounds = leafBounds(node, candidate);
+    return nodes.some((other) => {
+      if (other.id === node.id) return false;
+      const otherPosition = positions.get(other.id);
+      if (!otherPosition) return false;
+      return boundsOverlap(candidateBounds, leafBounds(other, otherPosition));
+    });
+  };
 
   for (const node of nodes) {
     if (moduleLayout.nodes[node.id]?.fixed || node.kind !== 'port') {
@@ -2920,7 +2946,7 @@ function alignSimpleLeafNodes(
       );
       const verticalGap =
         diagramSizing.gridSize * (peerSide === 'NORTH' ? 3 + sideIndex * 2 : 2 + sideIndex * 2);
-      positions.set(node.id, {
+      const candidate = {
         x: snapToGrid(peerPosition.x + peerOffset.x - ownOffset.x - ownLeadOffset),
         y: snapToGrid(
           peerSide === 'NORTH'
@@ -2928,14 +2954,20 @@ function alignSimpleLeafNodes(
             : peerPosition.y + peerOffset.y + verticalGap,
           node.kind,
         ),
-      });
+      };
+      if (!wouldOverlapOtherNode(node, candidate)) {
+        positions.set(node.id, candidate);
+      }
       continue;
     }
 
-    positions.set(node.id, {
+    const candidate = {
       ...nodePosition,
       y: snapToGrid(peerPosition.y + peerOffset.y - ownOffset.y, node.kind),
-    });
+    };
+    if (!wouldOverlapOtherNode(node, candidate)) {
+      positions.set(node.id, candidate);
+    }
   }
 }
 

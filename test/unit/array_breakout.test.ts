@@ -24,6 +24,8 @@ describe('parser: array breakout', () => {
     const mod = graph.modules.array_stack_breakout;
     const breakout = mod.nodes.find((n) => n.kind === 'bus' && n.label === 'arr');
     expect(breakout).toBeDefined();
-    console.log(JSON.stringify(breakout, null, 2));
+    expect(
+      breakout?.ports.filter((port) => port.direction === 'output').map((port) => port.label),
+    ).toEqual(['[3]', '[2]', '[1]', '[0]']);
   });
 });

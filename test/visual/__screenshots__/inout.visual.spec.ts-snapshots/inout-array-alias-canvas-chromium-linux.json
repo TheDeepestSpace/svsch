@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 1200,
-        "y": 168
+        "y": 120
       },
       "width": 144,
       "height": 125,
@@ -48,13 +48,13 @@
             "direction": "input"
           },
           {
-            "id": "out:_0_",
-            "name": "[0]",
+            "id": "out:_1_",
+            "name": "[1]",
             "direction": "output"
           },
           {
-            "id": "out:_1_",
-            "name": "[1]",
+            "id": "out:_0_",
+            "name": "[0]",
             "direction": "output"
           }
         ]
@@ -105,7 +105,7 @@
       "type": "hdl",
       "position": {
         "x": 816,
-        "y": 288
+        "y": 240
       },
       "width": 144,
       "height": 96,
@@ -140,7 +140,7 @@
       "type": "hdl",
       "position": {
         "x": 816,
-        "y": 144
+        "y": 96
       },
       "width": 144,
       "height": 96,
@@ -175,7 +175,7 @@
       "type": "hdl",
       "position": {
         "x": 1560,
-        "y": 252
+        "y": 204
       },
       "width": 120,
       "height": 24,
@@ -215,7 +215,7 @@
       "type": "hdl",
       "position": {
         "x": 1896,
-        "y": 252
+        "y": 204
       },
       "width": 120,
       "height": 24,
@@ -238,7 +238,7 @@
       "target": "port:inout_array_alias:a",
       "sourceHandle": "out:a",
       "targetHandle": "port:a",
-      "path": "M 1352 270 L 1552.5 270"
+      "path": "M 1352 222 L 1552.5 222"
     },
     {
       "id": "edge:bus:inout_array_alias:drive_enable:mux:inout_array_alias:a_elem_0:ternary:drive_enable_0_",
@@ -246,7 +246,7 @@
       "target": "mux:inout_array_alias:a_elem_0:ternary",
       "sourceHandle": "out:_0_",
       "targetHandle": "sel",
-      "path": "M 600 48 L 624 48 L 720 48 L 720 264 L 888 264 L 888 312"
+      "path": "M 600 96 L 624 96 L 720 96 L 720 216 L 888 216 L 888 264"
     },
     {
       "id": "edge:bus:inout_array_alias:drive_enable:mux:inout_array_alias:a_elem_1:ternary:drive_enable_1_",
@@ -254,7 +254,7 @@
       "target": "mux:inout_array_alias:a_elem_1:ternary",
       "sourceHandle": "out:_1_",
       "targetHandle": "sel",
-      "path": "M 600 96 L 624 96 L 711 96 Q 720 87 729 96 L 888 96 L 888 120 L 888 168"
+      "path": "M 600 48 L 624 48 L 888 48 L 888 72 L 888 120"
     },
     {
       "id": "edge:literal:inout_array_alias:8_hff:8_hff:mux:inout_array_alias:a_elem_0:ternary:8_hff",
@@ -262,7 +262,7 @@
       "target": "mux:inout_array_alias:a_elem_0:ternary",
       "sourceHandle": "port:8_hff",
       "targetHandle": "in:true",
-      "path": "M 600 192 L 624 192 L 711 192 Q 720 183 729 192 L 792 192 L 792 255 Q 801 264 792 273 L 792 336 L 816 336"
+      "path": "M 600 192 L 624 192 L 711 192 Q 720 183 729 192 L 792 192 L 792 207 Q 801 216 792 225 L 792 288 L 816 288"
     },
     {
       "id": "edge:literal:inout_array_alias:8_hff:8_hff:mux:inout_array_alias:a_elem_1:ternary:8_hff",
@@ -270,7 +270,7 @@
       "target": "mux:inout_array_alias:a_elem_1:ternary",
       "sourceHandle": "port:8_hff",
       "targetHandle": "in:true",
-      "path": "M 600 192 L 624 192 L 711 192 Q 720 183 729 192 L 792 192 L 816 192"
+      "path": "M 600 192 L 624 192 L 711 192 Q 720 183 729 192 L 792 192 L 792 144 L 816 144"
     },
     {
       "id": "edge:literal:inout_array_alias:8_hzz:8_hzz:mux:inout_array_alias:a_elem_0:ternary:8_hzz",
@@ -278,7 +278,7 @@
       "target": "mux:inout_array_alias:a_elem_0:ternary",
       "sourceHandle": "port:8_hzz",
       "targetHandle": "in:false",
-      "path": "M 600 240 L 624 240 L 711 240 Q 720 231 729 240 L 792 240 L 792 255 Q 801 264 792 273 L 792 360 L 816 360"
+      "path": "M 600 240 L 624 240 L 792 240 L 792 312 L 816 312"
     },
     {
       "id": "edge:literal:inout_array_alias:8_hzz:8_hzz:mux:inout_array_alias:a_elem_1:ternary:8_hzz",
@@ -286,7 +286,7 @@
       "target": "mux:inout_array_alias:a_elem_1:ternary",
       "sourceHandle": "port:8_hzz",
       "targetHandle": "in:false",
-      "path": "M 600 240 L 624 240 L 711 240 Q 720 231 729 240 L 792 240 L 792 216 L 816 216"
+      "path": "M 600 240 L 624 240 L 792 240 L 792 225 Q 801 216 792 207 L 792 168 L 816 168"
     },
     {
       "id": "edge:mux:inout_array_alias:a_elem_0:ternary:bus_comp:inout_array_alias:a:a_elem_0",
@@ -294,7 +294,7 @@
       "target": "bus_comp:inout_array_alias:a",
       "sourceHandle": "out",
       "targetHandle": "in:_0_",
-      "path": "M 960 336 L 984 336 L 1080 336 L 1080 240 L 1176 240 L 1200 240"
+      "path": "M 960 288 L 984 288 L 1080 288 L 1080 192 L 1176 192 L 1200 192"
     },
     {
       "id": "edge:mux:inout_array_alias:a_elem_1:ternary:bus_comp:inout_array_alias:a:a_elem_1",
@@ -302,7 +302,7 @@
       "target": "bus_comp:inout_array_alias:a",
       "sourceHandle": "out",
       "targetHandle": "in:_1_",
-      "path": "M 960 192 L 984 192 L 1176 192 L 1200 192"
+      "path": "M 960 144 L 984 144 L 1176 144 L 1200 144"
     },
     {
       "id": "edge:port:inout_array_alias:a:port:inout_array_alias:y:y",
@@ -310,7 +310,7 @@
       "target": "port:inout_array_alias:y",
       "sourceHandle": "port:a",
       "targetHandle": "port:y",
-      "path": "M 1690.5 270 L 1888.5 270"
+      "path": "M 1690.5 222 L 1888.5 222"
     },
     {
       "id": "edge:port:inout_array_alias:drive_enable:bus:inout_array_alias:drive_enable:drive_enable",

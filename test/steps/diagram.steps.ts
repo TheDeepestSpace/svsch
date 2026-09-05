@@ -2357,6 +2357,26 @@ Then(
   },
 );
 
+Then(
+  'the module dropdown should contain {string}, {string} in that order',
+  async function (this: BddWorld, m1: string, m2: string) {
+    const options = await this.webviewPage
+      .locator('select[aria-label="Module"] option')
+      .allTextContents();
+    expect(options).toEqual([m1, m2]);
+  },
+);
+
+Then(
+  'the module dropdown should not contain {string}',
+  async function (this: BddWorld, moduleName: string) {
+    const options = await this.webviewPage
+      .locator('select[aria-label="Module"] option')
+      .allTextContents();
+    expect(options).not.toContain(moduleName);
+  },
+);
+
 Then('I should see a combinational block', async function (this: BddWorld) {
   await expect(
     this.webviewPage.locator('[data-node-kind="comb"], [data-node-kind="gate"]'),
