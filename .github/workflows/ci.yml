@@ -325,7 +325,7 @@ jobs:
         # alongside the test run itself, rather than needing a second,
         # separately-timed step.
         run: >-
-          node scripts/mem-poller.mjs mem-profile-visual-shard-${{ matrix.shard }}.json --
+          node scripts/mem-poller.mjs visual-shard-${{ matrix.shard }}.json --
           npm run test:visual -- --shard=${{ matrix.shard }}/6 --reporter=blob
         env:
           SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/visual-${{ matrix.shard }}
@@ -338,7 +338,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mem-profile-visual-raw-${{ matrix.shard }}
-          path: mem-profile-visual-shard-${{ matrix.shard }}.json
+          path: visual-shard-${{ matrix.shard }}.json
           if-no-files-found: warn
 
       - name: Upload Backend Coverage Data (visual, shard ${{ matrix.shard }})
@@ -638,7 +638,7 @@ jobs:
         # command it wraps) so it can read every descendant process's
         # /proc/<pid>/stat regardless of which uid (root vs dev) owns it.
         run: >-
-          node scripts/mem-poller.mjs mem-profile-bdd-shard-${{ matrix.shard }}.json --
+          node scripts/mem-poller.mjs bdd-shard-${{ matrix.shard }}.json --
           sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
         env:
           SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/bdd-${{ matrix.shard }}
@@ -648,7 +648,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mem-profile-bdd-raw-${{ matrix.shard }}
-          path: mem-profile-bdd-shard-${{ matrix.shard }}.json
+          path: bdd-shard-${{ matrix.shard }}.json
           if-no-files-found: warn
 
       # closeElectronApp sweeps detached NodeService helpers after every test.
@@ -925,7 +925,7 @@ jobs:
         # why it runs as root around the sudo'd test command rather than
         # inside it.
         run: >-
-          node scripts/mem-poller.mjs mem-profile-system-${{ matrix.vscode_version }}.json --
+          node scripts/mem-poller.mjs system-${{ matrix.vscode_version }}.json --
           sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
@@ -936,7 +936,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mem-profile-system-raw-${{ matrix.vscode_version }}
-          path: mem-profile-system-${{ matrix.vscode_version }}.json
+          path: system-${{ matrix.vscode_version }}.json
           if-no-files-found: warn
 
       - name: Upload Backend Coverage Data (system, ${{ matrix.vscode_version }})
