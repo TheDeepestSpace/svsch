@@ -1105,6 +1105,12 @@ jobs:
       # gh-pages (a static asset next to the benchmark history data it
       # already publishes there).
       contents: write
+    concurrency:
+      # Shared across every job/workflow that pushes to gh-pages (see
+      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
+      # serialized repo-wide, not just within this workflow/ref (#380).
+      group: gh-pages-publish
+      cancel-in-progress: false
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1176,6 +1182,12 @@ jobs:
       # Looks up this run's own timing (Actions API) for its "so far"
       # preview point.
       actions: read
+    concurrency:
+      # Shared across every job/workflow that pushes to gh-pages (see
+      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
+      # serialized repo-wide, not just within this workflow/ref (#380).
+      group: gh-pages-publish
+      cancel-in-progress: false
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1234,6 +1246,12 @@ jobs:
       # HTML report to gh-pages (a static asset next to the mem-profile
       # history data it already publishes there).
       contents: write
+    concurrency:
+      # Shared across every job/workflow that pushes to gh-pages (see
+      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
+      # serialized repo-wide, not just within this workflow/ref (#380).
+      group: gh-pages-publish
+      cancel-in-progress: false
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1294,6 +1312,12 @@ jobs:
       # gh-pages (GitHub Pages is enabled for this repo), so it's directly
       # browsable instead of only downloadable as a workflow artifact.
       contents: write
+    concurrency:
+      # Shared across every job/workflow that pushes to gh-pages (see
+      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
+      # serialized repo-wide, not just within this workflow/ref (#380).
+      group: gh-pages-publish
+      cancel-in-progress: false
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1341,6 +1365,12 @@ jobs:
       # gh-pages (GitHub Pages is enabled for this repo), so it's directly
       # browsable instead of only downloadable as a workflow artifact.
       contents: write
+    concurrency:
+      # Shared across every job/workflow that pushes to gh-pages (see
+      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
+      # serialized repo-wide, not just within this workflow/ref (#380).
+      group: gh-pages-publish
+      cancel-in-progress: false
     steps:
       - *checkout_step
       - *restore_npm_step
