@@ -18,9 +18,13 @@ const visualCategory = CATEGORIES.find((c) => c.key === 'visual')!;
 
 describe('computePeakRssBytes', () => {
   it('returns the maximum rss across the timeseries', () => {
-    expect(computePeakRssBytes([{ t: 0, rss: 100 }, { t: 1, rss: 300 }, { t: 2, rss: 200 }])).toBe(
-      300,
-    );
+    expect(
+      computePeakRssBytes([
+        { t: 0, rss: 100 },
+        { t: 1, rss: 300 },
+        { t: 2, rss: 200 },
+      ]),
+    ).toBe(300);
   });
 
   it('returns 0 for an empty timeseries', () => {
