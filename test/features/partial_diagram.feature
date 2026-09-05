@@ -80,6 +80,32 @@ Feature: Partial diagram
     And I should see 2 cut net labels named "mid"
     And there should not be a connection between "u1" and "u2"
 
+  Scenario: Selecting multiple blocks and clicking Add to Partial adds them all at once
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        logic mid;
+        leaf u1(.a(a), .y(mid));
+        leaf u2(.a(mid), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select the blocks "u1" and "u2"
+    Then the "Add to Partial" button should be visible
+    When I add the selected block to the partial diagram
+    Then the SVSCH partial diagram panel opens
+    When I switch to the partial diagram panel
+    Then I should see an instance node "u1" of module "leaf"
+    And I should see an instance node "u2" of module "leaf"
+    And I should see 1 cut net labels named "a"
+    And I should see 2 cut net labels named "mid"
+    And I should see 1 cut net labels named "y"
+    And there should not be a connection between "u1" and "u2"
+
   Scenario: Closing the partial panel discards its state
     Given I have a file "top.sv" in my workspace:
       """

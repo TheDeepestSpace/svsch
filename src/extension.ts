@@ -38,8 +38,8 @@ export function activate(context: vscode.ExtensionContext): void {
       panel = new DiagramPanel(context, getElaborationService(), () => {
         panel = undefined;
       });
-      panel.onAddToPartial = async (module, nodeId) => {
-        await getPartialPanel().addNode(module, nodeId);
+      panel.onAddToPartial = async (module, nodeIds) => {
+        await getPartialPanel().addNodes(module, nodeIds);
       };
     }
     return panel;

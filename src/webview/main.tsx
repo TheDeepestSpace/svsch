@@ -929,22 +929,20 @@ function DiagramApp(): React.ReactElement {
       if (!graphInSync) return;
 
       // `p` mirrors the block-selection toolbar's "Add to Partial" button —
-      // exactly one real (non-label, non-spliced) block selected, and never
+      // one or more real (non-label, non-spliced) blocks selected, and never
       // from inside a partial pane itself.
       if (key === 'p') {
         if (isPartial) return;
-        const selectedBlocks = nodes.filter(
-          (node) =>
-            node.selected === true &&
-            node.data.node.kind !== 'netLabel' &&
-            !isExpandNamespacedId(node.id),
+        const allSelected = nodes.filter((node) => node.selected === true);
+        const selectedBlocks = allSelected.filter(
+          (node) => node.data.node.kind !== 'netLabel' && !isExpandNamespacedId(node.id),
         );
-        if (selectedBlocks.length !== 1) return;
+        if (selectedBlocks.length === 0 || selectedBlocks.length !== allSelected.length) return;
         event.preventDefault();
         vscode.postMessage({
           type: 'addToPartial',
           moduleName: view.moduleName,
-          nodeId: selectedBlocks[0].id,
+          nodeIds: selectedBlocks.map((node) => node.id),
         });
         return;
       }
@@ -2253,12 +2251,14 @@ function NodeSelectionToolbar({
   const collapseSplice = partialDiagram ? undefined : activeSplice;
   const showCutOut = !partialDiagram && cutOutEdges.length > 0;
   const showRevertSize = !partialDiagram && resizedNodeIds.length > 0;
-  // "Add to Partial" (issue #403): exactly one real block selected on the
-  // main diagram — the host clones it (all wires cut) into the partial pane,
-  // opening the pane if none is open and reusing the open one otherwise.
-  const addToPartialNode =
-    !partialDiagram && selectedBlocks.length === 1 && selected.length === 1
-      ? selected[0]
+  // "Add to Partial" (issue #403): one or more real blocks selected on the
+  // main diagram — the host clones all of them (every wire cut) into the
+  // partial pane, opening the pane if none is open and reusing the open one
+  // otherwise. `selected` already excludes netLabel and expand-namespaced
+  // (spliced) nodes, so any non-empty selection here is all real blocks.
+  const addToPartialNodes =
+    !partialDiagram && selectedBlocks.length === selected.length && selected.length >= 1
+      ? selected
       : undefined;
 
   // Nothing to offer: a lone block with every net already cut and no resize
@@ -2271,7 +2271,7 @@ function NodeSelectionToolbar({
       !showRevertSize &&
       !expandableInstance &&
       !collapseSplice &&
-      !addToPartialNode) ||
+      !addToPartialNodes) ||
     (selected.length < 1 && !expandableInstance && !collapseSplice)
   ) {
     return null;
@@ -2478,17 +2478,21 @@ function NodeSelectionToolbar({
               Collapse
             </button>
           )}
-          {addToPartialNode && (
+          {addToPartialNodes && (
             <button
               type="button"
               className="svsch-selection-add-partial-control"
-              title="Clone this block (all wires cut) into the partial diagram pane"
+              title={
+                addToPartialNodes.length === 1
+                  ? 'Clone this block (all wires cut) into the partial diagram pane'
+                  : `Clone these ${addToPartialNodes.length} blocks (all wires cut) into the partial diagram pane`
+              }
               onClick={(event) => {
                 event.stopPropagation();
                 vscode.postMessage({
                   type: 'addToPartial',
                   moduleName,
-                  nodeId: addToPartialNode.id,
+                  nodeIds: addToPartialNodes.map((node) => node.id),
                 });
               }}
               onDoubleClick={(event) => event.stopPropagation()}

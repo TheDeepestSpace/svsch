@@ -159,7 +159,7 @@ type WebviewMessage =
       };
     }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
-  | { type: 'addToPartial'; moduleName: string; nodeId: string }
+  | { type: 'addToPartial'; moduleName: string; nodeIds: string[] }
   | { type: 'exportSvg' };
 
 export class DiagramPanel {
@@ -167,9 +167,9 @@ export class DiagramPanel {
    * Delegate for the selection toolbar's "Add to Partial" action (issue
    * #403) — set by extension.ts, which owns the partial pane's lifecycle so
    * one open pane is reused across clicks. Receives the fully loaded source
-   * module and the selected node's id.
+   * module and the selected nodes' ids (one or more, for a multi-selection).
    */
-  onAddToPartial?: (module: DesignModule, nodeId: string) => Promise<void> | void;
+  onAddToPartial?: (module: DesignModule, nodeIds: string[]) => Promise<void> | void;
 
   private panel?: vscode.WebviewPanel;
   private readonly elaborationInvalidationDisposable: Disposable;
@@ -518,7 +518,7 @@ export class DiagramPanel {
     if (message.type === 'addToPartial') {
       const module = this.graph?.modules[message.moduleName];
       if (module && !isListOnlyPlaceholder(module)) {
-        await this.onAddToPartial?.(module, message.nodeId);
+        await this.onAddToPartial?.(module, message.nodeIds);
       }
       return;
     }

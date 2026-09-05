@@ -66,12 +66,18 @@ export class PartialDiagramPanel {
   ) {}
 
   /**
-   * Adds a node from the main diagram into the pane, creating the pane if it
-   * isn't open. v1 scope: the pane views exactly one source module — adding
-   * a node from a *different* module restarts the pane's content around it.
+   * Adds one or more nodes from the main diagram into the pane (e.g. a
+   * multi-block selection sent in a single "Add to Partial" click), creating
+   * the pane if it isn't open. v1 scope: the pane views exactly one source
+   * module — adding a node from a *different* module restarts the pane's
+   * content around it. All of them land in a single re-render rather than
+   * one per node.
    */
-  async addNode(sourceModule: DesignModule, nodeId: string): Promise<void> {
-    if (!sourceModule.nodes.some((node) => node.id === nodeId)) {
+  async addNodes(sourceModule: DesignModule, nodeIds: string[]): Promise<void> {
+    const validNodeIds = nodeIds.filter((nodeId) =>
+      sourceModule.nodes.some((node) => node.id === nodeId),
+    );
+    if (validNodeIds.length === 0) {
       return;
     }
     this.ensurePanel();
@@ -83,8 +89,14 @@ export class PartialDiagramPanel {
     // see the module as the main diagram last showed it.
     this.sourceModule = sourceModule;
     this.panel?.reveal(vscode.ViewColumn.Beside, true);
-    if (!this.state.includedNodeIds.includes(nodeId)) {
-      this.state.includedNodeIds.push(nodeId);
+    let added = false;
+    for (const nodeId of validNodeIds) {
+      if (!this.state.includedNodeIds.includes(nodeId)) {
+        this.state.includedNodeIds.push(nodeId);
+        added = true;
+      }
+    }
+    if (added) {
       await this.postView();
     }
   }
