@@ -196,15 +196,12 @@ Then('I should not see any cut net labels in the partial diagram', async functio
 // can't poll the saved-layout file for a diff: the partial pane's layout
 // lives only in the extension host's memory and is never written to disk
 // (see PartialDiagramPanel) — the round trip is given time to settle instead.
-When(
-  'I click "Auto Layout All" in the partial diagram toolbar',
-  async function (this: BddWorld) {
-    await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
-    const button = this.webviewPage.locator('.toolbar button', { hasText: 'Auto Layout All' });
-    await expect(button).toBeVisible();
-    await button.click();
-    await this.workbox.waitForTimeout(1000);
-    await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 10_000 });
-    await this.takeScreenshot('After clicking Auto Layout All in the partial diagram');
-  },
-);
+When('I click "Auto Layout All" in the partial diagram toolbar', async function (this: BddWorld) {
+  await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
+  const button = this.webviewPage.locator('.toolbar button', { hasText: 'Auto Layout All' });
+  await expect(button).toBeVisible();
+  await button.click();
+  await this.workbox.waitForTimeout(1000);
+  await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 10_000 });
+  await this.takeScreenshot('After clicking Auto Layout All in the partial diagram');
+});
