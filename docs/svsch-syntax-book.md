@@ -443,7 +443,7 @@ Nested conditional expressions become cascaded two-way multiplexers.
   input logic c,
   output logic y
 );
-  <mark>assign y = sel1 ? (sel2 ? a : b) : c;</mark>
+  assign y = sel1 ? (<mark>sel2 ? a : b</mark>) : c;
 endmodule
 </code></pre>
 
