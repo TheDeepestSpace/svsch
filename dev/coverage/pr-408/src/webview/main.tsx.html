@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/1096</span>
+                <span class='fraction'>0/1097</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/725</span>
+                <span class='fraction'>0/727</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/941</span>
+                <span class='fraction'>0/942</span>
             </div>
         
             
@@ -2969,7 +2969,16 @@
 <a name='L2904'></a><a href='#L2904'>2904</a>
 <a name='L2905'></a><a href='#L2905'>2905</a>
 <a name='L2906'></a><a href='#L2906'>2906</a>
-<a name='L2907'></a><a href='#L2907'>2907</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L2907'></a><a href='#L2907'>2907</a>
+<a name='L2908'></a><a href='#L2908'>2908</a>
+<a name='L2909'></a><a href='#L2909'>2909</a>
+<a name='L2910'></a><a href='#L2910'>2910</a>
+<a name='L2911'></a><a href='#L2911'>2911</a>
+<a name='L2912'></a><a href='#L2912'>2912</a>
+<a name='L2913'></a><a href='#L2913'>2913</a>
+<a name='L2914'></a><a href='#L2914'>2914</a>
+<a name='L2915'></a><a href='#L2915'>2915</a>
+<a name='L2916'></a><a href='#L2916'>2916</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -3111,7 +3120,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -4066,6 +4080,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -6012,11 +6030,16 @@ const vscode = <span class="cstat-no" title="statement not covered" >getVscodeAp
 const EDGE_Z_INDEX = <span class="cstat-no" title="statement not covered" >1;</span>
 const ARRAY_NODE_Z_INDEX = <span class="cstat-no" title="statement not covered" >2;</span>
 const BLOCK_NODE_Z_INDEX = <span class="cstat-no" title="statement not covered" >2;</span>
+// Net-cut labels sit above blocks for the same reason their stub edges do:
+// a label lives right at a node's port lead, and a block placed later (the
+// partial pane's extend inserts nodes into an already-rendered diagram) can
+// otherwise mount on top of it, burying the label and its hover actions.
+const NET_LABEL_NODE_Z_INDEX = <span class="cstat-no" title="statement not covered" >3;</span>
 // A cut net's stub wire is always short and runs from a node straight out to
 // its own dangling end, so it never has a real edge's usual clearance from
 // node interiors — draw it (and its hover-only Reroute control) above nodes
-// so it stays visible, and clickable, when it lands close to one.
-const CUT_STUB_EDGE_Z_INDEX = <span class="cstat-no" title="statement not covered" >3;</span>
+// and labels so it stays visible, and clickable, when it lands close to one.
+const CUT_STUB_EDGE_Z_INDEX = <span class="cstat-no" title="statement not covered" >4;</span>
 const GENERATE_REGION_MIN_CONTENT_PADDING = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize * 2;</span>
 &nbsp;
 function <span class="fstat-no" title="function not covered" >generateStateClass(s</span>tate?: string, prefix = <span class="branch-0 cbranch-no" title="branch not covered" >'generate'): string | undefined {</span>
@@ -6977,7 +7000,11 @@ function <span class="fstat-no" title="function not covered" >DiagramApp(): Reac
       position: node.position,
       selected: reselectIds?.has(node.id) ?? undefined,
       className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
-      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
+      zIndex: nodeIsArrayNode(node)
+        ? ARRAY_NODE_Z_INDEX
+        : node.kind === 'netLabel'
+          ? NET_LABEL_NODE_Z_INDEX
+          : BLOCK_NODE_Z_INDEX,
       data: {
         node,
         moduleName: view.moduleName,
@@ -8788,7 +8815,7 @@ function <span class="fstat-no" title="function not covered" >snapRegionBounds(<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-05T16:14:14.359Z
+                at 2026-09-05T23:01:05.319Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
