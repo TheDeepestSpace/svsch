@@ -1,12 +1,7 @@
 Feature: Partial diagram
-  The ephemeral "Partial Diagram" pane (issue #403): selecting a node on the
-  main diagram and clicking "Add to Partial [P]" opens (or reuses) a second
-  "SVSCH Partial Diagram" webview holding a clone of that node with every
-  wire cut. Hovering a cut net end reveals an "extend" arrow that pulls in
-  the node on the other end of that net — resolved against the original
-  module's edge list — and ties the net inside the partial only. Existing
-  nodes stay locked in place when a new node is pulled in (locked-node ELK
-  layout). Nothing is persisted: closing the pane discards all of its state.
+  As a hardware design engineer
+  I want to be able to observe and traverse a subset of the diagram nodes
+  So that I can more easily comprehend complex hierarchies by looking at their controlled, reduced subset
 
   Scenario: Add to Partial opens a partial diagram with the node's wires cut
     Given I have a file "top.sv" in my workspace:
