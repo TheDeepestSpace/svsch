@@ -719,7 +719,7 @@
       "id": "cut-label:instance:cpu_top:u_instr_mem:port:instr:source",
       "type": "hdl",
       "position": {
-        "x": 5016,
+        "x": 5160,
         "y": -192
       },
       "width": 96,
@@ -3779,7 +3779,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::expand-port-label:port:instr_mem:addr",
       "type": "hdl",
       "position": {
-        "x": 4080,
+        "x": 4224,
         "y": -144
       },
       "width": 96,
@@ -3799,7 +3799,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::expand-port-label:port:instr_mem:instr",
       "type": "hdl",
       "position": {
-        "x": 4752,
+        "x": 4896,
         "y": -72
       },
       "width": 96,
@@ -3819,7 +3819,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::mux:instr_mem:mem_read_addr",
       "type": "hdl",
       "position": {
-        "x": 4392,
+        "x": 4536,
         "y": -96
       },
       "width": 144,
@@ -3869,7 +3869,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::port:instr_mem:instr",
       "type": "hdl",
       "position": {
-        "x": 4920,
+        "x": 5064,
         "y": -192
       },
       "width": 72,
@@ -3880,6 +3880,26 @@
           {
             "id": "port:instr",
             "name": "instr",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:cpu_top:u_instr_mem::reg:instr_mem:mem",
+      "type": "hdl",
+      "position": {
+        "x": 4080,
+        "y": -96
+      },
+      "width": 240,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "q",
+            "name": "Q",
             "direction": "output"
           }
         ]
@@ -5812,7 +5832,7 @@
         "x": 3936,
         "y": -264
       },
-      "width": 1056,
+      "width": 1200,
       "height": 312,
       "data": {
         "kind": "instance",
@@ -6460,7 +6480,7 @@
       "target": "cut-label:instance:cpu_top:u_instr_mem:port:instr:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 4992 -168 L 5016 -168 L 5016 -168"
+      "path": "M 5136 -168 L 5160 -168 L 5160 -168"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_jump_mux:port:y:sink:edge:instance:cpu_top:u_jump_mux:instance:cpu_top:u_pc_reg:next_pc",
@@ -7836,7 +7856,7 @@
       "target": "expand:instance:cpu_top:u_instr_mem::expand-port-label:port:instr_mem:instr",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 4536 -48 L 4560 -48 L 4728 -48 L 4752 -48"
+      "path": "M 4680 -48 L 4704 -48 L 4872 -48 L 4896 -48"
     },
     {
       "id": "expand:instance:cpu_top:u_instr_mem::edge:port:instr_mem:addr:mux:instr_mem:mem_read_addr:addr",
@@ -7844,7 +7864,15 @@
       "target": "expand:instance:cpu_top:u_instr_mem::mux:instr_mem:mem_read_addr",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 4176 -120 L 4200 -120 L 4464 -120 L 4464 -72"
+      "path": "M 4320 -120 L 4344 -120 L 4608 -120 L 4608 -72"
+    },
+    {
+      "id": "expand:instance:cpu_top:u_instr_mem::edge:reg:instr_mem:mem:mux:instr_mem:mem_read_addr:mem",
+      "source": "expand:instance:cpu_top:u_instr_mem::reg:instr_mem:mem",
+      "target": "expand:instance:cpu_top:u_instr_mem::mux:instr_mem:mem_read_addr",
+      "sourceHandle": "q",
+      "targetHandle": "in:in",
+      "path": "M 4330.5 -42 L 4536 -42"
     },
     {
       "id": "expand:instance:cpu_top:u_jump_mux::edge:mux:mux2:y:ternary:port:mux2:y:y",
