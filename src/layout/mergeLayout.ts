@@ -92,6 +92,15 @@ export interface BuildViewModelOptions {
    * isn't stored in the module's saved layout.
    */
   elkSizeOverrides?: Record<string, { width: number; height: number }>;
+  /**
+   * Extra per-port ELK margins (nodeId → portId → reserved box), merged on
+   * top of the net-cut label margins this pass derives itself. Used by the
+   * partial diagram (see layout/partialDiagram.ts), whose cut ends are
+   * synthesized *after* this view is built rather than through the module
+   * layout's own netCuts — without the reservation ELK would pack nodes
+   * right where those labels are about to land.
+   */
+  extraPortMargins?: Map<string, Map<string, { width: number; height: number }>>;
 }
 
 export async function buildViewModel(
@@ -121,12 +130,20 @@ export async function buildViewModel(
   // The generate-block wrappers are derived from their arms, so keep them out of the ELK /
   // packing layout (arms fall back to roots) and only add their bounds in positionGenerateRegions.
   const armRegions = generateRegions.filter((region) => !region.isGenerateBlock);
+  const cutMargins = netCutPortMargins(designModule, activeCuts);
+  for (const [nodeId, byPort] of options?.extraPortMargins ?? new Map()) {
+    const existing = cutMargins.get(nodeId) ?? new Map<string, { width: number; height: number }>();
+    for (const [portId, dims] of byPort) {
+      existing.set(portId, dims);
+    }
+    cutMargins.set(nodeId, existing);
+  }
   const elkLayout = await autoLayoutMissingNodes(
     designModule.nodes,
     routedDesignEdges,
     moduleLayout,
     armRegions,
-    netCutPortMargins(designModule, activeCuts),
+    cutMargins,
     options?.elkSizeOverrides,
   );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
@@ -1196,7 +1213,7 @@ function boundsOverlap(a: NodeBounds, b: NodeBounds): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
-function resolveCutLabelCollisions(
+export function resolveCutLabelCollisions(
   nodes: PositionedNode[],
   positionedNodes: PositionedNode[],
   endpointByLabelId: Map<string, string>,
@@ -1294,7 +1311,7 @@ function resolveCutLabelCollisions(
   return nodes.map((node) => resolved.get(node.id) ?? node);
 }
 
-function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
+export function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
   return role === 'source'
     ? `cut-label:${netKey}:source`
     : `cut-label:${netKey}:sink:${edgeId ?? ''}`;
@@ -1308,7 +1325,7 @@ function isCutStubEdgeId(id: string): boolean {
   return id.startsWith('cut-stub:');
 }
 
-function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
+export function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
   return role === 'source'
     ? `cut-stub:${netKey}:source`
     : `cut-stub:${netKey}:sink:${edgeId ?? ''}`;
@@ -1331,7 +1348,7 @@ export function cutLabelEdgeStyle(
   };
 }
 
-function makeCutLabelNode(
+export function makeCutLabelNode(
   id: string,
   label: string,
   moduleName: string,
@@ -1373,7 +1390,7 @@ function makeCutLabelNode(
   };
 }
 
-function makeCutStubEdge({
+export function makeCutStubEdge({
   id,
   template,
   source,
@@ -1426,7 +1443,7 @@ export function elkSideToHandleSide(side: ElkPortSide): 'left' | 'right' | 'top'
   return 'bottom';
 }
 
-function oppositeHandleSide(
+export function oppositeHandleSide(
   side: 'left' | 'right' | 'top' | 'bottom',
 ): 'left' | 'right' | 'top' | 'bottom' {
   if (side === 'left') return 'right';
@@ -1435,7 +1452,7 @@ function oppositeHandleSide(
   return 'top';
 }
 
-function labelPositionForHandlePoint(
+export function labelPositionForHandlePoint(
   point: { x: number; y: number },
   handleSide: 'left' | 'right' | 'top' | 'bottom',
   label: string,

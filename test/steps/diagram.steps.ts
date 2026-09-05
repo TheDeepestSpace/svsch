@@ -220,7 +220,9 @@ When('I reload the diagram', async function (this: BddWorld) {
 
 When('I close and reopen the diagram', async function (this: BddWorld) {
   // Actually close the SVSCH editor tab (Ctrl+W), then reopen it.
-  const tab = this.workbox.locator('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]').first();
+  const tab = this.workbox
+    .locator('.tab[aria-label*="SVSCH Diagram"], .tab[title*="SVSCH Diagram"]')
+    .first();
   if (await tab.isVisible({ timeout: 2_000 }).catch(() => false)) {
     await tab.click();
     await this.evaluateInVSCode((_vscode) => {

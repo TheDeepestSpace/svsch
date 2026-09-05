@@ -1,0 +1,346 @@
+import type {
+  DesignGraph,
+  DesignModule,
+  DiagramEdge,
+  DiagramNode,
+  DiagramViewModel,
+  PositionedNode,
+} from '../ir/types';
+import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
+import { edgeNetKey, endpointKey } from '../ir/edgeNet';
+import { resolvedNodeDimensions } from '../diagram/nodeSizing';
+import {
+  buildViewModel,
+  cutLabelEdgeStyle,
+  cutLabelNodeId,
+  cutStubEdgeId,
+  defaultNetCutLabel,
+  elkSideToHandleSide,
+  labelPositionForHandlePoint,
+  makeCutLabelNode,
+  makeCutStubEdge,
+  oppositeHandleSide,
+  renderedLeadPoint,
+  resolveCutLabelCollisions,
+} from './mergeLayout';
+
+/**
+ * The whole state of one "Partial Diagram" pane (issue #403), living entirely
+ * in the extension host and fully discarded when the pane closes — nothing
+ * here is ever persisted. The partial is a derived, ephemeral view over a
+ * single source module: a subset of its nodes, with every net cut except the
+ * ones the user explicitly tied back together via the "extend" arrow.
+ */
+export interface PartialDiagramState {
+  sourceModuleName: string;
+  /** In insertion order — first entry is the node the pane was opened with. */
+  includedNodeIds: string[];
+  /**
+   * Nets (by edgeNetKey over the *source* module's edge list) the user has
+   * tied inside the partial. An edge is drawn as a real wire only when its
+   * net is tied AND both its endpoints are included; every other edge
+   * touching an included node renders as a cut end.
+   */
+  tiedNetKeys: string[];
+}
+
+interface PartialCutNet {
+  netKey: string;
+  label: string;
+  origin: 'declared' | 'synthetic';
+  /** Sorted by edge id, so label metadata is deterministic across rebuilds. */
+  edges: DiagramEdge[];
+}
+
+interface PartialCutPlan {
+  keptEdges: DiagramEdge[];
+  cutNets: PartialCutNet[];
+}
+
+/**
+ * Splits the source module's edges (restricted to those touching an included
+ * node) into edges kept as real wires and nets rendered as cut ends. Label
+ * text follows the same conventions as a manual net cut (defaultNetCutLabel),
+ * with anonymous fallback labels (NET_n) deduplicated across the plan's nets.
+ */
+function buildPartialCutPlan(
+  sourceModule: DesignModule,
+  state: PartialDiagramState,
+): PartialCutPlan {
+  const included = new Set(state.includedNodeIds);
+  const tied = new Set(state.tiedNetKeys);
+  const keptEdges: DiagramEdge[] = [];
+  const cutEdgesByNet = new Map<string, DiagramEdge[]>();
+
+  for (const edge of sourceModule.edges) {
+    const sourceIncluded = included.has(edge.source);
+    const targetIncluded = included.has(edge.target);
+    if (!sourceIncluded && !targetIncluded) {
+      continue;
+    }
+    const netKey = edgeNetKey(edge);
+    if (sourceIncluded && targetIncluded && tied.has(netKey)) {
+      keptEdges.push(edge);
+      continue;
+    }
+    const edges = cutEdgesByNet.get(netKey) ?? [];
+    edges.push(edge);
+    cutEdgesByNet.set(netKey, edges);
+  }
+
+  // Deterministic net order (and thus NET_n allocation order): by each net's
+  // first sorted edge id, the same tie-break buildNetCutProjection uses.
+  const sortedNets = [...cutEdgesByNet.entries()]
+    .map(([netKey, edges]) => ({
+      netKey,
+      edges: [...edges].sort((a, b) => a.id.localeCompare(b.id)),
+    }))
+    .sort((a, b) => a.edges[0].id.localeCompare(b.edges[0].id));
+
+  const labelAccumulator: SavedModuleLayout = { nodes: {}, netCuts: {} };
+  const cutNets: PartialCutNet[] = sortedNets.map(({ netKey, edges }) => {
+    const first = edges[0];
+    const label = defaultNetCutLabel(first, sourceModule, labelAccumulator);
+    labelAccumulator.netCuts![netKey] = {
+      label,
+      source: { nodeId: first.source, ...(first.sourcePort ? { portId: first.sourcePort } : {}) },
+    };
+    const origin: 'declared' | 'synthetic' =
+      first.metadata?.declaredNetName && first.metadata.declaredNetName === label
+        ? 'declared'
+        : 'synthetic';
+    return { netKey, label, origin, edges };
+  });
+
+  return { keptEdges, cutNets };
+}
+
+/**
+ * ELK margins reserving room next to each included endpoint for the cut
+ * label about to be synthesized there — same idea as netCutPortMargins in
+ * mergeLayout.ts, but for the partial's own (netCuts-independent) cut ends.
+ */
+function partialCutLabelMargins(
+  plan: PartialCutPlan,
+  includedNodeIds: ReadonlySet<string>,
+): Map<string, Map<string, { width: number; height: number }>> {
+  const byNode = new Map<string, Map<string, { width: number; height: number }>>();
+  const reserve = (nodeId: string, portId: string | undefined, label: string) => {
+    if (!portId || !includedNodeIds.has(nodeId)) return;
+    const dimensions = resolvedNodeDimensions({
+      id: 'cut-label-margin',
+      kind: 'netLabel',
+      label,
+      ports: [],
+    });
+    const byPort = byNode.get(nodeId) ?? new Map<string, { width: number; height: number }>();
+    byPort.set(portId, dimensions);
+    byNode.set(nodeId, byPort);
+  };
+  for (const net of plan.cutNets) {
+    for (const edge of net.edges) {
+      reserve(edge.source, edge.sourcePort, net.label);
+      reserve(edge.target, edge.targetPort, net.label);
+    }
+  }
+  return byNode;
+}
+
+/**
+ * Builds the partial pane's full render view: the included subset of the
+ * source module laid out by the normal buildViewModel pipeline (nodes with a
+ * `fixed` saved position stay locked — ELK's interactive mode only places
+ * newcomers — and libavoid routes the tied wires), then the cut ends
+ * synthesized in place at each included endpoint's rendered lead point.
+ *
+ * The cut ends deliberately bypass the module layout's netCuts mechanism:
+ * that path requires the net's *source* node to be part of the module, but a
+ * partial routinely includes only a net's sink side.
+ */
+export async function buildPartialViewModel(
+  sourceModule: DesignModule,
+  state: PartialDiagramState,
+  layout: SavedLayout,
+): Promise<DiagramViewModel> {
+  const included = new Set(state.includedNodeIds);
+  const plan = buildPartialCutPlan(sourceModule, state);
+
+  const partialModule: DesignModule = {
+    ...sourceModule,
+    nodes: sourceModule.nodes.filter((node) => included.has(node.id)),
+    edges: plan.keptEdges,
+    // v1 keeps generate-region chrome out of the partial — regions reference
+    // node sets that are mostly not included.
+    generateRegions: undefined,
+  };
+  const graph: DesignGraph = {
+    rootModules: [partialModule.name],
+    modules: { [partialModule.name]: partialModule },
+    diagnostics: [],
+    generatedAt: '',
+  };
+
+  const view = await buildViewModel(graph, partialModule.name, layout, {
+    extraPortMargins: partialCutLabelMargins(plan, included),
+  });
+
+  const moduleLayout = layout.modules[partialModule.name] ?? { nodes: {} };
+  const nodesById = new Map<string, DiagramNode>(view.nodes.map((node) => [node.id, node]));
+  const positions = new Map(view.nodes.map((node) => [node.id, node.position]));
+  const labels: PositionedNode[] = [];
+  const stubs: DiagramEdge[] = [];
+  const endpointByLabelId = new Map<string, string>();
+  const seenSinkTargets = new Set<string>();
+
+  for (const net of plan.cutNets) {
+    const firstEdge = net.edges[0];
+
+    if (included.has(firstEdge.source)) {
+      const sourceLead = renderedLeadPoint(
+        firstEdge.source,
+        firstEdge.sourcePort,
+        nodesById,
+        positions,
+        true,
+        'source',
+      );
+      if (sourceLead) {
+        const handleSide = oppositeHandleSide(elkSideToHandleSide(sourceLead.side));
+        const labelId = cutLabelNodeId(net.netKey, 'source');
+        labels.push(
+          makeCutLabelNode(
+            labelId,
+            net.label,
+            partialModule.name,
+            {
+              netKey: net.netKey,
+              role: 'source',
+              align: 'end',
+              originalEdgeId: firstEdge.id,
+              handleSide,
+              edgeStyle: cutLabelEdgeStyle(firstEdge, nodesById),
+              origin: net.origin,
+            },
+            moduleLayout,
+            labelPositionForHandlePoint(sourceLead.point, handleSide, net.label),
+            firstEdge,
+          ),
+        );
+        endpointByLabelId.set(labelId, endpointKey(firstEdge.source, firstEdge.sourcePort));
+        stubs.push(
+          makeCutStubEdge({
+            id: cutStubEdgeId(net.netKey, 'source'),
+            template: firstEdge,
+            source: firstEdge.source,
+            sourcePort: firstEdge.sourcePort,
+            target: labelId,
+            targetPort: 'cut',
+            netKey: net.netKey,
+            role: 'source',
+            originalEdgeId: firstEdge.id,
+            moduleLayout,
+          }),
+        );
+      }
+    }
+
+    for (const edge of net.edges) {
+      if (!included.has(edge.target)) {
+        continue;
+      }
+      const sinkDedupeKey = `${endpointKey(edge.target, edge.targetPort)}::${net.label}`;
+      if (seenSinkTargets.has(sinkDedupeKey)) {
+        continue;
+      }
+      const targetLead = renderedLeadPoint(
+        edge.target,
+        edge.targetPort,
+        nodesById,
+        positions,
+        true,
+        'target',
+      );
+      if (!targetLead) {
+        continue;
+      }
+      seenSinkTargets.add(sinkDedupeKey);
+      const handleSide = oppositeHandleSide(elkSideToHandleSide(targetLead.side));
+      const labelId = cutLabelNodeId(net.netKey, 'sink', edge.id);
+      labels.push(
+        makeCutLabelNode(
+          labelId,
+          net.label,
+          partialModule.name,
+          {
+            netKey: net.netKey,
+            role: 'sink',
+            align: 'start',
+            originalEdgeId: edge.id,
+            handleSide,
+            edgeStyle: cutLabelEdgeStyle(edge, nodesById),
+            origin: net.origin,
+          },
+          moduleLayout,
+          labelPositionForHandlePoint(targetLead.point, handleSide, net.label),
+          edge,
+        ),
+      );
+      endpointByLabelId.set(labelId, endpointKey(edge.target, edge.targetPort));
+      stubs.push(
+        makeCutStubEdge({
+          id: cutStubEdgeId(net.netKey, 'sink', edge.id),
+          template: edge,
+          source: labelId,
+          sourcePort: 'cut',
+          target: edge.target,
+          targetPort: edge.targetPort,
+          netKey: net.netKey,
+          role: 'sink',
+          originalEdgeId: edge.id,
+          moduleLayout,
+        }),
+      );
+    }
+  }
+
+  const resolvedLabels = resolveCutLabelCollisions(labels, view.nodes, endpointByLabelId);
+
+  return {
+    ...view,
+    nodes: [...view.nodes, ...resolvedLabels],
+    edges: [...view.edges, ...stubs],
+  };
+}
+
+/**
+ * Resolves what an "extend" click on a cut end means against the *source*
+ * module's full edge list: which node sits on the other end of the net, and
+ * therefore which node joins the partial when this net is tied. Prefers the
+ * exact edge the clicked label was derived from (originalEdgeId); falls back
+ * to the net's first boundary edge. `newNodeIds` is empty when both ends are
+ * already included — the extend then just ties the net.
+ */
+export function resolveExtendTarget(
+  sourceModule: DesignModule,
+  state: PartialDiagramState,
+  netKey: string,
+  originalEdgeId?: string,
+): { edge: DiagramEdge; newNodeIds: string[] } | undefined {
+  const included = new Set(state.includedNodeIds);
+  const netEdges = sourceModule.edges
+    .filter((edge) => edgeNetKey(edge) === netKey)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  if (netEdges.length === 0) {
+    return undefined;
+  }
+  const preferred = originalEdgeId
+    ? netEdges.find((edge) => edge.id === originalEdgeId)
+    : undefined;
+  const boundary = netEdges.find((edge) => included.has(edge.source) !== included.has(edge.target));
+  const edge = preferred ?? boundary ?? netEdges[0];
+  const nodeIds = new Set(sourceModule.nodes.map((node) => node.id));
+  const newNodeIds = [...new Set([edge.source, edge.target])].filter(
+    (id) => !included.has(id) && nodeIds.has(id),
+  );
+  return { edge, newNodeIds };
+}

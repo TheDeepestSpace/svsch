@@ -82,6 +82,14 @@ interface GraphMessage {
   view: DiagramViewModel;
   modules: string[];
   expandedInstanceIds?: string[];
+  /**
+   * True when this document is an ephemeral "SVSCH Partial Diagram" pane
+   * (issue #403) rather than the main diagram. The same bundle serves both
+   * panel types — this flag is the only thing that distinguishes them, and
+   * it gates the module dropdown, which selection/hover affordances render,
+   * and the cut-end "extend" arrow.
+   */
+  partial?: boolean;
 }
 
 interface StatusMessage {
@@ -193,6 +201,7 @@ function App(): React.ReactElement {
 function DiagramApp(): React.ReactElement {
   const [view, setView] = useState<DiagramViewModel | undefined>();
   const [modules, setModules] = useState<string[]>([]);
+  const [isPartial, setIsPartial] = useState(false);
   const [status, setStatus] = useState<'idle' | 'rebuilding'>('idle');
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState<HdlFlowNode>([]);
   const [regions, setRegions] = useState<PositionedGenerateRegion[]>([]);
@@ -661,6 +670,7 @@ function DiagramApp(): React.ReactElement {
         spliceMapModuleNameRef.current = view.moduleName;
         setView(view);
         setModules(event.data.modules);
+        setIsPartial(event.data.partial === true);
         setExpandedInstanceIds(event.data.expandedInstanceIds ?? []);
         setHovered(undefined, true);
         setHoveredEdgeId(undefined);
@@ -886,7 +896,7 @@ function DiagramApp(): React.ReactElement {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.repeat) return;
       const key = event.key.toLowerCase();
-      if (key !== 'r' && key !== 't' && key !== 'c') return;
+      if (key !== 'r' && key !== 't' && key !== 'c' && key !== 'p') return;
 
       const target = event.target;
       if (
@@ -917,6 +927,27 @@ function DiagramApp(): React.ReactElement {
           (edge) => edge.data?.moduleName === view.moduleName && viewEdgeIds.has(edge.id),
         );
       if (!graphInSync) return;
+
+      // `p` mirrors the block-selection toolbar's "Add to Partial" button —
+      // exactly one real (non-label, non-spliced) block selected, and never
+      // from inside a partial pane itself.
+      if (key === 'p') {
+        if (isPartial) return;
+        const selectedBlocks = nodes.filter(
+          (node) =>
+            node.selected === true &&
+            node.data.node.kind !== 'netLabel' &&
+            !isExpandNamespacedId(node.id),
+        );
+        if (selectedBlocks.length !== 1) return;
+        event.preventDefault();
+        vscode.postMessage({
+          type: 'addToPartial',
+          moduleName: view.moduleName,
+          nodeId: selectedBlocks[0].id,
+        });
+        return;
+      }
 
       if (key === 't') {
         const netLabelNode = nodes.find((node) => {
@@ -1005,7 +1036,7 @@ function DiagramApp(): React.ReactElement {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nodes, edges, view, hoveredNetKey, hoveredEdgeId]);
+  }, [nodes, edges, view, hoveredNetKey, hoveredEdgeId, isPartial]);
 
   useEffect(() => {
     if (!view) {
@@ -1497,6 +1528,7 @@ function DiagramApp(): React.ReactElement {
       setPendingSelectionAction,
       overlayPortalNode,
       startNodeResize,
+      partialDiagram: isPartial,
     }),
     [
       hoveredNetKey,
@@ -1506,6 +1538,7 @@ function DiagramApp(): React.ReactElement {
       pendingSelectionAction,
       overlayPortalNode,
       startNodeResize,
+      isPartial,
     ],
   );
 
@@ -1514,60 +1547,15 @@ function DiagramApp(): React.ReactElement {
   }
 
   return (
-    <div className="shell" style={diagramStyle}>
-      <header className="toolbar">
-        <select
-          className="vscode-control vscode-select"
-          aria-label="Module"
-          value={view.moduleName}
-          onChange={(event) =>
-            vscode.postMessage({ type: 'openModule', moduleName: event.target.value })
-          }
-        >
-          {modules.map((moduleName) => (
-            <option key={moduleName} value={moduleName}>
-              {moduleName}
-            </option>
-          ))}
-        </select>
-        <button
-          className="vscode-control vscode-button vscode-button-secondary"
-          onClick={() => vscode.postMessage({ type: 'exportSvg' })}
-        >
-          Export SVG
-        </button>
-        <button
-          className="vscode-control vscode-button vscode-button-secondary"
-          onClick={rerouteLayout}
-        >
-          Reroute All
-        </button>
-        <button
-          className="vscode-control vscode-button vscode-button-secondary"
-          onClick={autoLayoutAll}
-        >
-          Auto Layout All
-        </button>
-        <button
-          className="vscode-control vscode-button"
-          onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}
-        >
-          Reset Layout
-        </button>
-        <div className="status-indicator">
-          {status === 'rebuilding' ? (
-            <div className="busy-indicator" role="status" aria-live="polite">
-              <span />
-              Updating
-            </div>
-          ) : view.diagnostics.length > 0 ? (
-            <div className="diagnostics-indicator" role="status">
-              <span aria-hidden="true">⚠</span>
-              {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
-            </div>
-          ) : null}
-        </div>
-      </header>
+    <div className="shell" style={diagramStyle} data-svsch-partial={isPartial || undefined}>
+      <DiagramToolbar
+        view={view}
+        modules={modules}
+        status={status}
+        partial={isPartial}
+        onRerouteLayout={rerouteLayout}
+        onAutoLayoutAll={autoLayoutAll}
+      />
       <main className="canvas" key={view.moduleName}>
         <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
         <InteractionContext.Provider value={interactionValue}>
@@ -1672,6 +1660,87 @@ function DiagramApp(): React.ReactElement {
         </InteractionContext.Provider>
       </main>
     </div>
+  );
+}
+
+// The shared top toolbar. Both panel types render it; the `partial` flag
+// (an ephemeral "SVSCH Partial Diagram" pane, issue #403) drops the module
+// dropdown — a partial views exactly one source module, never navigates —
+// and the Export SVG action, which the partial's host doesn't serve.
+function DiagramToolbar({
+  view,
+  modules,
+  status,
+  partial,
+  onRerouteLayout,
+  onAutoLayoutAll,
+}: {
+  view: DiagramViewModel;
+  modules: string[];
+  status: 'idle' | 'rebuilding';
+  partial: boolean;
+  onRerouteLayout: () => void;
+  onAutoLayoutAll: () => void;
+}): React.ReactElement {
+  return (
+    <header className="toolbar">
+      {!partial && (
+        <select
+          className="vscode-control vscode-select"
+          aria-label="Module"
+          value={view.moduleName}
+          onChange={(event) =>
+            vscode.postMessage({ type: 'openModule', moduleName: event.target.value })
+          }
+        >
+          {modules.map((moduleName) => (
+            <option key={moduleName} value={moduleName}>
+              {moduleName}
+            </option>
+          ))}
+        </select>
+      )}
+      {partial && <span className="toolbar-partial-title">{view.moduleName} — partial</span>}
+      {!partial && (
+        <button
+          className="vscode-control vscode-button vscode-button-secondary"
+          onClick={() => vscode.postMessage({ type: 'exportSvg' })}
+        >
+          Export SVG
+        </button>
+      )}
+      <button
+        className="vscode-control vscode-button vscode-button-secondary"
+        onClick={onRerouteLayout}
+      >
+        Reroute All
+      </button>
+      <button
+        className="vscode-control vscode-button vscode-button-secondary"
+        onClick={onAutoLayoutAll}
+      >
+        Auto Layout All
+      </button>
+      <button
+        className="vscode-control vscode-button"
+        onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}
+      >
+        Reset Layout
+      </button>
+      <div className="status-indicator">
+        {status === 'rebuilding' ? (
+          <div className="busy-indicator" role="status" aria-live="polite">
+            <span />
+            Updating
+          </div>
+        ) : view.diagnostics.length > 0 ? (
+          <div className="diagnostics-indicator" role="status">
+            <span aria-hidden="true">⚠</span>
+            {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
+          </div>
+        ) : null}
+      </div>
+    </header>
   );
 }
 
@@ -2114,7 +2183,7 @@ function NodeSelectionToolbar({
   onCollapseInstance: (regionId: string) => void;
   spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
-  const { overlayPortalNode } = useContext(InteractionContext);
+  const { overlayPortalNode, partialDiagram } = useContext(InteractionContext);
   // overlayPortalNode carries react-flow's scale(zoom) (see main.tsx's render), so button
   // markup here needs a counter-scale to stay a constant screen size instead of zooming
   // with the canvas — the outer .svsch-selection-toolbar keeps its flow-space position.
@@ -2177,7 +2246,20 @@ function NodeSelectionToolbar({
         (splice) => splice.flowInstanceId === singleInstance.id,
       )
     : undefined;
-  const expandableInstance = activeSplice ? undefined : singleInstance;
+  // Inside a partial pane (issue #403) the only selection actions that mean
+  // anything to its host are Auto Layout — everything else (cuts, resizes,
+  // expand, adding to a partial from a partial) is main-diagram-only.
+  const expandableInstance = partialDiagram ? undefined : activeSplice ? undefined : singleInstance;
+  const collapseSplice = partialDiagram ? undefined : activeSplice;
+  const showCutOut = !partialDiagram && cutOutEdges.length > 0;
+  const showRevertSize = !partialDiagram && resizedNodeIds.length > 0;
+  // "Add to Partial" (issue #403): exactly one real block selected on the
+  // main diagram — the host clones it (all wires cut) into the partial pane,
+  // opening the pane if none is open and reusing the open one otherwise.
+  const addToPartialNode =
+    !partialDiagram && selectedBlocks.length === 1 && selected.length === 1
+      ? selected[0]
+      : undefined;
 
   // Nothing to offer: a lone block with every net already cut and no resize
   // override gets no control, so skip rendering the (now empty) toolbar entirely.
@@ -2185,11 +2267,12 @@ function NodeSelectionToolbar({
     !overlayPortalNode ||
     selectedBlocks.length < 1 ||
     (selectedBlocks.length < 2 &&
-      cutOutEdges.length === 0 &&
-      resizedNodeIds.length === 0 &&
+      !showCutOut &&
+      !showRevertSize &&
       !expandableInstance &&
-      !activeSplice) ||
-    (selected.length < 1 && !expandableInstance && !activeSplice)
+      !collapseSplice &&
+      !addToPartialNode) ||
+    (selected.length < 1 && !expandableInstance && !collapseSplice)
   ) {
     return null;
   }
@@ -2330,7 +2413,7 @@ function NodeSelectionToolbar({
               Auto Layout
             </button>
           )}
-          {resizedNodeIds.length > 0 && (
+          {showRevertSize && (
             <button
               type="button"
               className="svsch-selection-revert-size-control"
@@ -2347,7 +2430,7 @@ function NodeSelectionToolbar({
               Revert Size
             </button>
           )}
-          {cutOutEdges.length > 0 && (
+          {showCutOut && (
             <button
               type="button"
               className="svsch-selection-cutout-control"
@@ -2379,20 +2462,43 @@ function NodeSelectionToolbar({
               Expand
             </button>
           )}
-          {activeSplice && (
+          {collapseSplice && (
             <button
               type="button"
               className="svsch-selection-collapse-control"
               title="Collapse this instance's unfolded diagram"
               onClick={(event) => {
                 event.stopPropagation();
-                onCollapseInstance(activeSplice.region.id);
+                onCollapseInstance(collapseSplice.region.id);
               }}
               onDoubleClick={(event) => event.stopPropagation()}
               onMouseDown={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}
             >
               Collapse
+            </button>
+          )}
+          {addToPartialNode && (
+            <button
+              type="button"
+              className="svsch-selection-add-partial-control"
+              title="Clone this block (all wires cut) into the partial diagram pane"
+              onClick={(event) => {
+                event.stopPropagation();
+                vscode.postMessage({
+                  type: 'addToPartial',
+                  moduleName,
+                  nodeId: addToPartialNode.id,
+                });
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Add to Partial
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">P</span>
+              </kbd>
             </button>
           )}
         </div>
