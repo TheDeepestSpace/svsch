@@ -42,6 +42,10 @@ interface ConditionalExpression {
   condition: string;
   whenTrue: string;
   whenFalse: string;
+  /** Offsets of each operand relative to the `expression` passed to parseConditionalExpression. */
+  conditionOffset: number;
+  whenTrueOffset: number;
+  whenFalseOffset: number;
 }
 
 interface PromotedTextExpression {
@@ -1104,6 +1108,11 @@ function extractContinuousAssigns(
       };
 
       if (containsConditionalExpression(expression)) {
+        const rawCapture = assignment[2];
+        const rawCaptureOffsetInMatch = assignment[0].length - rawCapture.length - 1;
+        const exprLeadingTrim = rawCapture.length - rawCapture.trimStart().length;
+        const exprOffsetInBody = assignment.index + rawCaptureOffsetInMatch + exprLeadingTrim;
+        const expressionOffset = match.header.length + 1 + exprOffsetInBody;
         const promoted = promoteTextExpression(
           match,
           expression,
@@ -1115,6 +1124,7 @@ function extractContinuousAssigns(
           signalWidths,
           edges,
           sourceRange,
+          expressionOffset,
           signalWidths.get(targetSignal),
         );
         if (promoted) {
@@ -1207,7 +1217,7 @@ function containsConditionalExpression(expression: string): boolean {
 }
 
 function parseConditionalExpression(expression: string): ConditionalExpression | undefined {
-  const text = stripOuterParentheses(expression);
+  const { text, offset: baseOffset } = stripOuterParenthesesWithOffset(expression);
   let question = -1;
   let nestedConditionals = 0;
   let parenDepth = 0;
@@ -1247,11 +1257,23 @@ function parseConditionalExpression(expression: string): ConditionalExpression |
     } else if (char === ':' && nestedConditionals > 0) {
       nestedConditionals--;
     } else if (char === ':') {
-      const condition = text.slice(0, question).trim();
-      const whenTrue = text.slice(question + 1, index).trim();
-      const whenFalse = text.slice(index + 1).trim();
+      const conditionRaw = text.slice(0, question);
+      const whenTrueRaw = text.slice(question + 1, index);
+      const whenFalseRaw = text.slice(index + 1);
+      const condition = conditionRaw.trim();
+      const whenTrue = whenTrueRaw.trim();
+      const whenFalse = whenFalseRaw.trim();
       if (condition && whenTrue && whenFalse) {
-        return { condition, whenTrue, whenFalse };
+        return {
+          condition,
+          whenTrue,
+          whenFalse,
+          conditionOffset: baseOffset + (conditionRaw.length - conditionRaw.trimStart().length),
+          whenTrueOffset:
+            baseOffset + question + 1 + (whenTrueRaw.length - whenTrueRaw.trimStart().length),
+          whenFalseOffset:
+            baseOffset + index + 1 + (whenFalseRaw.length - whenFalseRaw.trimStart().length),
+        };
       }
       return undefined;
     }
@@ -1261,11 +1283,53 @@ function parseConditionalExpression(expression: string): ConditionalExpression |
 }
 
 function stripOuterParentheses(expression: string): string {
+  return stripOuterParenthesesWithOffset(expression).text;
+}
+
+/** Like stripOuterParentheses, but also reports the returned text's offset within `expression`. */
+function stripOuterParenthesesWithOffset(expression: string): { text: string; offset: number } {
   let text = expression.trim();
+  let offset = expression.length - expression.trimStart().length;
   while (text.startsWith('(') && matchingClosingParen(text, 0) === text.length - 1) {
-    text = text.slice(1, -1).trim();
+    const inner = text.slice(1, -1);
+    offset += 1 + (inner.length - inner.trimStart().length);
+    text = inner.trim();
   }
-  return text;
+  return { text, offset };
+}
+
+function getCombinedSource(match: ModuleMatch): string {
+  return match.header + ';' + match.body;
+}
+
+function computeSourceRange(
+  match: ModuleMatch,
+  combined: string,
+  start: number,
+  length: number,
+): { file: string; startLine: number; startColumn: number; endLine: number; endColumn: number } {
+  const end = start + length;
+  return {
+    file: match.file,
+    startLine: match.startLine + lineAt(combined, start) - 1,
+    startColumn: columnAt(combined, start),
+    endLine: match.startLine + lineAt(combined, end) - 1,
+    endColumn: columnAt(combined, end),
+  };
+}
+
+/**
+ * Like computeSourceRange, but first strips any wrapping parentheses from `rawText` so a
+ * ternary operand like "(sel2 ? a : b)" highlights just the conditional, not its grouping parens.
+ */
+function narrowedOperandRange(
+  match: ModuleMatch,
+  combined: string,
+  rawOffset: number,
+  rawText: string,
+): { file: string; startLine: number; startColumn: number; endLine: number; endColumn: number } {
+  const { text, offset } = stripOuterParenthesesWithOffset(rawText);
+  return computeSourceRange(match, combined, rawOffset + offset, text.length);
 }
 
 function matchingClosingParen(expression: string, openingIndex: number): number {
@@ -1321,6 +1385,7 @@ function promoteTextExpression(
   signalWidths: Map<string, string>,
   edges: DesignModule['edges'],
   sourceRange: { file: string; startLine: number; endLine: number },
+  expressionOffset: number,
   outputWidth?: string,
 ): PromotedTextExpression | undefined {
   const conditional = parseConditionalExpression(expression);
@@ -1337,6 +1402,7 @@ function promoteTextExpression(
       signalWidths,
       edges,
       sourceRange,
+      expressionOffset,
       outputWidth,
     );
   }
@@ -1382,9 +1448,23 @@ function promoteTextExpression(
 
   let rewritten = expression;
   let embeddedIndex = 0;
+  let searchCursor = 0;
   let embedded = findParenthesizedConditional(rewritten);
   while (embedded) {
     const embeddedSignal = `${preferredSignal}_ternary_${embeddedIndex}`;
+    const literalMatch = `(${embedded.expression})`;
+    const foundAt = expression.indexOf(literalMatch, searchCursor);
+    const childOffset = foundAt >= 0 ? expressionOffset + foundAt + 1 : expressionOffset;
+    const childRange =
+      foundAt >= 0
+        ? computeSourceRange(
+            match,
+            getCombinedSource(match),
+            childOffset,
+            embedded.expression.length,
+          )
+        : sourceRange;
+    if (foundAt >= 0) searchCursor = foundAt + literalMatch.length;
     const promoted = promoteTextExpression(
       match,
       embedded.expression,
@@ -1395,7 +1475,8 @@ function promoteTextExpression(
       existingNodes,
       signalWidths,
       edges,
-      sourceRange,
+      childRange,
+      childOffset,
     );
     if (!promoted) break;
     rewritten =
@@ -1441,6 +1522,7 @@ function promoteTextConditional(
   signalWidths: Map<string, string>,
   edges: DesignModule['edges'],
   sourceRange: { file: string; startLine: number; endLine: number },
+  expressionOffset: number,
   outputWidth?: string,
 ): PromotedTextExpression | undefined {
   const nodeCount = mutableNodes.length;
@@ -1451,6 +1533,14 @@ function promoteTextConditional(
     return undefined;
   };
 
+  const combined = getCombinedSource(match);
+  const conditionOffset = expressionOffset + conditional.conditionOffset;
+  const conditionRange = narrowedOperandRange(
+    match,
+    combined,
+    conditionOffset,
+    conditional.condition,
+  );
   const selector = promoteTextExpression(
     match,
     conditional.condition,
@@ -1461,9 +1551,12 @@ function promoteTextConditional(
     existingNodes,
     signalWidths,
     edges,
-    sourceRange,
+    conditionRange,
+    conditionOffset,
   );
   if (!selector) return rollback();
+  const whenTrueOffset = expressionOffset + conditional.whenTrueOffset;
+  const whenTrueRange = narrowedOperandRange(match, combined, whenTrueOffset, conditional.whenTrue);
   const whenTrue = promoteTextExpression(
     match,
     conditional.whenTrue,
@@ -1474,10 +1567,18 @@ function promoteTextConditional(
     existingNodes,
     signalWidths,
     edges,
-    sourceRange,
+    whenTrueRange,
+    whenTrueOffset,
     outputWidth,
   );
   if (!whenTrue) return rollback();
+  const whenFalseOffset = expressionOffset + conditional.whenFalseOffset;
+  const whenFalseRange = narrowedOperandRange(
+    match,
+    combined,
+    whenFalseOffset,
+    conditional.whenFalse,
+  );
   const whenFalse = promoteTextExpression(
     match,
     conditional.whenFalse,
@@ -1488,7 +1589,8 @@ function promoteTextConditional(
     existingNodes,
     signalWidths,
     edges,
-    sourceRange,
+    whenFalseRange,
+    whenFalseOffset,
     outputWidth,
   );
   if (!whenFalse) return rollback();
