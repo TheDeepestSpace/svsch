@@ -200,3 +200,53 @@ Feature: Partial diagram
     And I should see a latch node "next_r"
     And there should be a connection between "r" and the mux node "case r"
     And there should be a connection between the mux node "if next_state_en" and the latch node "next_r"
+
+  Scenario: Extending a fanout wire in the partial diagram reveals every node it feeds
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(
+        input logic sel_a,
+        input logic sel_b,
+        input logic dflt,
+        output logic out_a,
+        output logic out_b
+      );
+        always_comb begin
+          case (sel_a)
+            1'b1: out_a = 1'b1;
+            default: out_a = dflt;
+          endcase
+        end
+        always_comb begin
+          case (sel_b)
+            1'b1: out_b = 1'b1;
+            default: out_b = dflt;
+          endcase
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should see a mux node "case sel_a"
+    And I should see a mux node "case sel_b"
+    And there should be a connection between "dflt" and the mux node "case sel_a"
+    And there should be a connection between "dflt" and the mux node "case sel_b"
+    When I click to select the block "case sel_a"
+    And I add the selected block to the partial diagram
+    Then the SVSCH partial diagram panel opens
+    When I switch to the partial diagram panel
+    Then I should see a mux node "case sel_a"
+    And I should not see a mux node "case sel_b"
+    And I should see 1 cut net labels named "dflt"
+    When I click the extend arrow on the cut net "dflt"
+    Then I should see a port node "dflt"
+    And there should be a connection between "dflt" and the mux node "case sel_a"
+    # "dflt" still feeds "case sel_b" too — tying the branch that was just
+    # extended must not silently drop the other one; a fresh cut end for it
+    # stays on "dflt" until that branch is extended on its own.
+    And I should not see a mux node "case sel_b"
+    And I should see 1 cut net labels named "dflt"
+    When I click the extend arrow on the cut net "dflt"
+    Then I should see a mux node "case sel_b"
+    And there should be a connection between "dflt" and the mux node "case sel_a"
+    And there should be a connection between "dflt" and the mux node "case sel_b"
+    And I should not see any cut net labels in the partial diagram

@@ -2683,6 +2683,13 @@ Then('I should see a mux node {string}', async function (this: BddWorld, name: s
   await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toBeVisible();
 });
 
+Then('I should not see a mux node {string}', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name, 'mux');
+  if (id) {
+    await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveCount(0);
+  }
+});
+
 Then('I should not see a register node {string}', async function (this: BddWorld, name: string) {
   const oldId = `reg:top:${name}`;
   await expect(this.webviewPage.locator(`.react-flow__node[data-id="${oldId}"]`)).not.toBeVisible();
