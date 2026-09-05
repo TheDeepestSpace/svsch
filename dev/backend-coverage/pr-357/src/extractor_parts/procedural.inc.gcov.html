@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-05 16:28:21</td>
+            <td class="headerValue">2026-09-05 16:59:42</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">37</td>
@@ -86,16 +86,16 @@
 <a name="24"><span class="lineNum">      24 </span><span class="lineCov">        325 :     return containsEdgeEvent(vpi_handle(vpiCondition, stmt));</span></a>
 <a name="25"><span class="lineNum">      25 </span>            : }</a>
 <a name="26"><span class="lineNum">      26 </span>            : </a>
-<a name="27"><span class="lineNum">      27 </span><span class="lineCov">       4484 : void DesignExtractor::processProcess(vpiHandle process_handle, Module&amp; mod) {</span></a>
-<a name="28"><span class="lineNum">      28 </span><span class="lineCov">       4484 :     int type = vpi_get(vpiType, process_handle);</span></a>
-<a name="29"><span class="lineNum">      29 </span><span class="lineCov">       4484 :     vpiHandle stmt = vpi_handle(vpiStmt, process_handle);</span></a>
+<a name="27"><span class="lineNum">      27 </span><span class="lineCov">       4487 : void DesignExtractor::processProcess(vpiHandle process_handle, Module&amp; mod) {</span></a>
+<a name="28"><span class="lineNum">      28 </span><span class="lineCov">       4487 :     int type = vpi_get(vpiType, process_handle);</span></a>
+<a name="29"><span class="lineNum">      29 </span><span class="lineCov">       4487 :     vpiHandle stmt = vpi_handle(vpiStmt, process_handle);</span></a>
 <a name="30"><span class="lineNum">      30 </span>            : </a>
-<a name="31"><span class="lineNum">      31 </span><span class="lineCov">       4484 :     if (type == vpiAlways) {</span></a>
-<a name="32"><span class="lineNum">      32 </span><span class="lineCov">       4440 :         int always_type = vpi_get(vpiAlwaysType, process_handle);</span></a>
+<a name="31"><span class="lineNum">      31 </span><span class="lineCov">       4487 :     if (type == vpiAlways) {</span></a>
+<a name="32"><span class="lineNum">      32 </span><span class="lineCov">       4443 :         int always_type = vpi_get(vpiAlwaysType, process_handle);</span></a>
 <a name="33"><span class="lineNum">      33 </span>            : </a>
-<a name="34"><span class="lineNum">      34 </span><span class="lineCov">       4440 :         if (always_type == 3 || isEdgeTriggeredAlways(process_handle)) { // always_ff or plain edge-triggered always</span></a>
-<a name="35"><span class="lineNum">      35 </span><span class="lineCov">       2383 :             processAlwaysFf(process_handle, mod);</span></a>
-<a name="36"><span class="lineNum">      36 </span><span class="lineCov">       4440 :             return;</span></a>
+<a name="34"><span class="lineNum">      34 </span><span class="lineCov">       4443 :         if (always_type == 3 || isEdgeTriggeredAlways(process_handle)) { // always_ff or plain edge-triggered always</span></a>
+<a name="35"><span class="lineNum">      35 </span><span class="lineCov">       2386 :             processAlwaysFf(process_handle, mod);</span></a>
+<a name="36"><span class="lineNum">      36 </span><span class="lineCov">       4443 :             return;</span></a>
 <a name="37"><span class="lineNum">      37 </span><span class="lineCov">       2057 :         } else if (always_type == 2 || always_type == 1) { // always_comb or always</span></a>
 <a name="38"><span class="lineNum">      38 </span><span class="lineCov">       2057 :             if (stmt) {</span></a>
 <a name="39"><span class="lineNum">      39 </span><span class="lineCov">       2057 :                 processStatement(stmt, mod, process_handle);</span></a>
@@ -162,13 +162,13 @@
 <a name="100"><span class="lineNum">     100 </span><span class="lineNoCov">          0 :     }</span></a>
 <a name="101"><span class="lineNum">     101 </span>            : }</a>
 <a name="102"><span class="lineNum">     102 </span>            : </a>
-<a name="103"><span class="lineNum">     103 </span><span class="lineCov">       1618 : bool DesignExtractor::isNonZeroResetValue(vpiHandle handle) {</span></a>
-<a name="104"><span class="lineNum">     104 </span><span class="lineCov">       1618 :     if (!handle) return false;</span></a>
-<a name="105"><span class="lineNum">     105 </span><span class="lineCov">       1618 :     vpiHandle actual = unwrapRef(handle);</span></a>
-<a name="106"><span class="lineNum">     106 </span><span class="lineCov">       1618 :     if (!actual) return false;</span></a>
-<a name="107"><span class="lineNum">     107 </span><span class="lineCov">       1618 :     int type = vpi_get(vpiType, actual);</span></a>
+<a name="103"><span class="lineNum">     103 </span><span class="lineCov">       1619 : bool DesignExtractor::isNonZeroResetValue(vpiHandle handle) {</span></a>
+<a name="104"><span class="lineNum">     104 </span><span class="lineCov">       1619 :     if (!handle) return false;</span></a>
+<a name="105"><span class="lineNum">     105 </span><span class="lineCov">       1619 :     vpiHandle actual = unwrapRef(handle);</span></a>
+<a name="106"><span class="lineNum">     106 </span><span class="lineCov">       1619 :     if (!actual) return false;</span></a>
+<a name="107"><span class="lineNum">     107 </span><span class="lineCov">       1619 :     int type = vpi_get(vpiType, actual);</span></a>
 <a name="108"><span class="lineNum">     108 </span>            : </a>
-<a name="109"><span class="lineNum">     109 </span><span class="lineCov">       1618 :     if (type == vpiOperation) {</span></a>
+<a name="109"><span class="lineNum">     109 </span><span class="lineCov">       1619 :     if (type == vpiOperation) {</span></a>
 <a name="110"><span class="lineNum">     110 </span><span class="lineCov">        240 :         int opType = vpi_get(vpiOpType, actual);</span></a>
 <a name="111"><span class="lineNum">     111 </span><span class="lineCov">        240 :         if (opType == 75 || opType == vpiConcatOp) { // assignment pattern or concatenation</span></a>
 <a name="112"><span class="lineNum">     112 </span><span class="lineCov">        240 :             vpiHandle operand_itr = vpi_iterate(vpiOperand, actual);</span></a>
@@ -187,32 +187,32 @@
 <a name="125"><span class="lineNum">     125 </span>            :         }</a>
 <a name="126"><span class="lineNum">     126 </span>            :     }</a>
 <a name="127"><span class="lineNum">     127 </span>            : </a>
-<a name="128"><span class="lineNum">     128 </span><span class="lineCov">       1379 :     if (type == 668) { // vpiTaggedPattern in UHDM</span></a>
+<a name="128"><span class="lineNum">     128 </span><span class="lineCov">       1380 :     if (type == 668) { // vpiTaggedPattern in UHDM</span></a>
 <a name="129"><span class="lineNum">     129 </span><span class="lineCov">         47 :         vpiHandle pattern = vpi_handle(vpiPattern, actual);</span></a>
 <a name="130"><span class="lineNum">     130 </span><span class="lineCov">         47 :         if (pattern) {</span></a>
 <a name="131"><span class="lineNum">     131 </span><span class="lineCov">         47 :             return isNonZeroResetValue(pattern);</span></a>
 <a name="132"><span class="lineNum">     132 </span>            :         }</a>
 <a name="133"><span class="lineNum">     133 </span>            :     }</a>
 <a name="134"><span class="lineNum">     134 </span>            : </a>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">       1332 :     if (type != vpiConstant) return true; // Complex logic is non-zero</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">       1333 :     if (type != vpiConstant) return true; // Complex logic is non-zero</span></a>
 <a name="136"><span class="lineNum">     136 </span>            : </a>
-<a name="137"><span class="lineNum">     137 </span><span class="lineCov">       1201 :     const char* val = vpi_get_str(vpiDecompile, actual);</span></a>
-<a name="138"><span class="lineNum">     138 </span><span class="lineCov">       1201 :     if (!val) return true;</span></a>
-<a name="139"><span class="lineNum">     139 </span><span class="lineCov">       1201 :     std::string s = val;</span></a>
+<a name="137"><span class="lineNum">     137 </span><span class="lineCov">       1202 :     const char* val = vpi_get_str(vpiDecompile, actual);</span></a>
+<a name="138"><span class="lineNum">     138 </span><span class="lineCov">       1202 :     if (!val) return true;</span></a>
+<a name="139"><span class="lineNum">     139 </span><span class="lineCov">       1202 :     std::string s = val;</span></a>
 <a name="140"><span class="lineNum">     140 </span>            :     // Remove underscores and size prefix</a>
-<a name="141"><span class="lineNum">     141 </span><span class="lineCov">       1201 :     size_t tick = s.find('\'');</span></a>
-<a name="142"><span class="lineNum">     142 </span><span class="lineCov">       1201 :     if (tick != std::string::npos) {</span></a>
-<a name="143"><span class="lineNum">     143 </span><span class="lineCov">       1200 :         if (tick + 2 &lt; s.size()) {</span></a>
-<a name="144"><span class="lineNum">     144 </span><span class="lineCov">        849 :             s = s.substr(tick + 2); // skip 'b, 'h, etc.</span></a>
+<a name="141"><span class="lineNum">     141 </span><span class="lineCov">       1202 :     size_t tick = s.find('\'');</span></a>
+<a name="142"><span class="lineNum">     142 </span><span class="lineCov">       1202 :     if (tick != std::string::npos) {</span></a>
+<a name="143"><span class="lineNum">     143 </span><span class="lineCov">       1201 :         if (tick + 2 &lt; s.size()) {</span></a>
+<a name="144"><span class="lineNum">     144 </span><span class="lineCov">        850 :             s = s.substr(tick + 2); // skip 'b, 'h, etc.</span></a>
 <a name="145"><span class="lineNum">     145 </span>            :         } else {</a>
 <a name="146"><span class="lineNum">     146 </span><span class="lineCov">        351 :             s = &quot;&quot;;</span></a>
 <a name="147"><span class="lineNum">     147 </span>            :         }</a>
 <a name="148"><span class="lineNum">     148 </span>            :     }</a>
-<a name="149"><span class="lineNum">     149 </span><span class="lineCov">       2005 :     for (char c : s) {</span></a>
-<a name="150"><span class="lineNum">     150 </span><span class="lineCov">        850 :         if (c != '0' &amp;&amp; c != '_' &amp;&amp; std::isalnum((unsigned char)c)) return true;</span></a>
+<a name="149"><span class="lineNum">     149 </span><span class="lineCov">       2007 :     for (char c : s) {</span></a>
+<a name="150"><span class="lineNum">     150 </span><span class="lineCov">        851 :         if (c != '0' &amp;&amp; c != '_' &amp;&amp; std::isalnum((unsigned char)c)) return true;</span></a>
 <a name="151"><span class="lineNum">     151 </span>            :     }</a>
-<a name="152"><span class="lineNum">     152 </span><span class="lineCov">       1155 :     return false;</span></a>
-<a name="153"><span class="lineNum">     153 </span><span class="lineCov">       1201 : }</span></a>
+<a name="152"><span class="lineNum">     152 </span><span class="lineCov">       1156 :     return false;</span></a>
+<a name="153"><span class="lineNum">     153 </span><span class="lineCov">       1202 : }</span></a>
 <a name="154"><span class="lineNum">     154 </span>            : </a>
 <a name="155"><span class="lineNum">     155 </span><span class="lineCov">        228 : bool DesignExtractor::isCanonicalFullArrayResetLoop(</span></a>
 <a name="156"><span class="lineNum">     156 </span>            :     vpiHandle assignment_handle,</a>
@@ -393,55 +393,55 @@
 <a name="331"><span class="lineNum">     331 </span><span class="lineCov">        264 :         &amp;&amp; getConstantInt(add_rhs) == 1;</span></a>
 <a name="332"><span class="lineNum">     332 </span><span class="lineCov">        223 : }</span></a>
 <a name="333"><span class="lineNum">     333 </span>            : </a>
-<a name="334"><span class="lineNum">     334 </span><span class="lineCov">      16367 : bool DesignExtractor::isSameObject(vpiHandle h1, vpiHandle h2) {</span></a>
-<a name="335"><span class="lineNum">     335 </span><span class="lineCov">      16367 :     if (h1 == h2) return true;</span></a>
-<a name="336"><span class="lineNum">     336 </span><span class="lineCov">      15517 :     if (!h1 || !h2) return false;</span></a>
-<a name="337"><span class="lineNum">     337 </span><span class="lineCov">      15517 :     if (vpi_get(vpiType, h1) != vpi_get(vpiType, h2)) return false;</span></a>
+<a name="334"><span class="lineNum">     334 </span><span class="lineCov">      16376 : bool DesignExtractor::isSameObject(vpiHandle h1, vpiHandle h2) {</span></a>
+<a name="335"><span class="lineNum">     335 </span><span class="lineCov">      16376 :     if (h1 == h2) return true;</span></a>
+<a name="336"><span class="lineNum">     336 </span><span class="lineCov">      15525 :     if (!h1 || !h2) return false;</span></a>
+<a name="337"><span class="lineNum">     337 </span><span class="lineCov">      15525 :     if (vpi_get(vpiType, h1) != vpi_get(vpiType, h2)) return false;</span></a>
 <a name="338"><span class="lineNum">     338 </span>            :     </a>
 <a name="339"><span class="lineNum">     339 </span>            :     // Check line and column as a proxy for object identity</a>
-<a name="340"><span class="lineNum">     340 </span><span class="lineCov">       6188 :     int l1 = vpi_get(vpiLineNo, h1);</span></a>
-<a name="341"><span class="lineNum">     341 </span><span class="lineCov">       6188 :     int l2 = vpi_get(vpiLineNo, h2);</span></a>
-<a name="342"><span class="lineNum">     342 </span><span class="lineCov">       6188 :     if (l1 != l2) return false;</span></a>
+<a name="340"><span class="lineNum">     340 </span><span class="lineCov">       6192 :     int l1 = vpi_get(vpiLineNo, h1);</span></a>
+<a name="341"><span class="lineNum">     341 </span><span class="lineCov">       6192 :     int l2 = vpi_get(vpiLineNo, h2);</span></a>
+<a name="342"><span class="lineNum">     342 </span><span class="lineCov">       6192 :     if (l1 != l2) return false;</span></a>
 <a name="343"><span class="lineNum">     343 </span>            :     </a>
-<a name="344"><span class="lineNum">     344 </span><span class="lineCov">       2835 :     int c1 = vpi_get(vpiColumnNo, h1);</span></a>
-<a name="345"><span class="lineNum">     345 </span><span class="lineCov">       2835 :     int c2 = vpi_get(vpiColumnNo, h2);</span></a>
-<a name="346"><span class="lineNum">     346 </span><span class="lineCov">       2835 :     if (c1 != c2) return false;</span></a>
+<a name="344"><span class="lineNum">     344 </span><span class="lineCov">       2837 :     int c1 = vpi_get(vpiColumnNo, h1);</span></a>
+<a name="345"><span class="lineNum">     345 </span><span class="lineCov">       2837 :     int c2 = vpi_get(vpiColumnNo, h2);</span></a>
+<a name="346"><span class="lineNum">     346 </span><span class="lineCov">       2837 :     if (c1 != c2) return false;</span></a>
 <a name="347"><span class="lineNum">     347 </span>            : </a>
-<a name="348"><span class="lineNum">     348 </span><span class="lineCov">       2831 :     return true;</span></a>
+<a name="348"><span class="lineNum">     348 </span><span class="lineCov">       2833 :     return true;</span></a>
 <a name="349"><span class="lineNum">     349 </span>            : }</a>
 <a name="350"><span class="lineNum">     350 </span>            : </a>
-<a name="351"><span class="lineNum">     351 </span><span class="lineCov">       4277 : bool DesignExtractor::isAncestor(vpiHandle ancestor, vpiHandle descendant) {</span></a>
-<a name="352"><span class="lineNum">     352 </span><span class="lineCov">       4277 :     if (!ancestor || !descendant) return false;</span></a>
-<a name="353"><span class="lineNum">     353 </span><span class="lineCov">       4277 :     vpiHandle curr = descendant;</span></a>
-<a name="354"><span class="lineNum">     354 </span><span class="lineCov">      14450 :     while (curr) {</span></a>
-<a name="355"><span class="lineNum">     355 </span><span class="lineCov">      14450 :         if (isSameObject(ancestor, curr)) return true;</span></a>
-<a name="356"><span class="lineNum">     356 </span><span class="lineCov">      11842 :         int type = vpi_get(vpiType, curr);</span></a>
-<a name="357"><span class="lineNum">     357 </span><span class="lineCov">      11842 :         if (type == vpiAlways || type == vpiModule) break;</span></a>
-<a name="358"><span class="lineNum">     358 </span><span class="lineCov">      10173 :         vpiHandle parent = vpi_handle(vpiParent, curr);</span></a>
-<a name="359"><span class="lineNum">     359 </span><span class="lineCov">      10173 :         if (!parent || parent == curr) break;</span></a>
-<a name="360"><span class="lineNum">     360 </span><span class="lineCov">      10173 :         curr = parent;</span></a>
+<a name="351"><span class="lineNum">     351 </span><span class="lineCov">       4280 : bool DesignExtractor::isAncestor(vpiHandle ancestor, vpiHandle descendant) {</span></a>
+<a name="352"><span class="lineNum">     352 </span><span class="lineCov">       4280 :     if (!ancestor || !descendant) return false;</span></a>
+<a name="353"><span class="lineNum">     353 </span><span class="lineCov">       4280 :     vpiHandle curr = descendant;</span></a>
+<a name="354"><span class="lineNum">     354 </span><span class="lineCov">      14457 :     while (curr) {</span></a>
+<a name="355"><span class="lineNum">     355 </span><span class="lineCov">      14457 :         if (isSameObject(ancestor, curr)) return true;</span></a>
+<a name="356"><span class="lineNum">     356 </span><span class="lineCov">      11847 :         int type = vpi_get(vpiType, curr);</span></a>
+<a name="357"><span class="lineNum">     357 </span><span class="lineCov">      11847 :         if (type == vpiAlways || type == vpiModule) break;</span></a>
+<a name="358"><span class="lineNum">     358 </span><span class="lineCov">      10177 :         vpiHandle parent = vpi_handle(vpiParent, curr);</span></a>
+<a name="359"><span class="lineNum">     359 </span><span class="lineCov">      10177 :         if (!parent || parent == curr) break;</span></a>
+<a name="360"><span class="lineNum">     360 </span><span class="lineCov">      10177 :         curr = parent;</span></a>
 <a name="361"><span class="lineNum">     361 </span>            :     }</a>
-<a name="362"><span class="lineNum">     362 </span><span class="lineCov">       1669 :     return false;</span></a>
+<a name="362"><span class="lineNum">     362 </span><span class="lineCov">       1670 :     return false;</span></a>
 <a name="363"><span class="lineNum">     363 </span>            : }</a>
 <a name="364"><span class="lineNum">     364 </span>            : </a>
-<a name="365"><span class="lineNum">     365 </span><span class="lineCov">       2383 : void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module&amp; mod) {</span></a>
-<a name="366"><span class="lineNum">     366 </span><span class="lineCov">       2383 :     vpiHandle stmt = vpi_handle(vpiStmt, always_handle);</span></a>
-<a name="367"><span class="lineNum">     367 </span><span class="lineCov">       2383 :     if (!stmt) return;</span></a>
+<a name="365"><span class="lineNum">     365 </span><span class="lineCov">       2386 : void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module&amp; mod) {</span></a>
+<a name="366"><span class="lineNum">     366 </span><span class="lineCov">       2386 :     vpiHandle stmt = vpi_handle(vpiStmt, always_handle);</span></a>
+<a name="367"><span class="lineNum">     367 </span><span class="lineCov">       2386 :     if (!stmt) return;</span></a>
 <a name="368"><span class="lineNum">     368 </span>            : </a>
-<a name="369"><span class="lineNum">     369 </span><span class="lineCov">       2383 :     std::vector&lt;vpiHandle&gt; assignments;</span></a>
-<a name="370"><span class="lineNum">     370 </span><span class="lineCov">       2383 :     findAssignments(stmt, assignments);</span></a>
+<a name="369"><span class="lineNum">     369 </span><span class="lineCov">       2386 :     std::vector&lt;vpiHandle&gt; assignments;</span></a>
+<a name="370"><span class="lineNum">     370 </span><span class="lineCov">       2386 :     findAssignments(stmt, assignments);</span></a>
 <a name="371"><span class="lineNum">     371 </span>            : </a>
-<a name="372"><span class="lineNum">     372 </span><span class="lineCov">       2383 :     bool statement_has_case = findFirstCase(stmt) != nullptr;</span></a>
-<a name="373"><span class="lineNum">     373 </span><span class="lineCov">       2383 :     bool has_lowerable_aggregate_assignments = false;</span></a>
-<a name="374"><span class="lineNum">     374 </span><span class="lineCov">       2383 :     std::vector&lt;vpiHandle&gt; aggregate_assignments;</span></a>
-<a name="375"><span class="lineNum">     375 </span><span class="lineCov">       2383 :     std::map&lt;std::string, std::vector&lt;vpiHandle&gt;&gt; reg_assigns;</span></a>
-<a name="376"><span class="lineNum">     376 </span><span class="lineCov">       2383 :     std::map&lt;std::string, vpiHandle&gt; reg_lhs_handles;</span></a>
-<a name="377"><span class="lineNum">     377 </span><span class="lineCov">       2383 :     std::vector&lt;std::string&gt; reg_first_seen_order;</span></a>
-<a name="378"><span class="lineNum">     378 </span><span class="lineCov">       2383 :     std::set&lt;std::string&gt; concat_derived_regs;</span></a>
-<a name="379"><span class="lineNum">     379 </span><span class="lineCov">       6373 :     for (vpiHandle a : assignments) {</span></a>
-<a name="380"><span class="lineNum">     380 </span><span class="lineCov">       3990 :         vpiHandle lhs = vpi_handle(vpiLhs, a);</span></a>
-<a name="381"><span class="lineNum">     381 </span><span class="lineCov">       3990 :         if (lhs) {</span></a>
-<a name="382"><span class="lineNum">     382 </span><span class="lineCov">       3990 :             if (isConcatOperation(lhs)) {</span></a>
+<a name="372"><span class="lineNum">     372 </span><span class="lineCov">       2386 :     bool statement_has_case = findFirstCase(stmt) != nullptr;</span></a>
+<a name="373"><span class="lineNum">     373 </span><span class="lineCov">       2386 :     bool has_lowerable_aggregate_assignments = false;</span></a>
+<a name="374"><span class="lineNum">     374 </span><span class="lineCov">       2386 :     std::vector&lt;vpiHandle&gt; aggregate_assignments;</span></a>
+<a name="375"><span class="lineNum">     375 </span><span class="lineCov">       2386 :     std::map&lt;std::string, std::vector&lt;vpiHandle&gt;&gt; reg_assigns;</span></a>
+<a name="376"><span class="lineNum">     376 </span><span class="lineCov">       2386 :     std::map&lt;std::string, vpiHandle&gt; reg_lhs_handles;</span></a>
+<a name="377"><span class="lineNum">     377 </span><span class="lineCov">       2386 :     std::vector&lt;std::string&gt; reg_first_seen_order;</span></a>
+<a name="378"><span class="lineNum">     378 </span><span class="lineCov">       2386 :     std::set&lt;std::string&gt; concat_derived_regs;</span></a>
+<a name="379"><span class="lineNum">     379 </span><span class="lineCov">       6380 :     for (vpiHandle a : assignments) {</span></a>
+<a name="380"><span class="lineNum">     380 </span><span class="lineCov">       3994 :         vpiHandle lhs = vpi_handle(vpiLhs, a);</span></a>
+<a name="381"><span class="lineNum">     381 </span><span class="lineCov">       3994 :         if (lhs) {</span></a>
+<a name="382"><span class="lineNum">     382 </span><span class="lineCov">       3994 :             if (isConcatOperation(lhs)) {</span></a>
 <a name="383"><span class="lineNum">     383 </span>            :                 // Case statements still use the legacy aggregate path below. All other</a>
 <a name="384"><span class="lineNum">     384 </span>            :                 // concat LHS assignments participate in lowerStatement so branch priority</a>
 <a name="385"><span class="lineNum">     385 </span>            :                 // and register creation are shared with scalar assignments.</a>
@@ -461,49 +461,49 @@
 <a name="399"><span class="lineNum">     399 </span>            :                 }</a>
 <a name="400"><span class="lineNum">     400 </span><span class="lineCov">        302 :                 continue;</span></a>
 <a name="401"><span class="lineNum">     401 </span><span class="lineCov">        302 :             }</span></a>
-<a name="402"><span class="lineNum">     402 </span><span class="lineCov">       3688 :             std::string sig_name = getSignalName(lhs);</span></a>
-<a name="403"><span class="lineNum">     403 </span><span class="lineCov">       3688 :             if (!reg_assigns.count(sig_name)) reg_first_seen_order.push_back(sig_name);</span></a>
-<a name="404"><span class="lineNum">     404 </span><span class="lineCov">       3688 :             reg_assigns[sig_name].push_back(a);</span></a>
-<a name="405"><span class="lineNum">     405 </span><span class="lineCov">       3688 :             if (!reg_lhs_handles.count(sig_name)) reg_lhs_handles[sig_name] = lhs;</span></a>
-<a name="406"><span class="lineNum">     406 </span><span class="lineCov">       3688 :         }</span></a>
+<a name="402"><span class="lineNum">     402 </span><span class="lineCov">       3692 :             std::string sig_name = getSignalName(lhs);</span></a>
+<a name="403"><span class="lineNum">     403 </span><span class="lineCov">       3692 :             if (!reg_assigns.count(sig_name)) reg_first_seen_order.push_back(sig_name);</span></a>
+<a name="404"><span class="lineNum">     404 </span><span class="lineCov">       3692 :             reg_assigns[sig_name].push_back(a);</span></a>
+<a name="405"><span class="lineNum">     405 </span><span class="lineCov">       3692 :             if (!reg_lhs_handles.count(sig_name)) reg_lhs_handles[sig_name] = lhs;</span></a>
+<a name="406"><span class="lineNum">     406 </span><span class="lineCov">       3692 :         }</span></a>
 <a name="407"><span class="lineNum">     407 </span>            :     }</a>
 <a name="408"><span class="lineNum">     408 </span>            : </a>
-<a name="409"><span class="lineNum">     409 </span><span class="lineCov">       2383 :     std::string clk_signal = &quot;&quot;;</span></a>
-<a name="410"><span class="lineNum">     410 </span><span class="lineCov">       2383 :     std::string rst_signal = &quot;&quot;;</span></a>
-<a name="411"><span class="lineNum">     411 </span><span class="lineCov">       2383 :     std::string reset_kind = &quot;&quot;;</span></a>
-<a name="412"><span class="lineNum">     412 </span><span class="lineCov">       2383 :     bool reset_active_low = false;</span></a>
+<a name="409"><span class="lineNum">     409 </span><span class="lineCov">       2386 :     std::string clk_signal = &quot;&quot;;</span></a>
+<a name="410"><span class="lineNum">     410 </span><span class="lineCov">       2386 :     std::string rst_signal = &quot;&quot;;</span></a>
+<a name="411"><span class="lineNum">     411 </span><span class="lineCov">       2386 :     std::string reset_kind = &quot;&quot;;</span></a>
+<a name="412"><span class="lineNum">     412 </span><span class="lineCov">       2386 :     bool reset_active_low = false;</span></a>
 <a name="413"><span class="lineNum">     413 </span>            : </a>
 <a name="414"><span class="lineNum">     414 </span>            :     // Async reset inference</a>
-<a name="415"><span class="lineNum">     415 </span><span class="lineCov">       2383 :     vpiHandle event_control = vpi_handle(vpiStmt, always_handle);</span></a>
-<a name="416"><span class="lineNum">     416 </span><span class="lineCov">       2383 :     if (event_control &amp;&amp; vpi_get(vpiType, event_control) == vpiEventControl) {</span></a>
-<a name="417"><span class="lineNum">     417 </span><span class="lineCov">       2383 :         vpiHandle cond = vpi_handle(vpiCondition, event_control);</span></a>
-<a name="418"><span class="lineNum">     418 </span><span class="lineCov">       2383 :         if (cond) {</span></a>
-<a name="419"><span class="lineNum">     419 </span><span class="lineCov">       2383 :              std::vector&lt;vpiHandle&gt; cond_ids;</span></a>
-<a name="420"><span class="lineNum">     420 </span><span class="lineCov">       2383 :              collectIdentifierHandles(cond, cond_ids);</span></a>
-<a name="421"><span class="lineNum">     421 </span><span class="lineCov">       2383 :              if (!cond_ids.empty()) clk_signal = getSignalName(cond_ids[0]);</span></a>
-<a name="422"><span class="lineNum">     422 </span><span class="lineCov">       2383 :              if (cond_ids.size() &gt; 1) {</span></a>
-<a name="423"><span class="lineNum">     423 </span><span class="lineCov">        639 :                  rst_signal = getSignalName(cond_ids[1]);</span></a>
-<a name="424"><span class="lineNum">     424 </span><span class="lineCov">        639 :                  reset_kind = &quot;async&quot;;</span></a>
-<a name="425"><span class="lineNum">     425 </span><span class="lineCov">        639 :                  if (vpi_get(vpiType, cond) == vpiOperation) {</span></a>
-<a name="426"><span class="lineNum">     426 </span><span class="lineCov">        639 :                      vpiHandle op_itr = vpi_iterate(vpiOperand, cond);</span></a>
-<a name="427"><span class="lineNum">     427 </span><span class="lineCov">        639 :                      vpi_scan(op_itr);</span></a>
-<a name="428"><span class="lineNum">     428 </span><span class="lineCov">        639 :                      vpiHandle rst_op = vpi_scan(op_itr);</span></a>
-<a name="429"><span class="lineNum">     429 </span><span class="lineCov">        639 :                      if (rst_op &amp;&amp; vpi_get(vpiOpType, rst_op) == 40) reset_active_low = true; // negedge</span></a>
-<a name="430"><span class="lineNum">     430 </span><span class="lineCov">        639 :                      vpi_release_handle(op_itr);</span></a>
+<a name="415"><span class="lineNum">     415 </span><span class="lineCov">       2386 :     vpiHandle event_control = vpi_handle(vpiStmt, always_handle);</span></a>
+<a name="416"><span class="lineNum">     416 </span><span class="lineCov">       2386 :     if (event_control &amp;&amp; vpi_get(vpiType, event_control) == vpiEventControl) {</span></a>
+<a name="417"><span class="lineNum">     417 </span><span class="lineCov">       2386 :         vpiHandle cond = vpi_handle(vpiCondition, event_control);</span></a>
+<a name="418"><span class="lineNum">     418 </span><span class="lineCov">       2386 :         if (cond) {</span></a>
+<a name="419"><span class="lineNum">     419 </span><span class="lineCov">       2386 :              std::vector&lt;vpiHandle&gt; cond_ids;</span></a>
+<a name="420"><span class="lineNum">     420 </span><span class="lineCov">       2386 :              collectIdentifierHandles(cond, cond_ids);</span></a>
+<a name="421"><span class="lineNum">     421 </span><span class="lineCov">       2386 :              if (!cond_ids.empty()) clk_signal = getSignalName(cond_ids[0]);</span></a>
+<a name="422"><span class="lineNum">     422 </span><span class="lineCov">       2386 :              if (cond_ids.size() &gt; 1) {</span></a>
+<a name="423"><span class="lineNum">     423 </span><span class="lineCov">        640 :                  rst_signal = getSignalName(cond_ids[1]);</span></a>
+<a name="424"><span class="lineNum">     424 </span><span class="lineCov">        640 :                  reset_kind = &quot;async&quot;;</span></a>
+<a name="425"><span class="lineNum">     425 </span><span class="lineCov">        640 :                  if (vpi_get(vpiType, cond) == vpiOperation) {</span></a>
+<a name="426"><span class="lineNum">     426 </span><span class="lineCov">        640 :                      vpiHandle op_itr = vpi_iterate(vpiOperand, cond);</span></a>
+<a name="427"><span class="lineNum">     427 </span><span class="lineCov">        640 :                      vpi_scan(op_itr);</span></a>
+<a name="428"><span class="lineNum">     428 </span><span class="lineCov">        640 :                      vpiHandle rst_op = vpi_scan(op_itr);</span></a>
+<a name="429"><span class="lineNum">     429 </span><span class="lineCov">        640 :                      if (rst_op &amp;&amp; vpi_get(vpiOpType, rst_op) == 40) reset_active_low = true; // negedge</span></a>
+<a name="430"><span class="lineNum">     430 </span><span class="lineCov">        640 :                      vpi_release_handle(op_itr);</span></a>
 <a name="431"><span class="lineNum">     431 </span>            :                  }</a>
 <a name="432"><span class="lineNum">     432 </span>            :              }</a>
-<a name="433"><span class="lineNum">     433 </span><span class="lineCov">       2383 :         }</span></a>
+<a name="433"><span class="lineNum">     433 </span><span class="lineCov">       2386 :         }</span></a>
 <a name="434"><span class="lineNum">     434 </span>            :     }</a>
 <a name="435"><span class="lineNum">     435 </span>            : </a>
 <a name="436"><span class="lineNum">     436 </span>            :     // Sync reset inference</a>
-<a name="437"><span class="lineNum">     437 </span><span class="lineCov">       2383 :     if (rst_signal.empty()) {</span></a>
-<a name="438"><span class="lineNum">     438 </span><span class="lineCov">       1744 :         vpiHandle body = vpi_handle(vpiStmt, always_handle);</span></a>
-<a name="439"><span class="lineNum">     439 </span><span class="lineCov">       1744 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiEventControl) body = vpi_handle(vpiStmt, body);</span></a>
-<a name="440"><span class="lineNum">     440 </span><span class="lineCov">       1744 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiBegin) {</span></a>
+<a name="437"><span class="lineNum">     437 </span><span class="lineCov">       2386 :     if (rst_signal.empty()) {</span></a>
+<a name="438"><span class="lineNum">     438 </span><span class="lineCov">       1746 :         vpiHandle body = vpi_handle(vpiStmt, always_handle);</span></a>
+<a name="439"><span class="lineNum">     439 </span><span class="lineCov">       1746 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiEventControl) body = vpi_handle(vpiStmt, body);</span></a>
+<a name="440"><span class="lineNum">     440 </span><span class="lineCov">       1746 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiBegin) {</span></a>
 <a name="441"><span class="lineNum">     441 </span><span class="lineCov">       1643 :              vpiHandle itr = vpi_iterate(vpiStmt, body);</span></a>
 <a name="442"><span class="lineNum">     442 </span><span class="lineCov">       1643 :              if (itr) { body = vpi_scan(itr); vpi_release_handle(itr); }</span></a>
 <a name="443"><span class="lineNum">     443 </span>            :         }</a>
-<a name="444"><span class="lineNum">     444 </span><span class="lineCov">       1744 :         if (body &amp;&amp; (vpi_get(vpiType, body) == vpiIf || vpi_get(vpiType, body) == vpiIfElse) &amp;&amp; vpi_handle(vpiElseStmt, body)) {</span></a>
+<a name="444"><span class="lineNum">     444 </span><span class="lineCov">       1746 :         if (body &amp;&amp; (vpi_get(vpiType, body) == vpiIf || vpi_get(vpiType, body) == vpiIfElse) &amp;&amp; vpi_handle(vpiElseStmt, body)) {</span></a>
 <a name="445"><span class="lineNum">     445 </span><span class="lineCov">        420 :             vpiHandle cond = vpi_handle(vpiCondition, body);</span></a>
 <a name="446"><span class="lineNum">     446 </span><span class="lineCov">        420 :             std::vector&lt;vpiHandle&gt; cond_ids;</span></a>
 <a name="447"><span class="lineNum">     447 </span><span class="lineCov">        420 :             collectIdentifierHandles(cond, cond_ids);</span></a>
@@ -515,45 +515,45 @@
 <a name="453"><span class="lineNum">     453 </span><span class="lineCov">        420 :         }</span></a>
 <a name="454"><span class="lineNum">     454 </span>            :     }</a>
 <a name="455"><span class="lineNum">     455 </span>            : </a>
-<a name="456"><span class="lineNum">     456 </span><span class="lineCov">       2383 :     bool is_reset_condition = false;</span></a>
-<a name="457"><span class="lineNum">     457 </span><span class="lineCov">       2383 :     vpiHandle reset_branch_stmt = nullptr;</span></a>
-<a name="458"><span class="lineNum">     458 </span><span class="lineCov">       2383 :     vpiHandle else_branch_stmt = nullptr;</span></a>
+<a name="456"><span class="lineNum">     456 </span><span class="lineCov">       2386 :     bool is_reset_condition = false;</span></a>
+<a name="457"><span class="lineNum">     457 </span><span class="lineCov">       2386 :     vpiHandle reset_branch_stmt = nullptr;</span></a>
+<a name="458"><span class="lineNum">     458 </span><span class="lineCov">       2386 :     vpiHandle else_branch_stmt = nullptr;</span></a>
 <a name="459"><span class="lineNum">     459 </span>            : </a>
-<a name="460"><span class="lineNum">     460 </span><span class="lineCov">       2383 :     if (!rst_signal.empty()) {</span></a>
-<a name="461"><span class="lineNum">     461 </span><span class="lineCov">       1008 :         vpiHandle body = vpi_handle(vpiStmt, always_handle);</span></a>
-<a name="462"><span class="lineNum">     462 </span><span class="lineCov">       1008 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiEventControl) body = vpi_handle(vpiStmt, body);</span></a>
-<a name="463"><span class="lineNum">     463 </span><span class="lineCov">       1008 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiBegin) {</span></a>
-<a name="464"><span class="lineNum">     464 </span><span class="lineCov">       1006 :             vpiHandle itr = vpi_iterate(vpiStmt, body);</span></a>
-<a name="465"><span class="lineNum">     465 </span><span class="lineCov">       1006 :             if (itr) { body = vpi_scan(itr); vpi_release_handle(itr); }</span></a>
+<a name="460"><span class="lineNum">     460 </span><span class="lineCov">       2386 :     if (!rst_signal.empty()) {</span></a>
+<a name="461"><span class="lineNum">     461 </span><span class="lineCov">       1009 :         vpiHandle body = vpi_handle(vpiStmt, always_handle);</span></a>
+<a name="462"><span class="lineNum">     462 </span><span class="lineCov">       1009 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiEventControl) body = vpi_handle(vpiStmt, body);</span></a>
+<a name="463"><span class="lineNum">     463 </span><span class="lineCov">       1009 :         if (body &amp;&amp; vpi_get(vpiType, body) == vpiBegin) {</span></a>
+<a name="464"><span class="lineNum">     464 </span><span class="lineCov">       1007 :             vpiHandle itr = vpi_iterate(vpiStmt, body);</span></a>
+<a name="465"><span class="lineNum">     465 </span><span class="lineCov">       1007 :             if (itr) { body = vpi_scan(itr); vpi_release_handle(itr); }</span></a>
 <a name="466"><span class="lineNum">     466 </span>            :         }</a>
-<a name="467"><span class="lineNum">     467 </span><span class="lineCov">       1008 :         if (body &amp;&amp; (vpi_get(vpiType, body) == vpiIf || vpi_get(vpiType, body) == vpiIfElse)) {</span></a>
-<a name="468"><span class="lineNum">     468 </span><span class="lineCov">       1008 :             std::vector&lt;vpiHandle&gt; cond_ids;</span></a>
-<a name="469"><span class="lineNum">     469 </span><span class="lineCov">       1008 :             collectIdentifierHandles(vpi_handle(vpiCondition, body), cond_ids);</span></a>
-<a name="470"><span class="lineNum">     470 </span><span class="lineCov">       1008 :             for (vpiHandle cond_id : cond_ids) {</span></a>
-<a name="471"><span class="lineNum">     471 </span><span class="lineCov">       1008 :                 if (getSignalName(cond_id) == rst_signal) {</span></a>
-<a name="472"><span class="lineNum">     472 </span><span class="lineCov">       1008 :                     is_reset_condition = true;</span></a>
-<a name="473"><span class="lineNum">     473 </span><span class="lineCov">       1008 :                     reset_branch_stmt = vpi_handle(vpiStmt, body);</span></a>
-<a name="474"><span class="lineNum">     474 </span><span class="lineCov">       1008 :                     else_branch_stmt = vpi_handle(vpiElseStmt, body);</span></a>
-<a name="475"><span class="lineNum">     475 </span><span class="lineCov">       1008 :                     break;</span></a>
+<a name="467"><span class="lineNum">     467 </span><span class="lineCov">       1009 :         if (body &amp;&amp; (vpi_get(vpiType, body) == vpiIf || vpi_get(vpiType, body) == vpiIfElse)) {</span></a>
+<a name="468"><span class="lineNum">     468 </span><span class="lineCov">       1009 :             std::vector&lt;vpiHandle&gt; cond_ids;</span></a>
+<a name="469"><span class="lineNum">     469 </span><span class="lineCov">       1009 :             collectIdentifierHandles(vpi_handle(vpiCondition, body), cond_ids);</span></a>
+<a name="470"><span class="lineNum">     470 </span><span class="lineCov">       1009 :             for (vpiHandle cond_id : cond_ids) {</span></a>
+<a name="471"><span class="lineNum">     471 </span><span class="lineCov">       1009 :                 if (getSignalName(cond_id) == rst_signal) {</span></a>
+<a name="472"><span class="lineNum">     472 </span><span class="lineCov">       1009 :                     is_reset_condition = true;</span></a>
+<a name="473"><span class="lineNum">     473 </span><span class="lineCov">       1009 :                     reset_branch_stmt = vpi_handle(vpiStmt, body);</span></a>
+<a name="474"><span class="lineNum">     474 </span><span class="lineCov">       1009 :                     else_branch_stmt = vpi_handle(vpiElseStmt, body);</span></a>
+<a name="475"><span class="lineNum">     475 </span><span class="lineCov">       1009 :                     break;</span></a>
 <a name="476"><span class="lineNum">     476 </span>            :                 }</a>
 <a name="477"><span class="lineNum">     477 </span>            :             }</a>
-<a name="478"><span class="lineNum">     478 </span><span class="lineCov">       1008 :         }</span></a>
+<a name="478"><span class="lineNum">     478 </span><span class="lineCov">       1009 :         }</span></a>
 <a name="479"><span class="lineNum">     479 </span>            :     }</a>
 <a name="480"><span class="lineNum">     480 </span>            : </a>
-<a name="481"><span class="lineNum">     481 </span><span class="lineCov">       2383 :     std::map&lt;std::string, LoweredValue&gt; lowered_values;</span></a>
-<a name="482"><span class="lineNum">     482 </span><span class="lineCov">       2383 :     if (!is_reset_condition &amp;&amp; containsIf(stmt) &amp;&amp; !statement_has_case) {</span></a>
+<a name="481"><span class="lineNum">     481 </span><span class="lineCov">       2386 :     std::map&lt;std::string, LoweredValue&gt; lowered_values;</span></a>
+<a name="482"><span class="lineNum">     482 </span><span class="lineCov">       2386 :     if (!is_reset_condition &amp;&amp; containsIf(stmt) &amp;&amp; !statement_has_case) {</span></a>
 <a name="483"><span class="lineNum">     483 </span><span class="lineCov">        342 :         std::set&lt;std::string&gt; targets;</span></a>
 <a name="484"><span class="lineNum">     484 </span><span class="lineCov">        342 :         collectAssignmentTargets(stmt, targets);</span></a>
 <a name="485"><span class="lineNum">     485 </span><span class="lineCov">        342 :         std::map&lt;std::string, std::string&gt; desired_outputs;</span></a>
 <a name="486"><span class="lineNum">     486 </span><span class="lineCov">        869 :         for (const auto&amp; target : targets) desired_outputs[target] = target + &quot;_next&quot;;</span></a>
 <a name="487"><span class="lineNum">     487 </span><span class="lineCov">        342 :         lowered_values = lowerStatement(stmt, mod, true, desired_outputs, always_handle);</span></a>
-<a name="488"><span class="lineNum">     488 </span><span class="lineCov">       2383 :     } else if (is_reset_condition &amp;&amp; else_branch_stmt &amp;&amp; containsIf(else_branch_stmt) &amp;&amp; !findFirstCase(else_branch_stmt)) {</span></a>
+<a name="488"><span class="lineNum">     488 </span><span class="lineCov">       2386 :     } else if (is_reset_condition &amp;&amp; else_branch_stmt &amp;&amp; containsIf(else_branch_stmt) &amp;&amp; !findFirstCase(else_branch_stmt)) {</span></a>
 <a name="489"><span class="lineNum">     489 </span><span class="lineCov">        296 :         std::set&lt;std::string&gt; targets;</span></a>
 <a name="490"><span class="lineNum">     490 </span><span class="lineCov">        296 :         collectAssignmentTargets(else_branch_stmt, targets);</span></a>
 <a name="491"><span class="lineNum">     491 </span><span class="lineCov">        296 :         std::map&lt;std::string, std::string&gt; desired_outputs;</span></a>
 <a name="492"><span class="lineNum">     492 </span><span class="lineCov">        794 :         for (const auto&amp; target : targets) desired_outputs[target] = target + &quot;_next&quot;;</span></a>
 <a name="493"><span class="lineNum">     493 </span><span class="lineCov">        296 :         lowered_values = lowerStatement(else_branch_stmt, mod, true, desired_outputs, always_handle);</span></a>
-<a name="494"><span class="lineNum">     494 </span><span class="lineCov">       2041 :     } else if (has_lowerable_aggregate_assignments &amp;&amp; !statement_has_case) {</span></a>
+<a name="494"><span class="lineNum">     494 </span><span class="lineCov">       2044 :     } else if (has_lowerable_aggregate_assignments &amp;&amp; !statement_has_case) {</span></a>
 <a name="495"><span class="lineNum">     495 </span><span class="lineCov">         46 :         vpiHandle lowered_stmt = is_reset_condition &amp;&amp; else_branch_stmt ? else_branch_stmt : stmt;</span></a>
 <a name="496"><span class="lineNum">     496 </span><span class="lineCov">         46 :         std::set&lt;std::string&gt; targets;</span></a>
 <a name="497"><span class="lineNum">     497 </span><span class="lineCov">         46 :         collectAssignmentTargets(lowered_stmt, targets);</span></a>
@@ -564,8 +564,8 @@
 <a name="502"><span class="lineNum">     502 </span>            : </a>
 <a name="503"><span class="lineNum">     503 </span>            :     // A non-zero aggregate reset needs the same bit breakout as a data assignment so</a>
 <a name="504"><span class="lineNum">     504 </span>            :     // each register's RV port receives only its own slice. Zero resets remain implicit.</a>
-<a name="505"><span class="lineNum">     505 </span><span class="lineCov">       2383 :     std::map&lt;std::string, LoweredValue&gt; aggregate_reset_values;</span></a>
-<a name="506"><span class="lineNum">     506 </span><span class="lineCov">       2383 :     if (is_reset_condition &amp;&amp; reset_branch_stmt &amp;&amp; has_lowerable_aggregate_assignments) {</span></a>
+<a name="505"><span class="lineNum">     505 </span><span class="lineCov">       2386 :     std::map&lt;std::string, LoweredValue&gt; aggregate_reset_values;</span></a>
+<a name="506"><span class="lineNum">     506 </span><span class="lineCov">       2386 :     if (is_reset_condition &amp;&amp; reset_branch_stmt &amp;&amp; has_lowerable_aggregate_assignments) {</span></a>
 <a name="507"><span class="lineNum">     507 </span><span class="lineCov">         64 :         bool has_nonzero_aggregate_reset = false;</span></a>
 <a name="508"><span class="lineNum">     508 </span><span class="lineCov">        320 :         for (vpiHandle assignment : assignments) {</span></a>
 <a name="509"><span class="lineNum">     509 </span><span class="lineCov">        256 :             vpiHandle lhs = vpi_handle(vpiLhs, assignment);</span></a>
@@ -585,7 +585,7 @@
 <a name="523"><span class="lineNum">     523 </span><span class="lineNoCov">          0 :         }</span></a>
 <a name="524"><span class="lineNum">     524 </span>            :     }</a>
 <a name="525"><span class="lineNum">     525 </span>            : </a>
-<a name="526"><span class="lineNum">     526 </span><span class="lineCov">       2383 :     for (vpiHandle aggregate_assign : aggregate_assignments) {</span></a>
+<a name="526"><span class="lineNum">     526 </span><span class="lineCov">       2386 :     for (vpiHandle aggregate_assign : aggregate_assignments) {</span></a>
 <a name="527"><span class="lineNum">     527 </span><span class="lineNoCov">          0 :         auto aggregate_values = lowerAggregateAssignment(aggregate_assign, mod, true, {}, &quot;_next&quot;);</span></a>
 <a name="528"><span class="lineNum">     528 </span><span class="lineNoCov">          0 :         for (const auto&amp; [reg_name, value] : aggregate_values) {</span></a>
 <a name="529"><span class="lineNum">     529 </span><span class="lineNoCov">          0 :             if (!value.assigned || reg_name.empty()) continue;</span></a>
@@ -623,44 +623,44 @@
 <a name="561"><span class="lineNum">     561 </span>            : </a>
 <a name="562"><span class="lineNum">     562 </span>            :     // Preserve procedural source order for normal writes, then put reset-only writes last so</a>
 <a name="563"><span class="lineNum">     563 </span>            :     // they retain reset priority if they cannot be folded into the canonical register reset.</a>
-<a name="564"><span class="lineNum">     564 </span><span class="lineCov">       2383 :     std::vector&lt;std::string&gt; reg_name_order;</span></a>
+<a name="564"><span class="lineNum">     564 </span><span class="lineCov">       2386 :     std::vector&lt;std::string&gt; reg_name_order;</span></a>
 <a name="565"><span class="lineNum">     565 </span>            :     {</a>
-<a name="566"><span class="lineNum">     566 </span><span class="lineCov">       2383 :         std::vector&lt;std::string&gt; normal_first;</span></a>
-<a name="567"><span class="lineNum">     567 </span><span class="lineCov">       2383 :         std::vector&lt;std::string&gt; reset_sole_last;</span></a>
-<a name="568"><span class="lineNum">     568 </span><span class="lineCov">       5575 :         for (const auto&amp; reg_name : reg_first_seen_order) {</span></a>
-<a name="569"><span class="lineNum">     569 </span><span class="lineCov">       3192 :             const auto&amp; reg_assigns_vec = reg_assigns.at(reg_name);</span></a>
+<a name="566"><span class="lineNum">     566 </span><span class="lineCov">       2386 :         std::vector&lt;std::string&gt; normal_first;</span></a>
+<a name="567"><span class="lineNum">     567 </span><span class="lineCov">       2386 :         std::vector&lt;std::string&gt; reset_sole_last;</span></a>
+<a name="568"><span class="lineNum">     568 </span><span class="lineCov">       5581 :         for (const auto&amp; reg_name : reg_first_seen_order) {</span></a>
+<a name="569"><span class="lineNum">     569 </span><span class="lineCov">       3195 :             const auto&amp; reg_assigns_vec = reg_assigns.at(reg_name);</span></a>
 <a name="570"><span class="lineNum">     570 </span>            :             // Only indexed writes (bracketed LHS) go through the addr-mux collision/demotion</a>
 <a name="571"><span class="lineNum">     571 </span>            :             // logic below, so only those need reordering. A bracket-less whole-array write</a>
 <a name="572"><span class="lineNum">     572 </span>            :             // (e.g. `M &lt;= '{default: ...}'`) must keep its original relative position — it</a>
 <a name="573"><span class="lineNum">     573 </span>            :             // seeds the canonical &quot;reg:&lt;mod&gt;:&lt;base&gt;&quot; node that a sibling indexed write's</a>
 <a name="574"><span class="lineNum">     574 </span>            :             // array_reg_exists check expects to already be there.</a>
-<a name="575"><span class="lineNum">     575 </span><span class="lineCov">       2600 :             bool sole_reset_assign = is_reset_condition &amp;&amp; reset_branch_stmt &amp;&amp;</span></a>
-<a name="576"><span class="lineNum">     576 </span><span class="lineCov">       5792 :                 reg_name.find('[') != std::string::npos &amp;&amp;</span></a>
+<a name="575"><span class="lineNum">     575 </span><span class="lineCov">       2602 :             bool sole_reset_assign = is_reset_condition &amp;&amp; reset_branch_stmt &amp;&amp;</span></a>
+<a name="576"><span class="lineNum">     576 </span><span class="lineCov">       5797 :                 reg_name.find('[') != std::string::npos &amp;&amp;</span></a>
 <a name="577"><span class="lineNum">     577 </span><span class="lineCov">        628 :                 std::all_of(reg_assigns_vec.begin(), reg_assigns_vec.end(),</span></a>
 <a name="578"><span class="lineNum">     578 </span><span class="lineCov">        805 :                     [&amp;](vpiHandle ra) { return isAncestor(reset_branch_stmt, ra); });</span></a>
-<a name="579"><span class="lineNum">     579 </span><span class="lineCov">       3192 :             (sole_reset_assign ? reset_sole_last : normal_first).push_back(reg_name);</span></a>
+<a name="579"><span class="lineNum">     579 </span><span class="lineCov">       3195 :             (sole_reset_assign ? reset_sole_last : normal_first).push_back(reg_name);</span></a>
 <a name="580"><span class="lineNum">     580 </span>            :         }</a>
-<a name="581"><span class="lineNum">     581 </span><span class="lineCov">       2383 :         reg_name_order = std::move(normal_first);</span></a>
-<a name="582"><span class="lineNum">     582 </span><span class="lineCov">       2383 :         reg_name_order.insert(reg_name_order.end(), reset_sole_last.begin(), reset_sole_last.end());</span></a>
-<a name="583"><span class="lineNum">     583 </span><span class="lineCov">       2383 :     }</span></a>
+<a name="581"><span class="lineNum">     581 </span><span class="lineCov">       2386 :         reg_name_order = std::move(normal_first);</span></a>
+<a name="582"><span class="lineNum">     582 </span><span class="lineCov">       2386 :         reg_name_order.insert(reg_name_order.end(), reset_sole_last.begin(), reset_sole_last.end());</span></a>
+<a name="583"><span class="lineNum">     583 </span><span class="lineCov">       2386 :     }</span></a>
 <a name="584"><span class="lineNum">     584 </span>            : </a>
-<a name="585"><span class="lineNum">     585 </span><span class="lineCov">       5575 :     for (auto const&amp; reg_name : reg_name_order) {</span></a>
-<a name="586"><span class="lineNum">     586 </span><span class="lineCov">       3192 :         auto const&amp; reg_assigns_vec = reg_assigns.at(reg_name);</span></a>
-<a name="587"><span class="lineNum">     587 </span><span class="lineCov">       3192 :         vpiHandle lhs_first = reg_lhs_handles.count(reg_name)</span></a>
-<a name="588"><span class="lineNum">     588 </span><span class="lineCov">       3192 :             ? reg_lhs_handles.at(reg_name)</span></a>
+<a name="585"><span class="lineNum">     585 </span><span class="lineCov">       5581 :     for (auto const&amp; reg_name : reg_name_order) {</span></a>
+<a name="586"><span class="lineNum">     586 </span><span class="lineCov">       3195 :         auto const&amp; reg_assigns_vec = reg_assigns.at(reg_name);</span></a>
+<a name="587"><span class="lineNum">     587 </span><span class="lineCov">       3195 :         vpiHandle lhs_first = reg_lhs_handles.count(reg_name)</span></a>
+<a name="588"><span class="lineNum">     588 </span><span class="lineCov">       3195 :             ? reg_lhs_handles.at(reg_name)</span></a>
 <a name="589"><span class="lineNum">     589 </span><span class="lineNoCov">          0 :             : vpi_handle(vpiLhs, reg_assigns_vec[0]);</span></a>
-<a name="590"><span class="lineNum">     590 </span><span class="lineCov">       3192 :         std::string reg_base = getBaseSignalName(lhs_first);</span></a>
-<a name="591"><span class="lineNum">     591 </span><span class="lineCov">       3192 :         ensureDeclaredArray(mod, reg_base);</span></a>
+<a name="590"><span class="lineNum">     590 </span><span class="lineCov">       3195 :         std::string reg_base = getBaseSignalName(lhs_first);</span></a>
+<a name="591"><span class="lineNum">     591 </span><span class="lineCov">       3195 :         ensureDeclaredArray(mod, reg_base);</span></a>
 <a name="592"><span class="lineNum">     592 </span>            : </a>
 <a name="593"><span class="lineNum">     593 </span>            :         // Detect variable-index array write: bracket with non-constant index -&gt; stacked address mux</a>
 <a name="594"><span class="lineNum">     594 </span>            :         // We check independently of mod.arrayDimensions since UHDM may store unpacked dims differently.</a>
-<a name="595"><span class="lineNum">     595 </span><span class="lineCov">       3192 :         bool is_array_reg = mod.arrayDimensions.count(reg_base) &gt; 0;</span></a>
-<a name="596"><span class="lineNum">     596 </span><span class="lineCov">       3192 :         bool is_variable_index = false;</span></a>
-<a name="597"><span class="lineNum">     597 </span><span class="lineCov">       3192 :         std::string index_expr;</span></a>
-<a name="598"><span class="lineNum">     598 </span><span class="lineCov">       3192 :         vpiHandle index_handle = nullptr;</span></a>
+<a name="595"><span class="lineNum">     595 </span><span class="lineCov">       3195 :         bool is_array_reg = mod.arrayDimensions.count(reg_base) &gt; 0;</span></a>
+<a name="596"><span class="lineNum">     596 </span><span class="lineCov">       3195 :         bool is_variable_index = false;</span></a>
+<a name="597"><span class="lineNum">     597 </span><span class="lineCov">       3195 :         std::string index_expr;</span></a>
+<a name="598"><span class="lineNum">     598 </span><span class="lineCov">       3195 :         vpiHandle index_handle = nullptr;</span></a>
 <a name="599"><span class="lineNum">     599 </span>            :         {</a>
-<a name="600"><span class="lineNum">     600 </span><span class="lineCov">       3192 :             size_t bracket = reg_name.find('[');</span></a>
-<a name="601"><span class="lineNum">     601 </span><span class="lineCov">       3192 :             if (bracket != std::string::npos) {</span></a>
+<a name="600"><span class="lineNum">     600 </span><span class="lineCov">       3195 :             size_t bracket = reg_name.find('[');</span></a>
+<a name="601"><span class="lineNum">     601 </span><span class="lineCov">       3195 :             if (bracket != std::string::npos) {</span></a>
 <a name="602"><span class="lineNum">     602 </span><span class="lineCov">       1256 :                 std::string candidate = reg_name.substr(bracket + 1);</span></a>
 <a name="603"><span class="lineNum">     603 </span><span class="lineCov">       1256 :                 if (!candidate.empty() &amp;&amp; candidate.back() == ']') candidate.pop_back();</span></a>
 <a name="604"><span class="lineNum">     604 </span>            :                 // Strip any trailing ]+:... for indexed part-selects</a>
@@ -691,38 +691,38 @@
 <a name="629"><span class="lineNum">     629 </span>            : </a>
 <a name="630"><span class="lineNum">     630 </span>            :         // If array dimensions weren't found by the module scanner (UHDM doesn't expose them via VPI</a>
 <a name="631"><span class="lineNum">     631 </span>            :         // ranges for logic arrays), fall back to source-text regex extraction.</a>
-<a name="632"><span class="lineNum">     632 </span><span class="lineCov">       3192 :         if (is_variable_index &amp;&amp; !mod.arrayDimensions.count(reg_base)) {</span></a>
+<a name="632"><span class="lineNum">     632 </span><span class="lineCov">       3195 :         if (is_variable_index &amp;&amp; !mod.arrayDimensions.count(reg_base)) {</span></a>
 <a name="633"><span class="lineNum">     633 </span><span class="lineNoCov">          0 :             ensureDeclaredArray(mod, reg_base);</span></a>
 <a name="634"><span class="lineNum">     634 </span><span class="lineNoCov">          0 :             is_array_reg = mod.arrayDimensions.count(reg_base) &gt; 0;</span></a>
 <a name="635"><span class="lineNum">     635 </span>            :         }</a>
 <a name="636"><span class="lineNum">     636 </span>            : </a>
-<a name="637"><span class="lineNum">     637 </span><span class="lineCov">       3192 :         Node n;</span></a>
-<a name="638"><span class="lineNum">     638 </span><span class="lineCov">       3192 :         n.id = &quot;reg:&quot; + mod.name + &quot;:&quot; + reg_name;</span></a>
-<a name="639"><span class="lineNum">     639 </span><span class="lineCov">       3192 :         n.kind = &quot;register&quot;;</span></a>
-<a name="640"><span class="lineNum">     640 </span><span class="lineCov">       3192 :         n.label = reg_name;</span></a>
-<a name="641"><span class="lineNum">     641 </span><span class="lineCov">       3192 :         n.source.file = getFile(always_handle);</span></a>
-<a name="642"><span class="lineNum">     642 </span><span class="lineCov">       3192 :         n.source.line = getLine(always_handle);</span></a>
-<a name="643"><span class="lineNum">     643 </span><span class="lineCov">       3192 :         n.source.col = getCol(always_handle);</span></a>
-<a name="644"><span class="lineNum">     644 </span><span class="lineCov">       3192 :         n.source.endLine = getEndLine(always_handle);</span></a>
-<a name="645"><span class="lineNum">     645 </span><span class="lineCov">       3192 :         n.source.endCol = getEndCol(always_handle);</span></a>
+<a name="637"><span class="lineNum">     637 </span><span class="lineCov">       3195 :         Node n;</span></a>
+<a name="638"><span class="lineNum">     638 </span><span class="lineCov">       3195 :         n.id = &quot;reg:&quot; + mod.name + &quot;:&quot; + reg_name;</span></a>
+<a name="639"><span class="lineNum">     639 </span><span class="lineCov">       3195 :         n.kind = &quot;register&quot;;</span></a>
+<a name="640"><span class="lineNum">     640 </span><span class="lineCov">       3195 :         n.label = reg_name;</span></a>
+<a name="641"><span class="lineNum">     641 </span><span class="lineCov">       3195 :         n.source.file = getFile(always_handle);</span></a>
+<a name="642"><span class="lineNum">     642 </span><span class="lineCov">       3195 :         n.source.line = getLine(always_handle);</span></a>
+<a name="643"><span class="lineNum">     643 </span><span class="lineCov">       3195 :         n.source.col = getCol(always_handle);</span></a>
+<a name="644"><span class="lineNum">     644 </span><span class="lineCov">       3195 :         n.source.endLine = getEndLine(always_handle);</span></a>
+<a name="645"><span class="lineNum">     645 </span><span class="lineCov">       3195 :         n.source.endCol = getEndCol(always_handle);</span></a>
 <a name="646"><span class="lineNum">     646 </span>            : </a>
-<a name="647"><span class="lineNum">     647 </span><span class="lineCov">       3192 :         n.metadata.resetKind = reset_kind;</span></a>
-<a name="648"><span class="lineNum">     648 </span><span class="lineCov">       3192 :         n.metadata.resetActiveLow = reset_active_low;</span></a>
-<a name="649"><span class="lineNum">     649 </span><span class="lineCov">       3192 :         n.metadata.clockSignal = clk_signal;</span></a>
-<a name="650"><span class="lineNum">     650 </span><span class="lineCov">       3192 :         n.metadata.isProcedural = true;</span></a>
-<a name="651"><span class="lineNum">     651 </span><span class="lineCov">       3192 :         n.metadata.resetSignal = rst_signal;</span></a>
-<a name="652"><span class="lineNum">     652 </span><span class="lineCov">       3192 :         n.metadata.typeName = getTypeName(lhs_first);</span></a>
-<a name="653"><span class="lineNum">     653 </span><span class="lineCov">       3192 :         if (!n.metadata.typeName.empty()) n.metadata.typeSource = getTypeSource(lhs_first);</span></a>
+<a name="647"><span class="lineNum">     647 </span><span class="lineCov">       3195 :         n.metadata.resetKind = reset_kind;</span></a>
+<a name="648"><span class="lineNum">     648 </span><span class="lineCov">       3195 :         n.metadata.resetActiveLow = reset_active_low;</span></a>
+<a name="649"><span class="lineNum">     649 </span><span class="lineCov">       3195 :         n.metadata.clockSignal = clk_signal;</span></a>
+<a name="650"><span class="lineNum">     650 </span><span class="lineCov">       3195 :         n.metadata.isProcedural = true;</span></a>
+<a name="651"><span class="lineNum">     651 </span><span class="lineCov">       3195 :         n.metadata.resetSignal = rst_signal;</span></a>
+<a name="652"><span class="lineNum">     652 </span><span class="lineCov">       3195 :         n.metadata.typeName = getTypeName(lhs_first);</span></a>
+<a name="653"><span class="lineNum">     653 </span><span class="lineCov">       3195 :         if (!n.metadata.typeName.empty()) n.metadata.typeSource = getTypeSource(lhs_first);</span></a>
 <a name="654"><span class="lineNum">     654 </span>            :         // For constant part/bit selects (r[3:2], r[0], etc.) the register name</a>
 <a name="655"><span class="lineNum">     655 </span>            :         // already encodes the bit range — don't use the base signal's declared width</a>
 <a name="656"><span class="lineNum">     656 </span>            :         // (which would be the full bus width) as the cell width. Compute the real</a>
 <a name="657"><span class="lineNum">     657 </span>            :         // slice width from the range itself (e.g. &quot;[3:2]&quot; -&gt; 2 bits) rather than</a>
 <a name="658"><span class="lineNum">     658 </span>            :         // hardcoding 1 bit, which under-reported the width of multi-bit part-selects</a>
 <a name="659"><span class="lineNum">     659 </span>            :         // to every downstream consumer (D/Q port thickness, bus-composition wiring).</a>
-<a name="660"><span class="lineNum">     660 </span><span class="lineCov">       3192 :         std::string reg_width = &quot;&quot;;</span></a>
+<a name="660"><span class="lineNum">     660 </span><span class="lineCov">       3195 :         std::string reg_width = &quot;&quot;;</span></a>
 <a name="661"><span class="lineNum">     661 </span>            :         {</a>
-<a name="662"><span class="lineNum">     662 </span><span class="lineCov">       3192 :             size_t bracket = reg_name.find('[');</span></a>
-<a name="663"><span class="lineNum">     663 </span><span class="lineCov">       3192 :             if (bracket != std::string::npos) {</span></a>
+<a name="662"><span class="lineNum">     662 </span><span class="lineCov">       3195 :             size_t bracket = reg_name.find('[');</span></a>
+<a name="663"><span class="lineNum">     663 </span><span class="lineCov">       3195 :             if (bracket != std::string::npos) {</span></a>
 <a name="664"><span class="lineNum">     664 </span><span class="lineCov">       1256 :                 std::string sel = reg_name.substr(bracket + 1);</span></a>
 <a name="665"><span class="lineNum">     665 </span><span class="lineCov">       1256 :                 if (!sel.empty() &amp;&amp; sel.back() == ']') sel.pop_back();</span></a>
 <a name="666"><span class="lineNum">     666 </span><span class="lineCov">       1256 :                 bool is_const = !sel.empty() &amp;&amp; std::all_of(sel.begin(), sel.end(),</span></a>
@@ -744,42 +744,42 @@
 <a name="682"><span class="lineNum">     682 </span>            :                 }</a>
 <a name="683"><span class="lineNum">     683 </span><span class="lineCov">       1256 :             }</span></a>
 <a name="684"><span class="lineNum">     684 </span>            :         }</a>
-<a name="685"><span class="lineNum">     685 </span><span class="lineCov">       3192 :         if (reg_width.empty()) reg_width = getDeclaredSignalWidth(mod, reg_base);</span></a>
-<a name="686"><span class="lineNum">     686 </span><span class="lineCov">       3192 :         if (reg_width.empty()) reg_width = getWidth(lhs_first);</span></a>
-<a name="687"><span class="lineNum">     687 </span><span class="lineCov">       3192 :         auto lhs_field = getStructFieldRef(lhs_first, mod);</span></a>
-<a name="688"><span class="lineNum">     688 </span><span class="lineCov">       3192 :         if (lhs_field) {</span></a>
+<a name="685"><span class="lineNum">     685 </span><span class="lineCov">       3195 :         if (reg_width.empty()) reg_width = getDeclaredSignalWidth(mod, reg_base);</span></a>
+<a name="686"><span class="lineNum">     686 </span><span class="lineCov">       3195 :         if (reg_width.empty()) reg_width = getWidth(lhs_first);</span></a>
+<a name="687"><span class="lineNum">     687 </span><span class="lineCov">       3195 :         auto lhs_field = getStructFieldRef(lhs_first, mod);</span></a>
+<a name="688"><span class="lineNum">     688 </span><span class="lineCov">       3195 :         if (lhs_field) {</span></a>
 <a name="689"><span class="lineNum">     689 </span><span class="lineCov">        218 :             std::string fw = fieldWidth(mod.structSignals[lhs_field-&gt;first].type, lhs_field-&gt;second);</span></a>
 <a name="690"><span class="lineNum">     690 </span><span class="lineCov">        218 :             if (!fw.empty()) reg_width = fw;</span></a>
 <a name="691"><span class="lineNum">     691 </span><span class="lineCov">        218 :         }</span></a>
 <a name="692"><span class="lineNum">     692 </span>            : </a>
-<a name="693"><span class="lineNum">     693 </span><span class="lineCov">       3192 :         vpiHandle data_rhs = nullptr;</span></a>
-<a name="694"><span class="lineNum">     694 </span><span class="lineCov">       3192 :         vpiHandle reset_rhs = nullptr;</span></a>
-<a name="695"><span class="lineNum">     695 </span><span class="lineCov">       3192 :         vpiHandle reset_assign_handle = nullptr;</span></a>
+<a name="693"><span class="lineNum">     693 </span><span class="lineCov">       3195 :         vpiHandle data_rhs = nullptr;</span></a>
+<a name="694"><span class="lineNum">     694 </span><span class="lineCov">       3195 :         vpiHandle reset_rhs = nullptr;</span></a>
+<a name="695"><span class="lineNum">     695 </span><span class="lineCov">       3195 :         vpiHandle reset_assign_handle = nullptr;</span></a>
 <a name="696"><span class="lineNum">     696 </span>            :         // True when every assignment to this exact LHS text lives inside the reset branch —</a>
 <a name="697"><span class="lineNum">     697 </span>            :         // i.e. there is no separate non-reset write to protect via a downstream rst mux</a>
 <a name="698"><span class="lineNum">     698 </span>            :         // (e.g. a reset-only loop write `storage[i] &lt;= 0`, as opposed to a genuine partial</a>
 <a name="699"><span class="lineNum">     699 </span>            :         // reset where the same indexed target `M[addr]` is written in both branches).</a>
-<a name="700"><span class="lineNum">     700 </span><span class="lineCov">       3192 :         bool reset_is_sole_assign = false;</span></a>
+<a name="700"><span class="lineNum">     700 </span><span class="lineCov">       3195 :         bool reset_is_sole_assign = false;</span></a>
 <a name="701"><span class="lineNum">     701 </span>            : </a>
-<a name="702"><span class="lineNum">     702 </span><span class="lineCov">       3192 :         if (is_reset_condition &amp;&amp; reset_branch_stmt) {</span></a>
-<a name="703"><span class="lineNum">     703 </span><span class="lineCov">       1528 :             for (vpiHandle ra : reg_assigns_vec) {</span></a>
-<a name="704"><span class="lineNum">     704 </span><span class="lineCov">       1300 :                 if (isAncestor(reset_branch_stmt, ra)) {</span></a>
-<a name="705"><span class="lineNum">     705 </span><span class="lineCov">       1072 :                     reset_rhs = vpi_handle(vpiRhs, ra);</span></a>
-<a name="706"><span class="lineNum">     706 </span><span class="lineCov">       1072 :                     reset_assign_handle = ra;</span></a>
-<a name="707"><span class="lineNum">     707 </span><span class="lineCov">       1072 :                     break;</span></a>
+<a name="702"><span class="lineNum">     702 </span><span class="lineCov">       3195 :         if (is_reset_condition &amp;&amp; reset_branch_stmt) {</span></a>
+<a name="703"><span class="lineNum">     703 </span><span class="lineCov">       1529 :             for (vpiHandle ra : reg_assigns_vec) {</span></a>
+<a name="704"><span class="lineNum">     704 </span><span class="lineCov">       1301 :                 if (isAncestor(reset_branch_stmt, ra)) {</span></a>
+<a name="705"><span class="lineNum">     705 </span><span class="lineCov">       1073 :                     reset_rhs = vpi_handle(vpiRhs, ra);</span></a>
+<a name="706"><span class="lineNum">     706 </span><span class="lineCov">       1073 :                     reset_assign_handle = ra;</span></a>
+<a name="707"><span class="lineNum">     707 </span><span class="lineCov">       1073 :                     break;</span></a>
 <a name="708"><span class="lineNum">     708 </span>            :                 }</a>
 <a name="709"><span class="lineNum">     709 </span>            :             }</a>
-<a name="710"><span class="lineNum">     710 </span><span class="lineCov">       1300 :             if (reset_rhs) {</span></a>
-<a name="711"><span class="lineNum">     711 </span><span class="lineCov">       1072 :                 reset_is_sole_assign = std::all_of(reg_assigns_vec.begin(), reg_assigns_vec.end(),</span></a>
-<a name="712"><span class="lineNum">     712 </span><span class="lineCov">       1916 :                     [&amp;](vpiHandle ra) { return isAncestor(reset_branch_stmt, ra); });</span></a>
+<a name="710"><span class="lineNum">     710 </span><span class="lineCov">       1301 :             if (reset_rhs) {</span></a>
+<a name="711"><span class="lineNum">     711 </span><span class="lineCov">       1073 :                 reset_is_sole_assign = std::all_of(reg_assigns_vec.begin(), reg_assigns_vec.end(),</span></a>
+<a name="712"><span class="lineNum">     712 </span><span class="lineCov">       1918 :                     [&amp;](vpiHandle ra) { return isAncestor(reset_branch_stmt, ra); });</span></a>
 <a name="713"><span class="lineNum">     713 </span>            :             }</a>
 <a name="714"><span class="lineNum">     714 </span>            :         }</a>
 <a name="715"><span class="lineNum">     715 </span>            : </a>
 <a name="716"><span class="lineNum">     716 </span>            :         bool canonical_full_array_reset = is_array_reg</a>
 <a name="717"><span class="lineNum">     717 </span><span class="lineCov">       1055 :             &amp;&amp; reset_is_sole_assign</span></a>
 <a name="718"><span class="lineNum">     718 </span><span class="lineCov">        228 :             &amp;&amp; reset_assign_handle</span></a>
-<a name="719"><span class="lineNum">     719 </span><span class="lineCov">       4247 :             &amp;&amp; isCanonicalFullArrayResetLoop(reset_assign_handle, mod, reg_base, index_expr);</span></a>
-<a name="720"><span class="lineNum">     720 </span><span class="lineCov">       3192 :         if (canonical_full_array_reset) {</span></a>
+<a name="719"><span class="lineNum">     719 </span><span class="lineCov">       4250 :             &amp;&amp; isCanonicalFullArrayResetLoop(reset_assign_handle, mod, reg_base, index_expr);</span></a>
+<a name="720"><span class="lineNum">     720 </span><span class="lineCov">       3195 :         if (canonical_full_array_reset) {</span></a>
 <a name="721"><span class="lineNum">     721 </span><span class="lineCov">        444 :             std::string array_reg_id = &quot;reg:&quot; + mod.name + &quot;:&quot; + reg_base;</span></a>
 <a name="722"><span class="lineNum">     722 </span><span class="lineCov">        222 :             Node* array_reg = nullptr;</span></a>
 <a name="723"><span class="lineNum">     723 </span><span class="lineCov">        590 :             for (auto&amp; existing : mod.nodes) {</span></a>
@@ -837,15 +837,15 @@
 <a name="775"><span class="lineNum">     775 </span><span class="lineCov">        222 :             continue;</span></a>
 <a name="776"><span class="lineNum">     776 </span><span class="lineCov">        222 :         }</span></a>
 <a name="777"><span class="lineNum">     777 </span>            : </a>
-<a name="778"><span class="lineNum">     778 </span><span class="lineCov">       2970 :         std::vector&lt;std::string&gt; literal_inputs;</span></a>
-<a name="779"><span class="lineNum">     779 </span><span class="lineCov">       3816 :         for (vpiHandle a : reg_assigns_vec) {</span></a>
+<a name="778"><span class="lineNum">     778 </span><span class="lineCov">       2973 :         std::vector&lt;std::string&gt; literal_inputs;</span></a>
+<a name="779"><span class="lineNum">     779 </span><span class="lineCov">       3820 :         for (vpiHandle a : reg_assigns_vec) {</span></a>
 <a name="780"><span class="lineNum">     780 </span>            :             // Normally the reset assign is handled separately (RV port / rst mux) and excluded</a>
 <a name="781"><span class="lineNum">     781 </span>            :             // here so it isn't double-counted as a data input. But when it's the *only*</a>
 <a name="782"><span class="lineNum">     782 </span>            :             // assignment to this LHS (reset_is_sole_assign), there is no other assign to supply</a>
 <a name="783"><span class="lineNum">     783 </span>            :             // data_rhs — the reset value IS the write's data, so let it flow through normally.</a>
-<a name="784"><span class="lineNum">     784 </span><span class="lineCov">       3814 :             if (reset_assign_handle &amp;&amp; isSameObject(a, reset_assign_handle) &amp;&amp; !reset_is_sole_assign) continue;</span></a>
-<a name="785"><span class="lineNum">     785 </span><span class="lineCov">       2970 :             vpiHandle rhs = vpi_handle(vpiRhs, a);</span></a>
-<a name="786"><span class="lineNum">     786 </span><span class="lineCov">       2970 :             if (rhs &amp;&amp; isLiteralExpr(rhs)) {</span></a>
+<a name="784"><span class="lineNum">     784 </span><span class="lineCov">       3818 :             if (reset_assign_handle &amp;&amp; isSameObject(a, reset_assign_handle) &amp;&amp; !reset_is_sole_assign) continue;</span></a>
+<a name="785"><span class="lineNum">     785 </span><span class="lineCov">       2973 :             vpiHandle rhs = vpi_handle(vpiRhs, a);</span></a>
+<a name="786"><span class="lineNum">     786 </span><span class="lineCov">       2973 :             if (rhs &amp;&amp; isLiteralExpr(rhs)) {</span></a>
 <a name="787"><span class="lineNum">     787 </span><span class="lineCov">          2 :                 std::string literal_signal = getLiteralLabel(rhs);</span></a>
 <a name="788"><span class="lineNum">     788 </span><span class="lineCov">          2 :                 if (!literal_signal.empty() &amp;&amp; looksNamedLiteral(literal_signal)) {</span></a>
 <a name="789"><span class="lineNum">     789 </span><span class="lineNoCov">          0 :                     std::string literal_width = getDeclaredLiteralWidth(mod, literal_signal);</span></a>
@@ -856,18 +856,18 @@
 <a name="794"><span class="lineNum">     794 </span>            :                     }</a>
 <a name="795"><span class="lineNum">     795 </span><span class="lineNoCov">          0 :                 }</span></a>
 <a name="796"><span class="lineNum">     796 </span><span class="lineCov">          2 :             }</span></a>
-<a name="797"><span class="lineNum">     797 </span><span class="lineCov">       2970 :             if (rhs &amp;&amp; !isLiteralExpr(rhs)) { data_rhs = rhs; break; }</span></a>
+<a name="797"><span class="lineNum">     797 </span><span class="lineCov">       2973 :             if (rhs &amp;&amp; !isLiteralExpr(rhs)) { data_rhs = rhs; break; }</span></a>
 <a name="798"><span class="lineNum">     798 </span><span class="lineCov">          2 :             if (!data_rhs) data_rhs = rhs;</span></a>
 <a name="799"><span class="lineNum">     799 </span>            :         }</a>
 <a name="800"><span class="lineNum">     800 </span>            : </a>
 <a name="801"><span class="lineNum">     801 </span><span class="lineCov">        845 :         std::string d_signal = lowered_values.count(reg_name) &amp;&amp; lowered_values[reg_name].assigned</span></a>
-<a name="802"><span class="lineNum">     802 </span><span class="lineCov">       3815 :             ? lowered_values[reg_name].signal</span></a>
-<a name="803"><span class="lineNum">     803 </span><span class="lineCov">       8910 :             : getOrPromoteExpr(data_rhs, mod, reg_base + &quot;_next&quot;, true);</span></a>
-<a name="804"><span class="lineNum">     804 </span><span class="lineCov">       2970 :         std::string d_width = getWidth(data_rhs);</span></a>
-<a name="805"><span class="lineNum">     805 </span><span class="lineCov">       2970 :         if (!reg_width.empty()) d_width = reg_width;</span></a>
-<a name="806"><span class="lineNum">     806 </span><span class="lineCov">       2970 :         n.ports.push_back({&quot;D&quot;, &quot;input&quot;, d_signal, d_width});</span></a>
+<a name="802"><span class="lineNum">     802 </span><span class="lineCov">       3818 :             ? lowered_values[reg_name].signal</span></a>
+<a name="803"><span class="lineNum">     803 </span><span class="lineCov">       8919 :             : getOrPromoteExpr(data_rhs, mod, reg_base + &quot;_next&quot;, true);</span></a>
+<a name="804"><span class="lineNum">     804 </span><span class="lineCov">       2973 :         std::string d_width = getWidth(data_rhs);</span></a>
+<a name="805"><span class="lineNum">     805 </span><span class="lineCov">       2973 :         if (!reg_width.empty()) d_width = reg_width;</span></a>
+<a name="806"><span class="lineNum">     806 </span><span class="lineCov">       2973 :         n.ports.push_back({&quot;D&quot;, &quot;input&quot;, d_signal, d_width});</span></a>
 <a name="807"><span class="lineNum">     807 </span>            : </a>
-<a name="808"><span class="lineNum">     808 </span><span class="lineCov">       2970 :         if (reset_rhs &amp;&amp; isNonZeroResetValue(reset_rhs)) {</span></a>
+<a name="808"><span class="lineNum">     808 </span><span class="lineCov">       2973 :         if (reset_rhs &amp;&amp; isNonZeroResetValue(reset_rhs)) {</span></a>
 <a name="809"><span class="lineNum">     809 </span><span class="lineCov">        132 :             std::string rv_signal;</span></a>
 <a name="810"><span class="lineNum">     810 </span><span class="lineCov">        132 :             if (isConcatOperation(vpi_handle(vpiLhs, reset_assign_handle))</span></a>
 <a name="811"><span class="lineNum">     811 </span><span class="lineCov">        132 :                 &amp;&amp; aggregate_reset_values.count(reg_name)) {</span></a>
@@ -881,15 +881,15 @@
 <a name="819"><span class="lineNum">     819 </span><span class="lineCov">        132 :             n.ports.push_back({&quot;RV&quot;, &quot;input&quot;, rv_signal, reg_width, &quot;RV&quot;});</span></a>
 <a name="820"><span class="lineNum">     820 </span><span class="lineCov">        132 :         }</span></a>
 <a name="821"><span class="lineNum">     821 </span>            : </a>
-<a name="822"><span class="lineNum">     822 </span><span class="lineCov">       2970 :         for (const auto&amp; literal_signal : literal_inputs) {</span></a>
+<a name="822"><span class="lineNum">     822 </span><span class="lineCov">       2973 :         for (const auto&amp; literal_signal : literal_inputs) {</span></a>
 <a name="823"><span class="lineNum">     823 </span><span class="lineNoCov">          0 :             n.ports.push_back({literal_signal, &quot;input&quot;, literal_signal, reg_width, literal_signal});</span></a>
 <a name="824"><span class="lineNum">     824 </span>            :         }</a>
-<a name="825"><span class="lineNum">     825 </span><span class="lineCov">       2970 :         n.ports.push_back({&quot;Q&quot;, &quot;output&quot;, reg_name, reg_width});</span></a>
-<a name="826"><span class="lineNum">     826 </span><span class="lineCov">       2970 :         if (!clk_signal.empty()) n.ports.push_back({clk_signal, &quot;input&quot;, clk_signal, &quot;&quot;});</span></a>
-<a name="827"><span class="lineNum">     827 </span><span class="lineCov">       2970 :         if (!rst_signal.empty()) n.ports.push_back({rst_signal, &quot;input&quot;, rst_signal, &quot;&quot;});</span></a>
+<a name="825"><span class="lineNum">     825 </span><span class="lineCov">       2973 :         n.ports.push_back({&quot;Q&quot;, &quot;output&quot;, reg_name, reg_width});</span></a>
+<a name="826"><span class="lineNum">     826 </span><span class="lineCov">       2973 :         if (!clk_signal.empty()) n.ports.push_back({clk_signal, &quot;input&quot;, clk_signal, &quot;&quot;});</span></a>
+<a name="827"><span class="lineNum">     827 </span><span class="lineCov">       2973 :         if (!rst_signal.empty()) n.ports.push_back({rst_signal, &quot;input&quot;, rst_signal, &quot;&quot;});</span></a>
 <a name="828"><span class="lineNum">     828 </span>            : </a>
 <a name="829"><span class="lineNum">     829 </span>            :         // Array handling: stacked mux for variable-index writes; tag array registers</a>
-<a name="830"><span class="lineNum">     830 </span><span class="lineCov">       2970 :         if (is_variable_index) {</span></a>
+<a name="830"><span class="lineNum">     830 </span><span class="lineCov">       2973 :         if (is_variable_index) {</span></a>
 <a name="831"><span class="lineNum">     831 </span><span class="lineCov">        587 :             int arr_size = mod.arraySizes.count(reg_base) ? mod.arraySizes.at(reg_base) : 1;</span></a>
 <a name="832"><span class="lineNum">     832 </span>            : </a>
 <a name="833"><span class="lineNum">     833 </span>            :             // Ensure the whole-array register node exists first</a>
@@ -1043,27 +1043,27 @@
 <a name="981"><span class="lineNum">     981 </span><span class="lineCov">        587 :             continue;</span></a>
 <a name="982"><span class="lineNum">     982 </span><span class="lineCov">        587 :         }</span></a>
 <a name="983"><span class="lineNum">     983 </span>            : </a>
-<a name="984"><span class="lineNum">     984 </span><span class="lineCov">       2383 :         if (is_array_reg) {</span></a>
+<a name="984"><span class="lineNum">     984 </span><span class="lineCov">       2386 :         if (is_array_reg) {</span></a>
 <a name="985"><span class="lineNum">     985 </span><span class="lineCov">        246 :             n.metadata.isArrayNode = true;</span></a>
 <a name="986"><span class="lineNum">     986 </span><span class="lineCov">        246 :             n.metadata.arrayDimension = mod.arrayDimensions[reg_base];</span></a>
 <a name="987"><span class="lineNum">     987 </span><span class="lineCov">        246 :             n.metadata.arraySize = mod.arraySizes[reg_base];</span></a>
 <a name="988"><span class="lineNum">     988 </span>            :         }</a>
 <a name="989"><span class="lineNum">     989 </span>            : </a>
-<a name="990"><span class="lineNum">     990 </span><span class="lineCov">       2383 :         mod.nodes.push_back(n);</span></a>
+<a name="990"><span class="lineNum">     990 </span><span class="lineCov">       2386 :         mod.nodes.push_back(n);</span></a>
 <a name="991"><span class="lineNum">     991 </span>            : </a>
 <a name="992"><span class="lineNum">     992 </span>            :         // A concat-LHS target (e.g. `registered[2]`) produced its own register above;</a>
 <a name="993"><span class="lineNum">     993 </span>            :         // wire its Q output into the base signal's bus composition node so downstream</a>
 <a name="994"><span class="lineNum">     994 </span>            :         // readers (including the module output port) see the registered value instead</a>
 <a name="995"><span class="lineNum">     995 </span>            :         // of being left disconnected. Plain (non-concat) partial-bit-select writes are</a>
 <a name="996"><span class="lineNum">     996 </span>            :         // left to synthesizeBusCompositionNodes, which coalesces adjacent slices.</a>
-<a name="997"><span class="lineNum">     997 </span><span class="lineCov">       2137 :         if (!is_array_reg &amp;&amp; !is_variable_index &amp;&amp; concat_derived_regs.count(reg_name)</span></a>
-<a name="998"><span class="lineNum">     998 </span><span class="lineCov">       4520 :             &amp;&amp; reg_name.find('[') != std::string::npos) {</span></a>
+<a name="997"><span class="lineNum">     997 </span><span class="lineCov">       2140 :         if (!is_array_reg &amp;&amp; !is_variable_index &amp;&amp; concat_derived_regs.count(reg_name)</span></a>
+<a name="998"><span class="lineNum">     998 </span><span class="lineCov">       4526 :             &amp;&amp; reg_name.find('[') != std::string::npos) {</span></a>
 <a name="999"><span class="lineNum">     999 </span><span class="lineCov">         90 :             size_t bracket = reg_name.find('[');</span></a>
 <a name="1000"><span class="lineNum">    1000 </span><span class="lineCov">         90 :             ensureBusSliceCompositionInput(</span></a>
 <a name="1001"><span class="lineNum">    1001 </span><span class="lineCov">        180 :                 mod, reg_base, reg_name.substr(bracket), reg_name, getSourceInfo(lhs_first));</span></a>
 <a name="1002"><span class="lineNum">    1002 </span>            :         }</a>
-<a name="1003"><span class="lineNum">    1003 </span><span class="lineCov">       8189 :     }</span></a>
-<a name="1004"><span class="lineNum">    1004 </span><span class="lineCov">       2383 : }</span></a>
+<a name="1003"><span class="lineNum">    1003 </span><span class="lineCov">       8192 :     }</span></a>
+<a name="1004"><span class="lineNum">    1004 </span><span class="lineCov">       2386 : }</span></a>
 <a name="1005"><span class="lineNum">    1005 </span>            : </a>
 <a name="1006"><span class="lineNum">    1006 </span>            : // Strips the &quot;work@&quot; scope prefix that UHDM sometimes emits in decompiled strings.</a>
 <a name="1007"><span class="lineNum">    1007 </span><span class="lineCov">       3967 : static std::string stripWorkPrefix(const std::string&amp; s) {</span></a>
@@ -1294,48 +1294,48 @@
 <a name="1232"><span class="lineNum">    1232 </span><span class="lineCov">        436 :     return result;</span></a>
 <a name="1233"><span class="lineNum">    1233 </span><span class="lineCov">        218 : }</span></a>
 <a name="1234"><span class="lineNum">    1234 </span>            : </a>
-<a name="1235"><span class="lineNum">    1235 </span><span class="lineCov">      14210 : vpiHandle DesignExtractor::findFirstCase(vpiHandle stmt) {</span></a>
-<a name="1236"><span class="lineNum">    1236 </span><span class="lineCov">      14210 :     if (!stmt) return nullptr;</span></a>
-<a name="1237"><span class="lineNum">    1237 </span><span class="lineCov">      13327 :     int type = vpi_get(vpiType, stmt);</span></a>
-<a name="1238"><span class="lineNum">    1238 </span><span class="lineCov">      13327 :     if (type == vpiCase) return stmt;</span></a>
+<a name="1235"><span class="lineNum">    1235 </span><span class="lineCov">      14219 : vpiHandle DesignExtractor::findFirstCase(vpiHandle stmt) {</span></a>
+<a name="1236"><span class="lineNum">    1236 </span><span class="lineCov">      14219 :     if (!stmt) return nullptr;</span></a>
+<a name="1237"><span class="lineNum">    1237 </span><span class="lineCov">      13336 :     int type = vpi_get(vpiType, stmt);</span></a>
+<a name="1238"><span class="lineNum">    1238 </span><span class="lineCov">      13336 :     if (type == vpiCase) return stmt;</span></a>
 <a name="1239"><span class="lineNum">    1239 </span>            : </a>
-<a name="1240"><span class="lineNum">    1240 </span><span class="lineCov">      13327 :     if (type == vpiBegin || type == vpiNamedBegin || type == vpiFork || type == vpiNamedFork || type == vpiFor || type == vpiWhile || type == vpiRepeat || type == vpiForever) {</span></a>
-<a name="1241"><span class="lineNum">    1241 </span><span class="lineCov">       3734 :         vpiHandle itr = vpi_iterate(vpiStmt, stmt);</span></a>
-<a name="1242"><span class="lineNum">    1242 </span><span class="lineCov">       3734 :         if (itr) {</span></a>
-<a name="1243"><span class="lineNum">    1243 </span><span class="lineCov">       7529 :             while (vpiHandle child = vpi_scan(itr)) {</span></a>
-<a name="1244"><span class="lineNum">    1244 </span><span class="lineCov">       4018 :                 vpiHandle found = findFirstCase(child);</span></a>
-<a name="1245"><span class="lineNum">    1245 </span><span class="lineCov">       4018 :                 if (found) {</span></a>
+<a name="1240"><span class="lineNum">    1240 </span><span class="lineCov">      13336 :     if (type == vpiBegin || type == vpiNamedBegin || type == vpiFork || type == vpiNamedFork || type == vpiFor || type == vpiWhile || type == vpiRepeat || type == vpiForever) {</span></a>
+<a name="1241"><span class="lineNum">    1241 </span><span class="lineCov">       3735 :         vpiHandle itr = vpi_iterate(vpiStmt, stmt);</span></a>
+<a name="1242"><span class="lineNum">    1242 </span><span class="lineCov">       3735 :         if (itr) {</span></a>
+<a name="1243"><span class="lineNum">    1243 </span><span class="lineCov">       7531 :             while (vpiHandle child = vpi_scan(itr)) {</span></a>
+<a name="1244"><span class="lineNum">    1244 </span><span class="lineCov">       4019 :                 vpiHandle found = findFirstCase(child);</span></a>
+<a name="1245"><span class="lineNum">    1245 </span><span class="lineCov">       4019 :                 if (found) {</span></a>
 <a name="1246"><span class="lineNum">    1246 </span><span class="lineNoCov">          0 :                     vpi_release_handle(itr);</span></a>
 <a name="1247"><span class="lineNum">    1247 </span><span class="lineNoCov">          0 :                     return found;</span></a>
 <a name="1248"><span class="lineNum">    1248 </span>            :                 }</a>
-<a name="1249"><span class="lineNum">    1249 </span><span class="lineCov">       4018 :             }</span></a>
+<a name="1249"><span class="lineNum">    1249 </span><span class="lineCov">       4019 :             }</span></a>
 <a name="1250"><span class="lineNum">    1250 </span>            :         }</a>
-<a name="1251"><span class="lineNum">    1251 </span><span class="lineCov">      13327 :     } else if (type == vpiIf || type == vpiIfElse) {</span></a>
-<a name="1252"><span class="lineNum">    1252 </span><span class="lineCov">       2198 :         vpiHandle found = findFirstCase(vpi_handle(vpiStmt, stmt));</span></a>
-<a name="1253"><span class="lineNum">    1253 </span><span class="lineCov">       2198 :         if (found) return found;</span></a>
-<a name="1254"><span class="lineNum">    1254 </span><span class="lineCov">       2198 :         return findFirstCase(vpi_handle(vpiElseStmt, stmt));</span></a>
-<a name="1255"><span class="lineNum">    1255 </span><span class="lineCov">       7395 :     } else if (type == vpiEventControl) {</span></a>
-<a name="1256"><span class="lineNum">    1256 </span><span class="lineCov">       2383 :         return findFirstCase(vpi_handle(vpiStmt, stmt));</span></a>
+<a name="1251"><span class="lineNum">    1251 </span><span class="lineCov">      13336 :     } else if (type == vpiIf || type == vpiIfElse) {</span></a>
+<a name="1252"><span class="lineNum">    1252 </span><span class="lineCov">       2199 :         vpiHandle found = findFirstCase(vpi_handle(vpiStmt, stmt));</span></a>
+<a name="1253"><span class="lineNum">    1253 </span><span class="lineCov">       2199 :         if (found) return found;</span></a>
+<a name="1254"><span class="lineNum">    1254 </span><span class="lineCov">       2199 :         return findFirstCase(vpi_handle(vpiElseStmt, stmt));</span></a>
+<a name="1255"><span class="lineNum">    1255 </span><span class="lineCov">       7402 :     } else if (type == vpiEventControl) {</span></a>
+<a name="1256"><span class="lineNum">    1256 </span><span class="lineCov">       2386 :         return findFirstCase(vpi_handle(vpiStmt, stmt));</span></a>
 <a name="1257"><span class="lineNum">    1257 </span>            :     }</a>
 <a name="1258"><span class="lineNum">    1258 </span>            : </a>
-<a name="1259"><span class="lineNum">    1259 </span><span class="lineCov">       8746 :     return nullptr;</span></a>
+<a name="1259"><span class="lineNum">    1259 </span><span class="lineCov">       8751 :     return nullptr;</span></a>
 <a name="1260"><span class="lineNum">    1260 </span>            : }</a>
 <a name="1261"><span class="lineNum">    1261 </span>            : </a>
-<a name="1262"><span class="lineNum">    1262 </span><span class="lineCov">      10740 : bool DesignExtractor::containsIf(vpiHandle stmt) {</span></a>
-<a name="1263"><span class="lineNum">    1263 </span><span class="lineCov">      10740 :     if (!stmt) return false;</span></a>
-<a name="1264"><span class="lineNum">    1264 </span><span class="lineCov">      10740 :     int type = vpi_get(vpiType, stmt);</span></a>
-<a name="1265"><span class="lineNum">    1265 </span><span class="lineCov">      10740 :     if (type == vpiIf || type == vpiIfElse || type == vpiCase || type == vpiFor || type == vpiWhile || type == vpiRepeat || type == vpiForever) return true;</span></a>
+<a name="1262"><span class="lineNum">    1262 </span><span class="lineCov">      10745 : bool DesignExtractor::containsIf(vpiHandle stmt) {</span></a>
+<a name="1263"><span class="lineNum">    1263 </span><span class="lineCov">      10745 :     if (!stmt) return false;</span></a>
+<a name="1264"><span class="lineNum">    1264 </span><span class="lineCov">      10745 :     int type = vpi_get(vpiType, stmt);</span></a>
+<a name="1265"><span class="lineNum">    1265 </span><span class="lineCov">      10745 :     if (type == vpiIf || type == vpiIfElse || type == vpiCase || type == vpiFor || type == vpiWhile || type == vpiRepeat || type == vpiForever) return true;</span></a>
 <a name="1266"><span class="lineNum">    1266 </span>            : </a>
 <a name="1267"><span class="lineNum">    1267 </span>            :     // Check body of loops or event controls</a>
-<a name="1268"><span class="lineNum">    1268 </span><span class="lineCov">       8369 :     vpiHandle body = vpi_handle(vpiStmt, stmt);</span></a>
-<a name="1269"><span class="lineNum">    1269 </span><span class="lineCov">       8369 :     if (body &amp;&amp; body != stmt &amp;&amp; containsIf(body)) return true;</span></a>
+<a name="1268"><span class="lineNum">    1268 </span><span class="lineCov">       8374 :     vpiHandle body = vpi_handle(vpiStmt, stmt);</span></a>
+<a name="1269"><span class="lineNum">    1269 </span><span class="lineCov">       8374 :     if (body &amp;&amp; body != stmt &amp;&amp; containsIf(body)) return true;</span></a>
 <a name="1270"><span class="lineNum">    1270 </span>            :     </a>
-<a name="1271"><span class="lineNum">    1271 </span><span class="lineCov">       8027 :     vpiHandle else_body = vpi_handle(vpiElseStmt, stmt);</span></a>
-<a name="1272"><span class="lineNum">    1272 </span><span class="lineCov">       8027 :     if (else_body &amp;&amp; else_body != stmt &amp;&amp; containsIf(else_body)) return true;</span></a>
+<a name="1271"><span class="lineNum">    1271 </span><span class="lineCov">       8032 :     vpiHandle else_body = vpi_handle(vpiElseStmt, stmt);</span></a>
+<a name="1272"><span class="lineNum">    1272 </span><span class="lineCov">       8032 :     if (else_body &amp;&amp; else_body != stmt &amp;&amp; containsIf(else_body)) return true;</span></a>
 <a name="1273"><span class="lineNum">    1273 </span>            : </a>
 <a name="1274"><span class="lineNum">    1274 </span>            :     // Check children of blocks</a>
-<a name="1275"><span class="lineNum">    1275 </span><span class="lineCov">       8027 :     vpiHandle itr = vpi_iterate(vpiStmt, stmt);</span></a>
-<a name="1276"><span class="lineNum">    1276 </span><span class="lineCov">       8027 :     if (itr) {</span></a>
+<a name="1275"><span class="lineNum">    1275 </span><span class="lineCov">       8032 :     vpiHandle itr = vpi_iterate(vpiStmt, stmt);</span></a>
+<a name="1276"><span class="lineNum">    1276 </span><span class="lineCov">       8032 :     if (itr) {</span></a>
 <a name="1277"><span class="lineNum">    1277 </span><span class="lineCov">       6122 :         while (vpiHandle child = vpi_scan(itr)) {</span></a>
 <a name="1278"><span class="lineNum">    1278 </span><span class="lineCov">       4515 :             if (child != stmt &amp;&amp; containsIf(child)) {</span></a>
 <a name="1279"><span class="lineNum">    1279 </span><span class="lineCov">       2029 :                 vpi_release_handle(itr);</span></a>
@@ -1344,7 +1344,7 @@
 <a name="1282"><span class="lineNum">    1282 </span><span class="lineCov">       2486 :         }</span></a>
 <a name="1283"><span class="lineNum">    1283 </span>            :     }</a>
 <a name="1284"><span class="lineNum">    1284 </span>            : </a>
-<a name="1285"><span class="lineNum">    1285 </span><span class="lineCov">       5998 :     return false;</span></a>
+<a name="1285"><span class="lineNum">    1285 </span><span class="lineCov">       6003 :     return false;</span></a>
 <a name="1286"><span class="lineNum">    1286 </span>            : }</a>
 <a name="1287"><span class="lineNum">    1287 </span>            : </a>
 <a name="1288"><span class="lineNum">    1288 </span><span class="lineCov">      13478 : void DesignExtractor::collectAssignmentTargets(vpiHandle stmt, std::set&lt;std::string&gt;&amp; targets) {</span></a>
@@ -1835,28 +1835,28 @@
 <a name="1773"><span class="lineNum">    1773 </span><span class="lineCov">        342 :     mod.nodes.push_back(latch);</span></a>
 <a name="1774"><span class="lineNum">    1774 </span><span class="lineCov">        434 : }</span></a>
 <a name="1775"><span class="lineNum">    1775 </span>            : </a>
-<a name="1776"><span class="lineNum">    1776 </span><span class="lineCov">      58710 : void DesignExtractor::findAssignments(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; assigns) {</span></a>
-<a name="1777"><span class="lineNum">    1777 </span><span class="lineCov">      58710 :     if (!handle) return;</span></a>
-<a name="1778"><span class="lineNum">    1778 </span><span class="lineCov">      58710 :     int type = vpi_get(vpiType, handle);</span></a>
-<a name="1779"><span class="lineNum">    1779 </span><span class="lineCov">      58710 :     if (type == vpiAssignment || type == 84 || type == 85) {</span></a>
-<a name="1780"><span class="lineNum">    1780 </span><span class="lineCov">      26686 :         assigns.push_back(handle);</span></a>
-<a name="1781"><span class="lineNum">    1781 </span><span class="lineCov">      26686 :         return;</span></a>
+<a name="1776"><span class="lineNum">    1776 </span><span class="lineCov">      58719 : void DesignExtractor::findAssignments(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; assigns) {</span></a>
+<a name="1777"><span class="lineNum">    1777 </span><span class="lineCov">      58719 :     if (!handle) return;</span></a>
+<a name="1778"><span class="lineNum">    1778 </span><span class="lineCov">      58719 :     int type = vpi_get(vpiType, handle);</span></a>
+<a name="1779"><span class="lineNum">    1779 </span><span class="lineCov">      58719 :     if (type == vpiAssignment || type == 84 || type == 85) {</span></a>
+<a name="1780"><span class="lineNum">    1780 </span><span class="lineCov">      26690 :         assigns.push_back(handle);</span></a>
+<a name="1781"><span class="lineNum">    1781 </span><span class="lineCov">      26690 :         return;</span></a>
 <a name="1782"><span class="lineNum">    1782 </span>            :     }</a>
 <a name="1783"><span class="lineNum">    1783 </span>            : </a>
 <a name="1784"><span class="lineNum">    1784 </span>            :     // Common statement/body properties</a>
-<a name="1785"><span class="lineNum">    1785 </span><span class="lineCov">      96072 :     for (int prop : {vpiStmt, vpiElseStmt}) {</span></a>
-<a name="1786"><span class="lineNum">    1786 </span><span class="lineCov">      64048 :         vpiHandle h = vpi_handle(prop, handle);</span></a>
-<a name="1787"><span class="lineNum">    1787 </span><span class="lineCov">      64048 :         if (h &amp;&amp; h != handle) findAssignments(h, assigns);</span></a>
+<a name="1785"><span class="lineNum">    1785 </span><span class="lineCov">      96087 :     for (int prop : {vpiStmt, vpiElseStmt}) {</span></a>
+<a name="1786"><span class="lineNum">    1786 </span><span class="lineCov">      64058 :         vpiHandle h = vpi_handle(prop, handle);</span></a>
+<a name="1787"><span class="lineNum">    1787 </span><span class="lineCov">      64058 :         if (h &amp;&amp; h != handle) findAssignments(h, assigns);</span></a>
 <a name="1788"><span class="lineNum">    1788 </span>            :     }</a>
 <a name="1789"><span class="lineNum">    1789 </span>            : </a>
 <a name="1790"><span class="lineNum">    1790 </span>            :     // Iterators for blocks and cases</a>
-<a name="1791"><span class="lineNum">    1791 </span><span class="lineCov">      96072 :     for (int iter_type : {vpiStmt, vpiCaseItem}) {</span></a>
-<a name="1792"><span class="lineNum">    1792 </span><span class="lineCov">      64048 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
-<a name="1793"><span class="lineNum">    1793 </span><span class="lineCov">      64048 :         if (itr) {</span></a>
-<a name="1794"><span class="lineNum">    1794 </span><span class="lineCov">      32589 :             while (vpiHandle s = vpi_scan(itr)) {</span></a>
-<a name="1795"><span class="lineNum">    1795 </span><span class="lineCov">      20474 :                 if (s != handle) findAssignments(s, assigns);</span></a>
-<a name="1796"><span class="lineNum">    1796 </span><span class="lineCov">      20474 :             }</span></a>
-<a name="1797"><span class="lineNum">    1797 </span><span class="lineCov">      12115 :             vpi_release_handle(itr);</span></a>
+<a name="1791"><span class="lineNum">    1791 </span><span class="lineCov">      96087 :     for (int iter_type : {vpiStmt, vpiCaseItem}) {</span></a>
+<a name="1792"><span class="lineNum">    1792 </span><span class="lineCov">      64058 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
+<a name="1793"><span class="lineNum">    1793 </span><span class="lineCov">      64058 :         if (itr) {</span></a>
+<a name="1794"><span class="lineNum">    1794 </span><span class="lineCov">      32591 :             while (vpiHandle s = vpi_scan(itr)) {</span></a>
+<a name="1795"><span class="lineNum">    1795 </span><span class="lineCov">      20475 :                 if (s != handle) findAssignments(s, assigns);</span></a>
+<a name="1796"><span class="lineNum">    1796 </span><span class="lineCov">      20475 :             }</span></a>
+<a name="1797"><span class="lineNum">    1797 </span><span class="lineCov">      12116 :             vpi_release_handle(itr);</span></a>
 <a name="1798"><span class="lineNum">    1798 </span>            :         }</a>
 <a name="1799"><span class="lineNum">    1799 </span>            :     }</a>
 <a name="1800"><span class="lineNum">    1800 </span>            : }</a>
@@ -1874,24 +1874,24 @@
 <a name="1812"><span class="lineNum">    1812 </span><span class="lineNoCov">          0 :     }</span></a>
 <a name="1813"><span class="lineNum">    1813 </span><span class="lineNoCov">          0 : }</span></a>
 <a name="1814"><span class="lineNum">    1814 </span>            : </a>
-<a name="1815"><span class="lineNum">    1815 </span><span class="lineCov">     143917 : void DesignExtractor::collectIdentifierHandlesRecursive(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; h) {</span></a>
-<a name="1816"><span class="lineNum">    1816 </span><span class="lineCov">     143917 :     if (!handle) return;</span></a>
-<a name="1817"><span class="lineNum">    1817 </span><span class="lineCov">     143917 :     int type = vpi_get(vpiType, handle);</span></a>
+<a name="1815"><span class="lineNum">    1815 </span><span class="lineCov">     143928 : void DesignExtractor::collectIdentifierHandlesRecursive(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; h) {</span></a>
+<a name="1816"><span class="lineNum">    1816 </span><span class="lineCov">     143928 :     if (!handle) return;</span></a>
+<a name="1817"><span class="lineNum">    1817 </span><span class="lineCov">     143928 :     int type = vpi_get(vpiType, handle);</span></a>
 <a name="1818"><span class="lineNum">    1818 </span>            :     </a>
-<a name="1819"><span class="lineNum">    1819 </span><span class="lineCov">     143917 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == 44 || type == vpiBitSelect || type == vpiPartSelect || type == vpiParameter || vpi_get(vpiLocalParam, handle)) {</span></a>
-<a name="1820"><span class="lineNum">    1820 </span><span class="lineCov">     101159 :         h.push_back(handle);</span></a>
+<a name="1819"><span class="lineNum">    1819 </span><span class="lineCov">     143928 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == 44 || type == vpiBitSelect || type == vpiPartSelect || type == vpiParameter || vpi_get(vpiLocalParam, handle)) {</span></a>
+<a name="1820"><span class="lineNum">    1820 </span><span class="lineCov">     101170 :         h.push_back(handle);</span></a>
 <a name="1821"><span class="lineNum">    1821 </span>            :     }</a>
 <a name="1822"><span class="lineNum">    1822 </span>            : </a>
 <a name="1823"><span class="lineNum">    1823 </span>            :     // Recurse into properties</a>
-<a name="1824"><span class="lineNum">    1824 </span><span class="lineCov">    1727004 :     for (int prop : {vpiStmt, vpiElseStmt, vpiCondition, vpiRhs, vpiLhs, vpiIndex, vpiLeftRange, vpiRightRange, vpiArgument, vpiForInitStmt, vpiForIncStmt}) {</span></a>
-<a name="1825"><span class="lineNum">    1825 </span><span class="lineCov">    1583087 :         vpiHandle p = vpi_handle(prop, handle);</span></a>
-<a name="1826"><span class="lineNum">    1826 </span><span class="lineCov">    1583087 :         if (p &amp;&amp; p != handle) collectIdentifierHandlesRecursive(p, h);</span></a>
+<a name="1824"><span class="lineNum">    1824 </span><span class="lineCov">    1727136 :     for (int prop : {vpiStmt, vpiElseStmt, vpiCondition, vpiRhs, vpiLhs, vpiIndex, vpiLeftRange, vpiRightRange, vpiArgument, vpiForInitStmt, vpiForIncStmt}) {</span></a>
+<a name="1825"><span class="lineNum">    1825 </span><span class="lineCov">    1583208 :         vpiHandle p = vpi_handle(prop, handle);</span></a>
+<a name="1826"><span class="lineNum">    1826 </span><span class="lineCov">    1583208 :         if (p &amp;&amp; p != handle) collectIdentifierHandlesRecursive(p, h);</span></a>
 <a name="1827"><span class="lineNum">    1827 </span>            :     }</a>
 <a name="1828"><span class="lineNum">    1828 </span>            : </a>
 <a name="1829"><span class="lineNum">    1829 </span>            :     // Recurse into iterators</a>
-<a name="1830"><span class="lineNum">    1830 </span><span class="lineCov">     719585 :     for (int iter_type : {vpiOperand, vpiStmt, vpiCaseItem, vpiArgument}) {</span></a>
-<a name="1831"><span class="lineNum">    1831 </span><span class="lineCov">     575668 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
-<a name="1832"><span class="lineNum">    1832 </span><span class="lineCov">     575668 :         if (itr) {</span></a>
+<a name="1830"><span class="lineNum">    1830 </span><span class="lineCov">     719640 :     for (int iter_type : {vpiOperand, vpiStmt, vpiCaseItem, vpiArgument}) {</span></a>
+<a name="1831"><span class="lineNum">    1831 </span><span class="lineCov">     575712 :         vpiHandle itr = vpi_iterate(iter_type, handle);</span></a>
+<a name="1832"><span class="lineNum">    1832 </span><span class="lineCov">     575712 :         if (itr) {</span></a>
 <a name="1833"><span class="lineNum">    1833 </span><span class="lineCov">      68751 :             while (vpiHandle s = vpi_scan(itr)) {</span></a>
 <a name="1834"><span class="lineNum">    1834 </span><span class="lineCov">      43934 :                 if (s != handle) collectIdentifierHandlesRecursive(s, h);</span></a>
 <a name="1835"><span class="lineNum">    1835 </span><span class="lineCov">      43934 :             }</span></a>
@@ -1900,28 +1900,28 @@
 <a name="1838"><span class="lineNum">    1838 </span>            :     }</a>
 <a name="1839"><span class="lineNum">    1839 </span>            : }</a>
 <a name="1840"><span class="lineNum">    1840 </span>            : </a>
-<a name="1841"><span class="lineNum">    1841 </span><span class="lineCov">       8386 : void DesignExtractor::collectIdentifierHandles(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; h) {</span></a>
-<a name="1842"><span class="lineNum">    1842 </span><span class="lineCov">       8386 :     if (!handle) return;</span></a>
-<a name="1843"><span class="lineNum">    1843 </span><span class="lineCov">       8386 :     int type = vpi_get(vpiType, handle);</span></a>
-<a name="1844"><span class="lineNum">    1844 </span><span class="lineCov">       8386 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == 44 || type == vpiParameter || vpi_get(vpiLocalParam, handle)) {</span></a>
-<a name="1845"><span class="lineNum">    1845 </span><span class="lineCov">       4407 :         h.push_back(handle);</span></a>
-<a name="1846"><span class="lineNum">    1846 </span><span class="lineCov">       3979 :     } else if (type == vpiBitSelect || type == vpiPartSelect) {</span></a>
+<a name="1841"><span class="lineNum">    1841 </span><span class="lineCov">       8397 : void DesignExtractor::collectIdentifierHandles(vpiHandle handle, std::vector&lt;vpiHandle&gt;&amp; h) {</span></a>
+<a name="1842"><span class="lineNum">    1842 </span><span class="lineCov">       8397 :     if (!handle) return;</span></a>
+<a name="1843"><span class="lineNum">    1843 </span><span class="lineCov">       8397 :     int type = vpi_get(vpiType, handle);</span></a>
+<a name="1844"><span class="lineNum">    1844 </span><span class="lineCov">       8397 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == 44 || type == vpiParameter || vpi_get(vpiLocalParam, handle)) {</span></a>
+<a name="1845"><span class="lineNum">    1845 </span><span class="lineCov">       4412 :         h.push_back(handle);</span></a>
+<a name="1846"><span class="lineNum">    1846 </span><span class="lineCov">       3985 :     } else if (type == vpiBitSelect || type == vpiPartSelect) {</span></a>
 <a name="1847"><span class="lineNum">    1847 </span><span class="lineNoCov">          0 :         h.push_back(handle);</span></a>
-<a name="1848"><span class="lineNum">    1848 </span><span class="lineCov">       3979 :     } else if (type != vpiConstant) {</span></a>
-<a name="1849"><span class="lineNum">    1849 </span><span class="lineCov">       3979 :         vpiHandle operand_itr = vpi_iterate(vpiOperand, handle);</span></a>
-<a name="1850"><span class="lineNum">    1850 </span><span class="lineCov">       3979 :         if (operand_itr) {</span></a>
-<a name="1851"><span class="lineNum">    1851 </span><span class="lineCov">       8511 :             while (vpiHandle op = vpi_scan(operand_itr)) collectIdentifierHandles(op, h);</span></a>
-<a name="1852"><span class="lineNum">    1852 </span><span class="lineCov">       3936 :             vpi_release_handle(operand_itr);</span></a>
+<a name="1848"><span class="lineNum">    1848 </span><span class="lineCov">       3985 :     } else if (type != vpiConstant) {</span></a>
+<a name="1849"><span class="lineNum">    1849 </span><span class="lineCov">       3985 :         vpiHandle operand_itr = vpi_iterate(vpiOperand, handle);</span></a>
+<a name="1850"><span class="lineNum">    1850 </span><span class="lineCov">       3985 :         if (operand_itr) {</span></a>
+<a name="1851"><span class="lineNum">    1851 </span><span class="lineCov">       8524 :             while (vpiHandle op = vpi_scan(operand_itr)) collectIdentifierHandles(op, h);</span></a>
+<a name="1852"><span class="lineNum">    1852 </span><span class="lineCov">       3942 :             vpi_release_handle(operand_itr);</span></a>
 <a name="1853"><span class="lineNum">    1853 </span>            :         }</a>
 <a name="1854"><span class="lineNum">    1854 </span>            :     }</a>
 <a name="1855"><span class="lineNum">    1855 </span>            : }</a>
 <a name="1856"><span class="lineNum">    1856 </span>            : </a>
-<a name="1857"><span class="lineNum">    1857 </span><span class="lineCov">      96587 : bool DesignExtractor::isParameterHandle(vpiHandle handle) {</span></a>
-<a name="1858"><span class="lineNum">    1858 </span><span class="lineCov">      96587 :     if (!handle) return false;</span></a>
-<a name="1859"><span class="lineNum">    1859 </span><span class="lineCov">      96587 :     vpiHandle actual = unwrapRef(handle);</span></a>
-<a name="1860"><span class="lineNum">    1860 </span><span class="lineCov">      96587 :     if (!actual) actual = handle;</span></a>
-<a name="1861"><span class="lineNum">    1861 </span><span class="lineCov">      96587 :     int type = vpi_get(vpiType, actual);</span></a>
-<a name="1862"><span class="lineNum">    1862 </span><span class="lineCov">      96587 :     return type == vpiParameter || vpi_get(vpiLocalParam, actual);</span></a>
+<a name="1857"><span class="lineNum">    1857 </span><span class="lineCov">      96598 : bool DesignExtractor::isParameterHandle(vpiHandle handle) {</span></a>
+<a name="1858"><span class="lineNum">    1858 </span><span class="lineCov">      96598 :     if (!handle) return false;</span></a>
+<a name="1859"><span class="lineNum">    1859 </span><span class="lineCov">      96598 :     vpiHandle actual = unwrapRef(handle);</span></a>
+<a name="1860"><span class="lineNum">    1860 </span><span class="lineCov">      96598 :     if (!actual) actual = handle;</span></a>
+<a name="1861"><span class="lineNum">    1861 </span><span class="lineCov">      96598 :     int type = vpi_get(vpiType, actual);</span></a>
+<a name="1862"><span class="lineNum">    1862 </span><span class="lineCov">      96598 :     return type == vpiParameter || vpi_get(vpiLocalParam, actual);</span></a>
 <a name="1863"><span class="lineNum">    1863 </span>            : }</a>
 <a name="1864"><span class="lineNum">    1864 </span>            : </a>
 <a name="1865"><span class="lineNum">    1865 </span><span class="lineCov">       1449 : std::string DesignExtractor::normalizedParameterName(vpiHandle handle) {</span></a>
@@ -1948,18 +1948,18 @@
 <a name="1886"><span class="lineNum">    1886 </span><span class="lineNoCov">          0 :     return getSourceInfo(handle);</span></a>
 <a name="1887"><span class="lineNum">    1887 </span>            : }</a>
 <a name="1888"><span class="lineNum">    1888 </span>            : </a>
-<a name="1889"><span class="lineNum">    1889 </span><span class="lineCov">      95274 : std::vector&lt;ParameterRef&gt; DesignExtractor::collectParameterRefs(vpiHandle handle, const Module&amp; mod) {</span></a>
-<a name="1890"><span class="lineNum">    1890 </span><span class="lineCov">      95274 :     std::vector&lt;ParameterRef&gt; refs;</span></a>
-<a name="1891"><span class="lineNum">    1891 </span><span class="lineCov">      95274 :     if (!handle) return refs;</span></a>
+<a name="1889"><span class="lineNum">    1889 </span><span class="lineCov">      95285 : std::vector&lt;ParameterRef&gt; DesignExtractor::collectParameterRefs(vpiHandle handle, const Module&amp; mod) {</span></a>
+<a name="1890"><span class="lineNum">    1890 </span><span class="lineCov">      95285 :     std::vector&lt;ParameterRef&gt; refs;</span></a>
+<a name="1891"><span class="lineNum">    1891 </span><span class="lineCov">      95285 :     if (!handle) return refs;</span></a>
 <a name="1892"><span class="lineNum">    1892 </span>            : </a>
-<a name="1893"><span class="lineNum">    1893 </span><span class="lineCov">      95274 :     std::vector&lt;vpiHandle&gt; handles;</span></a>
-<a name="1894"><span class="lineNum">    1894 </span><span class="lineCov">      95274 :     collectIdentifierHandlesRecursive(handle, handles);</span></a>
-<a name="1895"><span class="lineNum">    1895 </span><span class="lineCov">      95274 :     std::set&lt;std::string&gt; seen;</span></a>
-<a name="1896"><span class="lineNum">    1896 </span><span class="lineCov">      95274 :     std::set&lt;std::string&gt; module_params;</span></a>
-<a name="1897"><span class="lineNum">    1897 </span><span class="lineCov">     117395 :     for (const auto&amp; param : mod.parameters) module_params.insert(param.name);</span></a>
+<a name="1893"><span class="lineNum">    1893 </span><span class="lineCov">      95285 :     std::vector&lt;vpiHandle&gt; handles;</span></a>
+<a name="1894"><span class="lineNum">    1894 </span><span class="lineCov">      95285 :     collectIdentifierHandlesRecursive(handle, handles);</span></a>
+<a name="1895"><span class="lineNum">    1895 </span><span class="lineCov">      95285 :     std::set&lt;std::string&gt; seen;</span></a>
+<a name="1896"><span class="lineNum">    1896 </span><span class="lineCov">      95285 :     std::set&lt;std::string&gt; module_params;</span></a>
+<a name="1897"><span class="lineNum">    1897 </span><span class="lineCov">     117406 :     for (const auto&amp; param : mod.parameters) module_params.insert(param.name);</span></a>
 <a name="1898"><span class="lineNum">    1898 </span>            : </a>
-<a name="1899"><span class="lineNum">    1899 </span><span class="lineCov">     191861 :     for (vpiHandle h : handles) {</span></a>
-<a name="1900"><span class="lineNum">    1900 </span><span class="lineCov">      96587 :         if (!isParameterHandle(h)) continue;</span></a>
+<a name="1899"><span class="lineNum">    1899 </span><span class="lineCov">     191883 :     for (vpiHandle h : handles) {</span></a>
+<a name="1900"><span class="lineNum">    1900 </span><span class="lineCov">      96598 :         if (!isParameterHandle(h)) continue;</span></a>
 <a name="1901"><span class="lineNum">    1901 </span><span class="lineNoCov">          0 :         std::string name = normalizedParameterName(h);</span></a>
 <a name="1902"><span class="lineNum">    1902 </span><span class="lineNoCov">          0 :         if (name.empty()) continue;</span></a>
 <a name="1903"><span class="lineNum">    1903 </span><span class="lineNoCov">          0 :         if (!module_params.empty() &amp;&amp; module_params.find(name) == module_params.end()) continue;</span></a>
@@ -1975,8 +1975,8 @@
 <a name="1913"><span class="lineNum">    1913 </span><span class="lineNoCov">          0 :         ref.declarationSource = getParameterDeclarationSource(h);</span></a>
 <a name="1914"><span class="lineNum">    1914 </span><span class="lineNoCov">          0 :         refs.push_back(ref);</span></a>
 <a name="1915"><span class="lineNum">    1915 </span><span class="lineNoCov">          0 :     }</span></a>
-<a name="1916"><span class="lineNum">    1916 </span><span class="lineCov">      95274 :     return refs;</span></a>
-<a name="1917"><span class="lineNum">    1917 </span><span class="lineCov">      95274 : }</span></a>
+<a name="1916"><span class="lineNum">    1916 </span><span class="lineCov">      95285 :     return refs;</span></a>
+<a name="1917"><span class="lineNum">    1917 </span><span class="lineCov">      95285 : }</span></a>
 </pre>
       </td>
     </tr>
