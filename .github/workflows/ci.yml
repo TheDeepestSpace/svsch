@@ -320,10 +320,26 @@ jobs:
       - name: Run Visual Tests (shard ${{ matrix.shard }}/6)
         # --reporter=blob defers HTML/JSON report generation: each shard just
         # records raw results, and merge_visual_reports below combines them
-        # into a single report via `playwright merge-reports`.
-        run: npm run test:visual -- --shard=${{ matrix.shard }}/6 --reporter=blob
+        # into a single report via `playwright merge-reports`. Wrapped in
+        # mem-poller.mjs (#400) so this shard's own RSS-over-time is captured
+        # alongside the test run itself, rather than needing a second,
+        # separately-timed step.
+        run: >-
+          node scripts/mem-poller.mjs visual-shard-${{ matrix.shard }}.json --
+          npm run test:visual -- --shard=${{ matrix.shard }}/6 --reporter=blob
         env:
           SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/visual-${{ matrix.shard }}
+
+      - name: Upload memory profile (visual, shard ${{ matrix.shard }})
+        # always(), not just on success — a shard that fails (or gets OOM
+        # killed) is exactly the case where its RSS-over-time is most worth
+        # keeping.
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mem-profile-visual-raw-${{ matrix.shard }}
+          path: visual-shard-${{ matrix.shard }}.json
+          if-no-files-found: warn
 
       - name: Upload Backend Coverage Data (visual, shard ${{ matrix.shard }})
         if: always()
@@ -617,10 +633,23 @@ jobs:
       - name: Run BDD Tests (shard ${{ matrix.shard }}/8)
         # --reporter=blob defers cucumber/JSON/HTML report generation: each shard
         # just records raw results, and merge_bdd_reports below combines them into
-        # a single report via `playwright merge-reports`.
-        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
+        # a single report via `playwright merge-reports`. Wrapped in
+        # mem-poller.mjs (#400), which runs as root (unlike the sudo'd test
+        # command it wraps) so it can read every descendant process's
+        # /proc/<pid>/stat regardless of which uid (root vs dev) owns it.
+        run: >-
+          node scripts/mem-poller.mjs bdd-shard-${{ matrix.shard }}.json --
+          sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
         env:
           SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/bdd-${{ matrix.shard }}
+
+      - name: Upload memory profile (bdd, shard ${{ matrix.shard }})
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mem-profile-bdd-raw-${{ matrix.shard }}
+          path: bdd-shard-${{ matrix.shard }}.json
+          if-no-files-found: warn
 
       # closeElectronApp sweeps detached NodeService helpers after every test.
       # Keep a shard-end sweep as an invariant/backstop so a future VS Code
@@ -892,10 +921,23 @@ jobs:
       - *prepare_vscode_user_step
 
       - name: Run System Tests (${{ matrix.vscode_version }})
-        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
+        # Wrapped in mem-poller.mjs (#400); see the BDD shard step above for
+        # why it runs as root around the sudo'd test command rather than
+        # inside it.
+        run: >-
+          node scripts/mem-poller.mjs system-${{ matrix.vscode_version }}.json --
+          sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
           SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/system-${{ matrix.vscode_version }}
+
+      - name: Upload memory profile (system, ${{ matrix.vscode_version }})
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mem-profile-system-raw-${{ matrix.vscode_version }}
+          path: system-${{ matrix.vscode_version }}.json
+          if-no-files-found: warn
 
       - name: Upload Backend Coverage Data (system, ${{ matrix.vscode_version }})
         if: always()
@@ -1172,6 +1214,70 @@ jobs:
           name: pr-stats-ci-duration
           path: ci-duration-stats.md
 
+  report_memory_stats:
+    # Publishes each shard's/leg's raw RSS-over-time timeseries plus a
+    # per-shard/leg HTML report to gh-pages, and renders this PR's memory
+    # (RSS) profiling section as markdown, for report_pr_stats to fold into
+    # the combined PR stats comment below (#400) — mirrors
+    # report_benchmark_stats/report_ci_duration_stats above. Needs every
+    # shard/leg across all three profiled suites (visual, BDD, system), not
+    # just visual+system like those two, since it's the only one of the
+    # three that also covers BDD.
+    needs: [prep, build_ci_image, merge_visual_reports, merge_bdd_reports, test_system]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # generate-memory-stats.mjs pushes the raw per-shard/leg timeseries and
+      # HTML report to gh-pages (a static asset next to the mem-profile
+      # history data it already publishes there).
+      contents: write
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Fetch gh-pages baseline
+        # Tolerate the branch not existing yet (first run, before any memory
+        # profile has ever published), but let real fetch failures (auth,
+        # network) fail the job instead of silently proceeding without a
+        # baseline.
+        run: |
+          set +e
+          git ls-remote --exit-code origin gh-pages >/dev/null 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            git fetch --depth=1 origin gh-pages:refs/remotes/origin/gh-pages
+          elif [ "$status" -eq 2 ]; then
+            echo "gh-pages branch not found on remote; continuing without a baseline"
+          else
+            exit "$status"
+          fi
+
+      - name: Download memory profile results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: mem-profile-*-raw-*
+          path: mem-profile-raw
+          merge-multiple: true
+
+      - name: Generate memory profiling stats
+        run: node scripts/generate-memory-stats.mjs memory-stats.md mem-profile-raw
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Upload memory profiling stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-memory
+          path: memory-stats.md
+
   report_coverage_stats:
     # Publishes the vitest html coverage report to gh-pages and renders this
     # PR's coverage section as markdown, for report_pr_stats to fold into the
@@ -1279,6 +1385,7 @@ jobs:
         report_backend_coverage_stats,
         report_benchmark_stats,
         report_ci_duration_stats,
+        report_memory_stats,
       ]
     if: >
       github.event_name == 'pull_request' &&
