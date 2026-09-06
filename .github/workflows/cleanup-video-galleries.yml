@@ -21,6 +21,7 @@ jobs:
       # retry loop against theirs (#380).
       group: gh-pages-publish
       cancel-in-progress: false
+      queue: max
     steps:
       - name: Checkout gh-pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

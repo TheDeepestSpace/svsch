@@ -20,6 +20,7 @@ concurrency:
   # publishMemProfileHistory's own retry-on-push-race loop (#380).
   group: gh-pages-publish
   cancel-in-progress: false
+  queue: max
 
 jobs:
   record:
