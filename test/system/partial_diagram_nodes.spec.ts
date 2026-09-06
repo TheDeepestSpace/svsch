@@ -161,7 +161,7 @@ test.describe('Add to Partial — every supported node kind', () => {
 
         const partialBlocksBefore = await countPartialPaneBlocks(workbox);
 
-        await clickSystemNode(workbox, mainWebview, nodeId);
+        await clickSystemNode(mainWebview, nodeId);
         const addToPartialButton = mainWebview.locator('.svsch-selection-toolbar button', {
           hasText: 'Add to Partial',
         });
@@ -420,16 +420,15 @@ async function findSystemNodeId(
   );
 }
 
-async function clickSystemNode(
-  workbox: Page,
-  webview: FrameLocator,
-  nodeId: string,
-): Promise<void> {
-  const box = await webview.locator(`.react-flow__node[data-id="${nodeId}"]`).boundingBox();
-  if (!box) {
-    throw new Error(`Could not get node box for ${nodeId}`);
-  }
-  await workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+async function clickSystemNode(webview: FrameLocator, nodeId: string): Promise<void> {
+  // Click the locator directly rather than computing a boundingBox() and
+  // dispatching a raw workbox.mouse.click(): the manual-coordinates version
+  // bypasses Playwright's actionability checks (visible, stable, not
+  // obscured), so a box captured a moment earlier — e.g. while the previous
+  // case's editor-group merge/split from above is still settling — can go
+  // stale and land the click on whatever now occupies those coordinates
+  // instead of retrying against the node's current position.
+  await webview.locator(`.react-flow__node[data-id="${nodeId}"]`).click();
 
   await expect
     .poll(
