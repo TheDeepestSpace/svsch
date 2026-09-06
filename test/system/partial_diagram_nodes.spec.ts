@@ -298,8 +298,16 @@ async function installSystemWebviewBridge(evaluateInVSCode: EvaluateInVSCode): P
   });
 }
 
-// Mirrors BddWorld.findPanelFrameIndex (test/steps/fixtures.ts): the partial
-// pane's shell carries data-svsch-partial="true", the main diagram's doesn't.
+// Mirrors BddWorld.findPanelFrameIndex (test/steps/fixtures.ts), with one
+// addition: this spec's electronApp fixture is worker-scoped and every other
+// test/system/*.spec.ts test shares that same window (see
+// test/system/playwright.config.ts's workers: 1), and none of those tests
+// close their diagram panel afterward. By the time this test's loop reaches
+// later iterations, several *background* main-diagram webviews from earlier
+// tests/cases can still be sitting in the DOM alongside the current one, so
+// matching on content alone risks returning a stale frame. Skip frames whose
+// outer iframe isn't currently visible (VS Code hides inactive editor
+// webviews rather than removing them).
 async function findFrameIndex(workbox: Page, panel: 'main' | 'partial'): Promise<number> {
   const selector =
     panel === 'partial' ? '.shell[data-svsch-partial="true"]' : '.shell:not([data-svsch-partial])';
@@ -307,6 +315,9 @@ async function findFrameIndex(workbox: Page, panel: 'main' | 'partial'): Promise
   for (;;) {
     const count = await workbox.locator('iframe.webview').count();
     for (let index = 0; index < count; index++) {
+      const outerFrame = workbox.locator('iframe.webview').nth(index);
+      const visible = await outerFrame.isVisible().catch(() => false);
+      if (!visible) continue;
       const matches = await workbox
         .frameLocator('iframe.webview')
         .nth(index)
