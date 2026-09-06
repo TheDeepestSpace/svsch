@@ -49,7 +49,14 @@ interface SyntaxBookNodeCase {
 // the first case of that kind, in syntax-book section order. `netLabel` and
 // `region` targets are excluded: "Add to Partial" only ever operates on real
 // selectable blocks (see `selectedBlocks` in src/webview/main.tsx), which a
-// cut-net label or a generate region is not.
+// cut-net label or a generate region is not. `interface` is excluded too:
+// every syntax-book case for that kind (see ports.yaml, interfaces.yaml) uses
+// `action: doubleClick` and expects a `selectedText` source-reveal — clicking
+// an interface node jumps to/highlights its declaration in the .sv file
+// instead of selecting it, so it can never reach the toolbar this test's loop
+// needs and reliably opens the source file as the active tab instead.
+const UNSELECTABLE_NODE_KINDS = new Set(['interface']);
+
 function loadOneCasePerNodeKind(): SyntaxBookNodeCase[] {
   const byKind = new Map<string, SyntaxBookNodeCase>();
   for (const file of SYNTAX_BOOK_SECTION_FILES) {
@@ -58,7 +65,12 @@ function loadOneCasePerNodeKind(): SyntaxBookNodeCase[] {
     const section = yaml.load(fs.readFileSync(filePath, 'utf8')) as { cases: SyntaxBookNodeCase[] };
     for (const caseData of section.cases) {
       const target = caseData.target;
-      if (target?.kind === 'node' && target.nodeKind && !byKind.has(target.nodeKind)) {
+      if (
+        target?.kind === 'node' &&
+        target.nodeKind &&
+        !UNSELECTABLE_NODE_KINDS.has(target.nodeKind) &&
+        !byKind.has(target.nodeKind)
+      ) {
         byKind.set(target.nodeKind, caseData);
       }
     }
