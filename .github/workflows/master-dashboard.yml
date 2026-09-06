@@ -1,0 +1,64 @@
+name: Publish Master Dashboard
+
+# Decoupled from ci.yml itself: this workflow only re-reads whatever
+# dev/<metric>/section.html fragments (+ dev/bench/history-averages.json)
+# currently exist on gh-pages after a master push's CI run completes, rather
+# than being fed freshly-computed values (#413). See
+# scripts/generate-master-dashboard.mjs / scripts/record-master-dashboard.mjs.
+#
+# Fires independently of, not downstream of, ci-duration.yml/
+# mem-profile-history.yml/coverage-history.yml/backend-coverage-history.yml —
+# all 5 workflows share the same workflow_run trigger, so which order they
+# actually run in for a given push isn't guaranteed (the shared
+# gh-pages-publish concurrency group only serializes them, it doesn't order
+# them by dependency). That's an accepted trade-off for staying simple and
+# self-healing: if this runs before, say, coverage-history.yml finishes for
+# this push, the dashboard just shows coverage's previous section until the
+# next master push's run picks up the fresher one — never a hard failure.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Shared across every job/workflow that pushes to gh-pages (see ci.yml's
+  # merge_visual_reports, ci-duration.yml, mem-profile-history.yml,
+  # coverage-history.yml, backend-coverage-history.yml,
+  # cleanup-video-galleries.yml) so pushes are serialized repo-wide rather
+  # than relying solely on publishMasterDashboard's own retry-on-push-race
+  # loop (#380).
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # workflow_run fires for every completed run of CI, including PRs — the
+    # master dashboard only rebuilds on push-to-master runs (matching the
+    # other 4 metrics' own filter, for the same reason: workflow_run doesn't
+    # support filtering by the triggering run's branch/event directly via
+    # `on:`).
+    if: >
+      github.event.workflow_run.head_branch == 'master' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Publish master dashboard
+        run: node scripts/record-master-dashboard.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
