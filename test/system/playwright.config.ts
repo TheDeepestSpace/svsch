@@ -21,6 +21,11 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
+  // Playwright's default testMatch also picks up `*.test.ts` files, which
+  // collides with vitest-only files living alongside the specs here (e.g.
+  // partial_diagram_interactions.coverage.test.ts) — restrict to `*.spec.ts`
+  // so those stay vitest-only.
+  testMatch: '**/*.spec.ts',
   // Playwright's default (<rootDir>/test-results, flat per-test) doesn't
   // match the CI upload glob (test-results/system/**) that the video
   // gallery job reads from — keep everything (videos, traces) nested here.
