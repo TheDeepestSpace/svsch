@@ -89,6 +89,12 @@ interface StatusMessage {
   status: 'idle' | 'rebuilding';
 }
 
+interface HighlightNodesMessage {
+  type: 'highlightNodes';
+  moduleName: string;
+  nodeIds: string[];
+}
+
 // Mirrors ExpandInstancePayload in diagramPanel.ts (not imported directly —
 // that file pulls in the `vscode` module and lives outside the webview
 // tsconfig project, same reason GraphMessage/StatusMessage above are their
@@ -632,7 +638,9 @@ function DiagramApp(): React.ReactElement {
 
   useEffect(() => {
     const listener = (
-      event: MessageEvent<GraphMessage | StatusMessage | ExpandInstanceDataMessage>,
+      event: MessageEvent<
+        GraphMessage | StatusMessage | ExpandInstanceDataMessage | HighlightNodesMessage
+      >,
     ) => {
       if (event.data.type === 'graph') {
         const view = event.data.view;
@@ -666,6 +674,20 @@ function DiagramApp(): React.ReactElement {
         setHoveredEdgeId(undefined);
       } else if (event.data.type === 'status') {
         setStatus(event.data.status);
+      } else if (event.data.type === 'highlightNodes') {
+        const selectedIds = new Set(event.data.nodeIds);
+        const moduleName = event.data.moduleName;
+        if (spliceMapModuleNameRef.current !== moduleName) return;
+        setNodes((current) => {
+          let changed = false;
+          const next = current.map((node) => {
+            const selected = selectedIds.has(node.id);
+            if (Boolean(node.selected) === selected) return node;
+            changed = true;
+            return { ...node, selected };
+          });
+          return changed ? next : current;
+        });
       } else if (event.data.type === 'expandInstanceData') {
         const { moduleName, payload } = event.data;
         // Keyed by namespace (globally unique — see requestExpand), not by
@@ -720,7 +742,7 @@ function DiagramApp(): React.ReactElement {
     window.addEventListener('message', listener);
     vscode.postMessage({ type: 'ready' });
     return () => window.removeEventListener('message', listener);
-  }, [setHovered]);
+  }, [setHovered, setNodes]);
 
   // Sends a requestExpandInstance message and remembers enough context (the
   // instance's current geometry, its namespace/parentRegionId in the splice
