@@ -1267,7 +1267,10 @@ jobs:
           merge-multiple: true
 
       - name: Generate memory profiling stats
-        run: node scripts/generate-memory-stats.mjs memory-stats.md mem-profile-raw
+        # Named zz-memory-stats.md (not memory-stats.md) so upsert-pr-stats-comment.mjs's
+        # sorted-filename join places it after both coverage sections
+        # (coverage-stats.md and zz-backend-coverage-stats.md).
+        run: node scripts/generate-memory-stats.mjs zz-memory-stats.md mem-profile-raw
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -1276,7 +1279,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pr-stats-memory
-          path: memory-stats.md
+          path: zz-memory-stats.md
 
   report_coverage_stats:
     # Publishes the vitest html coverage report to gh-pages and renders this
