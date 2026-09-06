@@ -567,6 +567,68 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
         }
     }
 
+    // Synthesize a source node for a declared memory that is read (its base
+    // name feeds an array-typed "in" port above) but never itself driven —
+    // e.g. a continuous read `assign instr = mem[addr];` from a
+    // declaration-only `logic mem [0:N-1];` with no procedural write.
+    // Without this, buildEdges finds no producer for the array's base name
+    // and the read mux's "in" port is left silently dangling.
+    {
+        std::set<std::string> driven_array_bases;
+        for (const auto& n : mod.nodes) {
+            for (const auto& p : n.ports) {
+                if (p.direction != "output" && p.direction != "inout") continue;
+                if (mod.arrayDimensions.count(p.signal)) driven_array_bases.insert(p.signal);
+            }
+        }
+        for (const auto& p : mod.ports) {
+            if ((p.direction == "input" || p.direction == "inout") && mod.arrayDimensions.count(p.name)) {
+                driven_array_bases.insert(p.name);
+            }
+        }
+        for (const auto& alias : mod.pendingArrayAliases) {
+            driven_array_bases.insert(alias.targetSignal);
+        }
+
+        // Collect one representative (source, width) per undriven array base first —
+        // pushing new nodes while iterating mod.nodes would invalidate this loop.
+        std::map<std::string, std::pair<SourceInfo, std::string>> undriven_bases;
+        for (const auto& n : mod.nodes) {
+            for (const auto& p : n.ports) {
+                if (p.direction != "input" || !p.isArrayNode) continue;
+                const std::string& base = p.signal;
+                if (base.empty() || !mod.arrayDimensions.count(base)) continue;
+                if (driven_array_bases.count(base)) continue;
+                undriven_bases.emplace(base, std::make_pair(n.source, p.width));
+            }
+        }
+
+        for (const auto& [base, source_and_width] : undriven_bases) {
+            std::string mem_node_id = "reg:" + mod.name + ":" + base;
+            bool exists = false;
+            for (const auto& existing : mod.nodes) {
+                if (existing.id == mem_node_id) { exists = true; break; }
+            }
+            if (exists) continue;
+
+            Node mem_node;
+            mem_node.id = mem_node_id;
+            mem_node.kind = "register";
+            mem_node.label = base;
+            mem_node.source = source_and_width.first;
+            mem_node.metadata.isArrayNode = true;
+            mem_node.metadata.arrayDimension = mod.arrayDimensions[base];
+            mem_node.metadata.arraySize = mod.arraySizes.count(base) ? mod.arraySizes[base] : 0;
+            mem_node.metadata.inferred = true;
+            mem_node.metadata.reason = "'" + base + "' is declared but never written — its "
+                "contents are undriven/uninitialized";
+            std::string elem_width = source_and_width.second;
+            if (elem_width.empty()) elem_width = getDeclaredSignalWidth(mod, base);
+            mem_node.ports.push_back({"Q", "output", base, elem_width});
+            mod.nodes.push_back(mem_node);
+        }
+    }
+
     modules_.push_back(mod);
     processing_modules_.erase(mod_name);
 }

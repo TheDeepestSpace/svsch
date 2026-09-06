@@ -2314,6 +2314,19 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
           source: node.source,
         });
       }
+
+      // Mirrors the inferred-latch warning above: the backend synthesizes a
+      // register-kind node standing in for a declared array/memory that's
+      // read somewhere but never procedurally written, so its "in" port has
+      // a source to connect to instead of dangling. Surface why that stand-in
+      // exists rather than leaving it looking like an ordinary register.
+      if (node.kind === 'register' && node.metadata?.isArrayNode && node.metadata?.inferred) {
+        graph.diagnostics.push({
+          severity: 'warning',
+          message: `${modName}.${node.label}: ${node.metadata.reason ?? 'declared but never written'}`,
+          source: node.source,
+        });
+      }
     }
 
     for (const edge of module.edges) {

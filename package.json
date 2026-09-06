@@ -186,6 +186,7 @@
     "jsdom": "^30.0.0",
     "multiple-cucumber-html-reporter": "^4.0.0",
     "patch-package": "^8.0.1",
+    "pidusage": "^4.0.1",
     "pixelmatch": "^7.1.0",
     "playwright-bdd": "^9.0.0",
     "pngjs": "^7.0.0",

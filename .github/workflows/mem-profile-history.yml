@@ -1,0 +1,65 @@
+name: Record Memory Profile History
+
+# Decoupled from ci.yml itself: this workflow only ever reads that run's
+# per-shard/leg memory profiling artifacts back after the fact, so recording
+# the master-push memory (RSS) trend (#400) can never touch, or regress, the
+# main pipeline — same reasoning ci-duration.yml gives for CI wall-clock
+# duration. See scripts/mem-profile.mjs / scripts/record-mem-profile-history.mjs.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Shared across every job/workflow that pushes to gh-pages (see ci.yml's
+  # merge_visual_reports, ci-duration.yml, cleanup-video-galleries.yml) so
+  # pushes are serialized repo-wide rather than relying solely on
+  # publishMemProfileHistory's own retry-on-push-race loop (#380).
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  record:
+    # workflow_run fires for every completed run of CI, including PRs — the
+    # "per master push" memory profiling history only tracks push-to-master
+    # runs (matching ci-duration.yml's own filter, for the same reason:
+    # workflow_run doesn't support filtering by the triggering run's
+    # branch/event directly via `on:`).
+    if: >
+      github.event.workflow_run.head_branch == 'master' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # Needed to download the triggering (not this) run's artifacts below.
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Download memory profile results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: mem-profile-*-raw-*
+          path: mem-profile-raw
+          merge-multiple: true
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Record memory profile history
+        run: node scripts/record-mem-profile-history.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+          RAW_DIR: mem-profile-raw
