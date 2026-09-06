@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-06 04:09:42</td>
+            <td class="headerValue">2026-09-06 06:15:26</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">31</td>
@@ -115,22 +115,22 @@
 <a name="53"><span class="lineNum">      53 </span><span class="lineCov">       5845 :     return signal;</span></a>
 <a name="54"><span class="lineNum">      54 </span><span class="lineCov">       6892 : }</span></a>
 <a name="55"><span class="lineNum">      55 </span>            : </a>
-<a name="56"><span class="lineNum">      56 </span><span class="lineCov">       6238 : bool DesignExtractor::isAluOperation(vpiHandle expr) {</span></a>
-<a name="57"><span class="lineNum">      57 </span><span class="lineCov">       6238 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;</span></a>
-<a name="58"><span class="lineNum">      58 </span><span class="lineCov">       4172 :     int op = vpi_get(vpiOpType, expr);</span></a>
-<a name="59"><span class="lineNum">      59 </span><span class="lineCov">       4172 :     return op == vpiAddOp || op == vpiSubOp;</span></a>
+<a name="56"><span class="lineNum">      56 </span><span class="lineCov">       6242 : bool DesignExtractor::isAluOperation(vpiHandle expr) {</span></a>
+<a name="57"><span class="lineNum">      57 </span><span class="lineCov">       6242 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;</span></a>
+<a name="58"><span class="lineNum">      58 </span><span class="lineCov">       4174 :     int op = vpi_get(vpiOpType, expr);</span></a>
+<a name="59"><span class="lineNum">      59 </span><span class="lineCov">       4174 :     return op == vpiAddOp || op == vpiSubOp;</span></a>
 <a name="60"><span class="lineNum">      60 </span>            : }</a>
 <a name="61"><span class="lineNum">      61 </span>            : </a>
-<a name="62"><span class="lineNum">      62 </span><span class="lineCov">        509 : std::string DesignExtractor::aluOperationSymbol(vpiHandle expr) {</span></a>
-<a name="63"><span class="lineNum">      63 </span><span class="lineCov">        509 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return &quot;&quot;;</span></a>
-<a name="64"><span class="lineNum">      64 </span><span class="lineCov">        509 :     int op = vpi_get(vpiOpType, expr);</span></a>
-<a name="65"><span class="lineNum">      65 </span><span class="lineCov">        509 :     if (op == vpiAddOp) return &quot;+&quot;;</span></a>
+<a name="62"><span class="lineNum">      62 </span><span class="lineCov">        510 : std::string DesignExtractor::aluOperationSymbol(vpiHandle expr) {</span></a>
+<a name="63"><span class="lineNum">      63 </span><span class="lineCov">        510 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return &quot;&quot;;</span></a>
+<a name="64"><span class="lineNum">      64 </span><span class="lineCov">        510 :     int op = vpi_get(vpiOpType, expr);</span></a>
+<a name="65"><span class="lineNum">      65 </span><span class="lineCov">        510 :     if (op == vpiAddOp) return &quot;+&quot;;</span></a>
 <a name="66"><span class="lineNum">      66 </span><span class="lineCov">         92 :     if (op == vpiSubOp) return &quot;-&quot;;</span></a>
 <a name="67"><span class="lineNum">      67 </span><span class="lineNoCov">          0 :     return &quot;&quot;;</span></a>
 <a name="68"><span class="lineNum">      68 </span>            : }</a>
 <a name="69"><span class="lineNum">      69 </span>            : </a>
-<a name="70"><span class="lineNum">      70 </span><span class="lineCov">     105053 : bool DesignExtractor::isReplicationOperation(vpiHandle expr) {</span></a>
-<a name="71"><span class="lineNum">      71 </span><span class="lineCov">     105053 :     return expr &amp;&amp; vpi_get(vpiType, expr) == vpiOperation &amp;&amp; vpi_get(vpiOpType, expr) == 34; // vpiMultiConcatOp</span></a>
+<a name="70"><span class="lineNum">      70 </span><span class="lineCov">     105055 : bool DesignExtractor::isReplicationOperation(vpiHandle expr) {</span></a>
+<a name="71"><span class="lineNum">      71 </span><span class="lineCov">     105055 :     return expr &amp;&amp; vpi_get(vpiType, expr) == vpiOperation &amp;&amp; vpi_get(vpiOpType, expr) == 34; // vpiMultiConcatOp</span></a>
 <a name="72"><span class="lineNum">      72 </span>            : }</a>
 <a name="73"><span class="lineNum">      73 </span>            : </a>
 <a name="74"><span class="lineNum">      74 </span><span class="lineCov">      84589 : bool DesignExtractor::isConcatOperation(vpiHandle expr) {</span></a>
@@ -658,76 +658,76 @@
 <a name="596"><span class="lineNum">     596 </span><span class="lineCov">        533 :     return out_signal;</span></a>
 <a name="597"><span class="lineNum">     597 </span><span class="lineCov">        533 : }</span></a>
 <a name="598"><span class="lineNum">     598 </span>            : </a>
-<a name="599"><span class="lineNum">     599 </span><span class="lineCov">        557 : std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module&amp; mod, const std::string&amp; preferred_name, bool is_procedural, const std::map&lt;std::string, LoweredValue&gt;&amp; current_drivers) {</span></a>
-<a name="600"><span class="lineNum">     600 </span><span class="lineCov">        557 :     if (!expr || !isAluOperation(expr)) return &quot;&quot;;</span></a>
+<a name="599"><span class="lineNum">     599 </span><span class="lineCov">        558 : std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module&amp; mod, const std::string&amp; preferred_name, bool is_procedural, const std::map&lt;std::string, LoweredValue&gt;&amp; current_drivers) {</span></a>
+<a name="600"><span class="lineNum">     600 </span><span class="lineCov">        558 :     if (!expr || !isAluOperation(expr)) return &quot;&quot;;</span></a>
 <a name="601"><span class="lineNum">     601 </span>            : </a>
-<a name="602"><span class="lineNum">     602 </span><span class="lineCov">        557 :     std::vector&lt;vpiHandle&gt; operands;</span></a>
-<a name="603"><span class="lineNum">     603 </span><span class="lineCov">        557 :     vpiHandle op_itr = vpi_iterate(vpiOperand, expr);</span></a>
-<a name="604"><span class="lineNum">     604 </span><span class="lineCov">        557 :     if (op_itr) {</span></a>
-<a name="605"><span class="lineNum">     605 </span><span class="lineCov">       1671 :         while (vpiHandle operand = vpi_scan(op_itr)) {</span></a>
-<a name="606"><span class="lineNum">     606 </span><span class="lineCov">       1114 :             operands.push_back(operand);</span></a>
-<a name="607"><span class="lineNum">     607 </span><span class="lineCov">       1114 :         }</span></a>
-<a name="608"><span class="lineNum">     608 </span><span class="lineCov">        557 :         vpi_release_handle(op_itr);</span></a>
+<a name="602"><span class="lineNum">     602 </span><span class="lineCov">        558 :     std::vector&lt;vpiHandle&gt; operands;</span></a>
+<a name="603"><span class="lineNum">     603 </span><span class="lineCov">        558 :     vpiHandle op_itr = vpi_iterate(vpiOperand, expr);</span></a>
+<a name="604"><span class="lineNum">     604 </span><span class="lineCov">        558 :     if (op_itr) {</span></a>
+<a name="605"><span class="lineNum">     605 </span><span class="lineCov">       1674 :         while (vpiHandle operand = vpi_scan(op_itr)) {</span></a>
+<a name="606"><span class="lineNum">     606 </span><span class="lineCov">       1116 :             operands.push_back(operand);</span></a>
+<a name="607"><span class="lineNum">     607 </span><span class="lineCov">       1116 :         }</span></a>
+<a name="608"><span class="lineNum">     608 </span><span class="lineCov">        558 :         vpi_release_handle(op_itr);</span></a>
 <a name="609"><span class="lineNum">     609 </span>            :     }</a>
-<a name="610"><span class="lineNum">     610 </span><span class="lineCov">        557 :     if (operands.size() &lt; 2) {</span></a>
+<a name="610"><span class="lineNum">     610 </span><span class="lineCov">        558 :     if (operands.size() &lt; 2) {</span></a>
 <a name="611"><span class="lineNum">     611 </span><span class="lineNoCov">          0 :         return &quot;&quot;;</span></a>
 <a name="612"><span class="lineNum">     612 </span>            :     }</a>
 <a name="613"><span class="lineNum">     613 </span>            : </a>
 <a name="614"><span class="lineNum">     614 </span>            :     // Only promote simple binary ALU operations.</a>
 <a name="615"><span class="lineNum">     615 </span>            :     // If either operand is another ALU operation, fallback to a single COMB node for the whole chain.</a>
-<a name="616"><span class="lineNum">     616 </span><span class="lineCov">        557 :     if (isAluOperation(operands[0]) || isAluOperation(operands[1])) {</span></a>
+<a name="616"><span class="lineNum">     616 </span><span class="lineCov">        558 :     if (isAluOperation(operands[0]) || isAluOperation(operands[1])) {</span></a>
 <a name="617"><span class="lineNum">     617 </span><span class="lineCov">         48 :         return &quot;&quot;;</span></a>
 <a name="618"><span class="lineNum">     618 </span>            :     }</a>
 <a name="619"><span class="lineNum">     619 </span>            : </a>
-<a name="620"><span class="lineNum">     620 </span><span class="lineCov">        509 :     std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;</span></a>
-<a name="621"><span class="lineNum">     621 </span><span class="lineCov">       1527 :     std::string node_id = &quot;alu:&quot; + mod.name + &quot;:&quot; + out_signal + (is_procedural ? &quot;:&quot; + nextId() : &quot;&quot;) + &quot;:expr&quot;;</span></a>
-<a name="622"><span class="lineNum">     622 </span><span class="lineCov">        509 :     if (!is_procedural) {</span></a>
-<a name="623"><span class="lineNum">     623 </span><span class="lineCov">        836 :         for (const auto&amp; n : mod.nodes) {</span></a>
+<a name="620"><span class="lineNum">     620 </span><span class="lineCov">        510 :     std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;</span></a>
+<a name="621"><span class="lineNum">     621 </span><span class="lineCov">       1530 :     std::string node_id = &quot;alu:&quot; + mod.name + &quot;:&quot; + out_signal + (is_procedural ? &quot;:&quot; + nextId() : &quot;&quot;) + &quot;:expr&quot;;</span></a>
+<a name="622"><span class="lineNum">     622 </span><span class="lineCov">        510 :     if (!is_procedural) {</span></a>
+<a name="623"><span class="lineNum">     623 </span><span class="lineCov">        837 :         for (const auto&amp; n : mod.nodes) {</span></a>
 <a name="624"><span class="lineNum">     624 </span><span class="lineCov">        327 :             if (n.id == node_id) return out_signal;</span></a>
 <a name="625"><span class="lineNum">     625 </span>            :         }</a>
 <a name="626"><span class="lineNum">     626 </span>            :     }</a>
 <a name="627"><span class="lineNum">     627 </span>            : </a>
-<a name="628"><span class="lineNum">     628 </span><span class="lineCov">        509 :     std::string lhs_signal;</span></a>
-<a name="629"><span class="lineNum">     629 </span><span class="lineCov">        509 :     if (isLiteralExpr(operands[0])) {</span></a>
+<a name="628"><span class="lineNum">     628 </span><span class="lineCov">        510 :     std::string lhs_signal;</span></a>
+<a name="629"><span class="lineNum">     629 </span><span class="lineCov">        510 :     if (isLiteralExpr(operands[0])) {</span></a>
 <a name="630"><span class="lineNum">     630 </span><span class="lineNoCov">          0 :         lhs_signal = getLiteralLabel(operands[0]);</span></a>
 <a name="631"><span class="lineNum">     631 </span><span class="lineNoCov">          0 :         ensureLiteralNode(operands[0], mod, lhs_signal, getWidth(operands[0]), expr, lhs_signal);</span></a>
 <a name="632"><span class="lineNum">     632 </span>            :     } else {</a>
-<a name="633"><span class="lineNum">     633 </span><span class="lineCov">        509 :         lhs_signal = getOrPromoteExpr(operands[0], mod, out_signal + &quot;_lhs&quot;, is_procedural, current_drivers);</span></a>
+<a name="633"><span class="lineNum">     633 </span><span class="lineCov">        510 :         lhs_signal = getOrPromoteExpr(operands[0], mod, out_signal + &quot;_lhs&quot;, is_procedural, current_drivers);</span></a>
 <a name="634"><span class="lineNum">     634 </span>            :     }</a>
 <a name="635"><span class="lineNum">     635 </span>            : </a>
-<a name="636"><span class="lineNum">     636 </span><span class="lineCov">        509 :     std::string rhs_signal;</span></a>
-<a name="637"><span class="lineNum">     637 </span><span class="lineCov">        509 :     if (isLiteralExpr(operands[1])) {</span></a>
+<a name="636"><span class="lineNum">     636 </span><span class="lineCov">        510 :     std::string rhs_signal;</span></a>
+<a name="637"><span class="lineNum">     637 </span><span class="lineCov">        510 :     if (isLiteralExpr(operands[1])) {</span></a>
 <a name="638"><span class="lineNum">     638 </span><span class="lineCov">         89 :         rhs_signal = getLiteralLabel(operands[1]);</span></a>
 <a name="639"><span class="lineNum">     639 </span><span class="lineCov">         89 :         ensureLiteralNode(operands[1], mod, rhs_signal, getWidth(operands[1]), expr, rhs_signal);</span></a>
 <a name="640"><span class="lineNum">     640 </span>            :     } else {</a>
-<a name="641"><span class="lineNum">     641 </span><span class="lineCov">        420 :         rhs_signal = getOrPromoteExpr(operands[1], mod, out_signal + &quot;_rhs&quot;, is_procedural, current_drivers);</span></a>
+<a name="641"><span class="lineNum">     641 </span><span class="lineCov">        421 :         rhs_signal = getOrPromoteExpr(operands[1], mod, out_signal + &quot;_rhs&quot;, is_procedural, current_drivers);</span></a>
 <a name="642"><span class="lineNum">     642 </span>            :     }</a>
 <a name="643"><span class="lineNum">     643 </span>            : </a>
-<a name="644"><span class="lineNum">     644 </span><span class="lineCov">        509 :     std::string expr_str = getExprText(expr);</span></a>
-<a name="645"><span class="lineNum">     645 </span><span class="lineCov">        509 :     std::string width = getWidth(expr);</span></a>
+<a name="644"><span class="lineNum">     644 </span><span class="lineCov">        510 :     std::string expr_str = getExprText(expr);</span></a>
+<a name="645"><span class="lineNum">     645 </span><span class="lineCov">        510 :     std::string width = getWidth(expr);</span></a>
 <a name="646"><span class="lineNum">     646 </span>            : </a>
-<a name="647"><span class="lineNum">     647 </span><span class="lineCov">        509 :     Node n;</span></a>
-<a name="648"><span class="lineNum">     648 </span><span class="lineCov">        509 :     n.id = node_id;</span></a>
-<a name="649"><span class="lineNum">     649 </span><span class="lineCov">        509 :     n.kind = &quot;alu&quot;;</span></a>
-<a name="650"><span class="lineNum">     650 </span><span class="lineCov">        509 :     n.label = &quot;&quot;;</span></a>
-<a name="651"><span class="lineNum">     651 </span><span class="lineCov">        509 :     n.source = getSourceInfo(expr);</span></a>
-<a name="652"><span class="lineNum">     652 </span><span class="lineCov">        509 :     refineSourceInfo(n.source, expr);</span></a>
-<a name="653"><span class="lineNum">     653 </span><span class="lineCov">        509 :     n.metadata.expression = expr_str;</span></a>
-<a name="654"><span class="lineNum">     654 </span><span class="lineCov">        509 :     n.metadata.operation = aluOperationSymbol(expr);</span></a>
-<a name="655"><span class="lineNum">     655 </span><span class="lineCov">        509 :     n.metadata.isProcedural = is_procedural;</span></a>
-<a name="656"><span class="lineNum">     656 </span><span class="lineCov">        509 :     n.metadata.parameterRefs = collectParameterRefs(expr, mod);</span></a>
-<a name="657"><span class="lineNum">     657 </span><span class="lineCov">        509 :     n.ports.push_back({&quot;lhs&quot;, &quot;input&quot;, lhs_signal, getWidth(operands[0]), &quot;lhs&quot;});</span></a>
-<a name="658"><span class="lineNum">     658 </span><span class="lineCov">        509 :     n.ports.push_back({&quot;rhs&quot;, &quot;input&quot;, rhs_signal, getWidth(operands[1]), &quot;rhs&quot;});</span></a>
+<a name="647"><span class="lineNum">     647 </span><span class="lineCov">        510 :     Node n;</span></a>
+<a name="648"><span class="lineNum">     648 </span><span class="lineCov">        510 :     n.id = node_id;</span></a>
+<a name="649"><span class="lineNum">     649 </span><span class="lineCov">        510 :     n.kind = &quot;alu&quot;;</span></a>
+<a name="650"><span class="lineNum">     650 </span><span class="lineCov">        510 :     n.label = &quot;&quot;;</span></a>
+<a name="651"><span class="lineNum">     651 </span><span class="lineCov">        510 :     n.source = getSourceInfo(expr);</span></a>
+<a name="652"><span class="lineNum">     652 </span><span class="lineCov">        510 :     refineSourceInfo(n.source, expr);</span></a>
+<a name="653"><span class="lineNum">     653 </span><span class="lineCov">        510 :     n.metadata.expression = expr_str;</span></a>
+<a name="654"><span class="lineNum">     654 </span><span class="lineCov">        510 :     n.metadata.operation = aluOperationSymbol(expr);</span></a>
+<a name="655"><span class="lineNum">     655 </span><span class="lineCov">        510 :     n.metadata.isProcedural = is_procedural;</span></a>
+<a name="656"><span class="lineNum">     656 </span><span class="lineCov">        510 :     n.metadata.parameterRefs = collectParameterRefs(expr, mod);</span></a>
+<a name="657"><span class="lineNum">     657 </span><span class="lineCov">        510 :     n.ports.push_back({&quot;lhs&quot;, &quot;input&quot;, lhs_signal, getWidth(operands[0]), &quot;lhs&quot;});</span></a>
+<a name="658"><span class="lineNum">     658 </span><span class="lineCov">        510 :     n.ports.push_back({&quot;rhs&quot;, &quot;input&quot;, rhs_signal, getWidth(operands[1]), &quot;rhs&quot;});</span></a>
 <a name="659"><span class="lineNum">     659 </span>            : </a>
-<a name="660"><span class="lineNum">     660 </span><span class="lineCov">        509 :     std::string display_label = out_signal;</span></a>
-<a name="661"><span class="lineNum">     661 </span><span class="lineCov">        509 :     if (display_label.size() &gt;= 5 &amp;&amp; display_label.compare(display_label.size() - 5, 5, &quot;_next&quot;) == 0) {</span></a>
+<a name="660"><span class="lineNum">     660 </span><span class="lineCov">        510 :     std::string display_label = out_signal;</span></a>
+<a name="661"><span class="lineNum">     661 </span><span class="lineCov">        510 :     if (display_label.size() &gt;= 5 &amp;&amp; display_label.compare(display_label.size() - 5, 5, &quot;_next&quot;) == 0) {</span></a>
 <a name="662"><span class="lineNum">     662 </span><span class="lineNoCov">          0 :         display_label = display_label.substr(0, display_label.size() - 5);</span></a>
 <a name="663"><span class="lineNum">     663 </span>            :     }</a>
-<a name="664"><span class="lineNum">     664 </span><span class="lineCov">        509 :     n.ports.push_back({out_signal, &quot;output&quot;, out_signal, width, display_label});</span></a>
-<a name="665"><span class="lineNum">     665 </span><span class="lineCov">        509 :     mod.nodes.push_back(n);</span></a>
-<a name="666"><span class="lineNum">     666 </span><span class="lineCov">        509 :     propagateStruct(mod, preferred_name, out_signal);</span></a>
-<a name="667"><span class="lineNum">     667 </span><span class="lineCov">        509 :     return out_signal;</span></a>
-<a name="668"><span class="lineNum">     668 </span><span class="lineCov">        557 : }</span></a>
+<a name="664"><span class="lineNum">     664 </span><span class="lineCov">        510 :     n.ports.push_back({out_signal, &quot;output&quot;, out_signal, width, display_label});</span></a>
+<a name="665"><span class="lineNum">     665 </span><span class="lineCov">        510 :     mod.nodes.push_back(n);</span></a>
+<a name="666"><span class="lineNum">     666 </span><span class="lineCov">        510 :     propagateStruct(mod, preferred_name, out_signal);</span></a>
+<a name="667"><span class="lineNum">     667 </span><span class="lineCov">        510 :     return out_signal;</span></a>
+<a name="668"><span class="lineNum">     668 </span><span class="lineCov">        558 : }</span></a>
 <a name="669"><span class="lineNum">     669 </span>            : </a>
 <a name="670"><span class="lineNum">     670 </span><span class="lineCov">       3304 : bool DesignExtractor::isComparatorOperation(vpiHandle expr) {</span></a>
 <a name="671"><span class="lineNum">     671 </span><span class="lineCov">       3304 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;</span></a>
@@ -844,10 +844,10 @@
 <a name="782"><span class="lineNum">     782 </span><span class="lineCov">        723 :     return out_signal;</span></a>
 <a name="783"><span class="lineNum">     783 </span><span class="lineCov">        723 : }</span></a>
 <a name="784"><span class="lineNum">     784 </span>            : </a>
-<a name="785"><span class="lineNum">     785 </span><span class="lineCov">      49061 : bool DesignExtractor::isConditionalOperation(vpiHandle expr) {</span></a>
+<a name="785"><span class="lineNum">     785 </span><span class="lineCov">      49063 : bool DesignExtractor::isConditionalOperation(vpiHandle expr) {</span></a>
 <a name="786"><span class="lineNum">     786 </span>            :     return expr</a>
-<a name="787"><span class="lineNum">     787 </span><span class="lineCov">      49061 :         &amp;&amp; vpi_get(vpiType, expr) == vpiOperation</span></a>
-<a name="788"><span class="lineNum">     788 </span><span class="lineCov">      98122 :         &amp;&amp; vpi_get(vpiOpType, expr) == vpiConditionOp;</span></a>
+<a name="787"><span class="lineNum">     787 </span><span class="lineCov">      49063 :         &amp;&amp; vpi_get(vpiType, expr) == vpiOperation</span></a>
+<a name="788"><span class="lineNum">     788 </span><span class="lineCov">      98126 :         &amp;&amp; vpi_get(vpiOpType, expr) == vpiConditionOp;</span></a>
 <a name="789"><span class="lineNum">     789 </span>            : }</a>
 <a name="790"><span class="lineNum">     790 </span>            : </a>
 <a name="791"><span class="lineNum">     791 </span><span class="lineCov">        909 : std::string DesignExtractor::promoteMuxExpr(vpiHandle expr, Module&amp; mod, const std::string&amp; preferred_name, bool is_procedural, const std::map&lt;std::string, LoweredValue&gt;&amp; current_drivers) {</span></a>
@@ -948,15 +948,15 @@
 <a name="886"><span class="lineNum">     886 </span><span class="lineCov">        909 :     return out_signal;</span></a>
 <a name="887"><span class="lineNum">     887 </span><span class="lineCov">        909 : }</span></a>
 <a name="888"><span class="lineNum">     888 </span>            : </a>
-<a name="889"><span class="lineNum">     889 </span><span class="lineCov">      83705 : bool DesignExtractor::isInverterOperation(vpiHandle expr) {</span></a>
-<a name="890"><span class="lineNum">     890 </span><span class="lineCov">      83705 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;</span></a>
-<a name="891"><span class="lineNum">     891 </span><span class="lineCov">      30923 :     int op = vpi_get(vpiOpType, expr);</span></a>
-<a name="892"><span class="lineNum">     892 </span><span class="lineCov">      30923 :     if (op == vpiBitNegOp) return true;</span></a>
+<a name="889"><span class="lineNum">     889 </span><span class="lineCov">      83707 : bool DesignExtractor::isInverterOperation(vpiHandle expr) {</span></a>
+<a name="890"><span class="lineNum">     890 </span><span class="lineCov">      83707 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;</span></a>
+<a name="891"><span class="lineNum">     891 </span><span class="lineCov">      30925 :     int op = vpi_get(vpiOpType, expr);</span></a>
+<a name="892"><span class="lineNum">     892 </span><span class="lineCov">      30925 :     if (op == vpiBitNegOp) return true;</span></a>
 <a name="893"><span class="lineNum">     893 </span>            : </a>
 <a name="894"><span class="lineNum">     894 </span>            :     // `!` (vpiNotOp=3) is logical NOT: it reduces any operand to 1-bit.</a>
 <a name="895"><span class="lineNum">     895 </span>            :     // Promote to inverter only when the operand is a simple 1-bit signal so</a>
 <a name="896"><span class="lineNum">     896 </span>            :     // the semantics are identical to `~`.  Multi-bit operands stay as combs.</a>
-<a name="897"><span class="lineNum">     897 </span><span class="lineCov">      21506 :     if (op == vpiNotOp) {</span></a>
+<a name="897"><span class="lineNum">     897 </span><span class="lineCov">      21508 :     if (op == vpiNotOp) {</span></a>
 <a name="898"><span class="lineNum">     898 </span>            :         // Promote `!` to an inverter only when the operand is a simple signal</a>
 <a name="899"><span class="lineNum">     899 </span>            :         // reference (not a compound expression).  The width check is deferred</a>
 <a name="900"><span class="lineNum">     900 </span>            :         // to promoteInverterExpr where Module context is available for a</a>
@@ -971,7 +971,7 @@
 <a name="909"><span class="lineNum">     909 </span><span class="lineCov">        840 :         int t = vpi_get(vpiType, operand);</span></a>
 <a name="910"><span class="lineNum">     910 </span><span class="lineCov">        840 :         return (t == vpiNet || t == vpiReg || t == vpiPort || t == 608);</span></a>
 <a name="911"><span class="lineNum">     911 </span>            :     }</a>
-<a name="912"><span class="lineNum">     912 </span><span class="lineCov">      20666 :     return false;</span></a>
+<a name="912"><span class="lineNum">     912 </span><span class="lineCov">      20668 :     return false;</span></a>
 <a name="913"><span class="lineNum">     913 </span>            : }</a>
 <a name="914"><span class="lineNum">     914 </span>            : </a>
 <a name="915"><span class="lineNum">     915 </span><span class="lineCov">       3237 : std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module&amp; mod, const std::string&amp; preferred_name, bool is_procedural, const std::map&lt;std::string, LoweredValue&gt;&amp; current_drivers) {</span></a>
@@ -1068,10 +1068,10 @@
 <a name="1006"><span class="lineNum">    1006 </span><span class="lineCov">       3237 :     return out_signal;</span></a>
 <a name="1007"><span class="lineNum">    1007 </span><span class="lineCov">       3237 : }</span></a>
 <a name="1008"><span class="lineNum">    1008 </span>            : </a>
-<a name="1009"><span class="lineNum">    1009 </span><span class="lineCov">      71868 : bool DesignExtractor::isGateOperation(vpiHandle expr) {</span></a>
-<a name="1010"><span class="lineNum">    1010 </span><span class="lineCov">      71868 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;</span></a>
-<a name="1011"><span class="lineNum">    1011 </span><span class="lineCov">      23621 :     int op = vpi_get(vpiOpType, expr);</span></a>
-<a name="1012"><span class="lineNum">    1012 </span><span class="lineCov">      23621 :     return op == vpiBitAndOp || op == vpiBitOrOp || op == vpiBitXorOp || op == vpiBitXNorOp || op == vpiLogAndOp || op == vpiLogOrOp;</span></a>
+<a name="1009"><span class="lineNum">    1009 </span><span class="lineCov">      71870 : bool DesignExtractor::isGateOperation(vpiHandle expr) {</span></a>
+<a name="1010"><span class="lineNum">    1010 </span><span class="lineCov">      71870 :     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;</span></a>
+<a name="1011"><span class="lineNum">    1011 </span><span class="lineCov">      23622 :     int op = vpi_get(vpiOpType, expr);</span></a>
+<a name="1012"><span class="lineNum">    1012 </span><span class="lineCov">      23622 :     return op == vpiBitAndOp || op == vpiBitOrOp || op == vpiBitXorOp || op == vpiBitXNorOp || op == vpiLogAndOp || op == vpiLogOrOp;</span></a>
 <a name="1013"><span class="lineNum">    1013 </span>            : }</a>
 <a name="1014"><span class="lineNum">    1014 </span>            : </a>
 <a name="1015"><span class="lineNum">    1015 </span>            : // AND/OR/XOR keep their name; a negated output (fused from an enclosing `~(...)`,</a>
@@ -1254,20 +1254,20 @@
 <a name="1192"><span class="lineNum">    1192 </span><span class="lineCov">       9499 :     return out_signal;</span></a>
 <a name="1193"><span class="lineNum">    1193 </span><span class="lineCov">       9620 : }</span></a>
 <a name="1194"><span class="lineNum">    1194 </span>            : </a>
-<a name="1195"><span class="lineNum">    1195 </span><span class="lineCov">      61706 : std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module&amp; mod, const std::string&amp; preferred_name, bool is_procedural, const std::map&lt;std::string, LoweredValue&gt;&amp; current_drivers) {</span></a>
-<a name="1196"><span class="lineNum">    1196 </span><span class="lineCov">      61706 :     if (!expr) return &quot;&quot;;</span></a>
-<a name="1197"><span class="lineNum">    1197 </span><span class="lineCov">      61706 :     int type = vpi_get(vpiType, expr);</span></a>
+<a name="1195"><span class="lineNum">    1195 </span><span class="lineCov">      61708 : std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module&amp; mod, const std::string&amp; preferred_name, bool is_procedural, const std::map&lt;std::string, LoweredValue&gt;&amp; current_drivers) {</span></a>
+<a name="1196"><span class="lineNum">    1196 </span><span class="lineCov">      61708 :     if (!expr) return &quot;&quot;;</span></a>
+<a name="1197"><span class="lineNum">    1197 </span><span class="lineCov">      61708 :     int type = vpi_get(vpiType, expr);</span></a>
 <a name="1198"><span class="lineNum">    1198 </span>            : </a>
-<a name="1199"><span class="lineNum">    1199 </span><span class="lineCov">      61706 :     if (auto field = getStructFieldRef(expr, mod)) {</span></a>
+<a name="1199"><span class="lineNum">    1199 </span><span class="lineCov">      61708 :     if (auto field = getStructFieldRef(expr, mod)) {</span></a>
 <a name="1200"><span class="lineNum">    1200 </span><span class="lineCov">        570 :         return ensureStructBreakout(mod, field-&gt;first, field-&gt;second, getSourceInfo(expr));</span></a>
-<a name="1201"><span class="lineNum">    1201 </span><span class="lineCov">      61706 :     }</span></a>
+<a name="1201"><span class="lineNum">    1201 </span><span class="lineCov">      61708 :     }</span></a>
 <a name="1202"><span class="lineNum">    1202 </span>            : </a>
-<a name="1203"><span class="lineNum">    1203 </span><span class="lineCov">      61421 :     if (isReplicationOperation(expr)) {</span></a>
+<a name="1203"><span class="lineNum">    1203 </span><span class="lineCov">      61423 :     if (isReplicationOperation(expr)) {</span></a>
 <a name="1204"><span class="lineNum">    1204 </span><span class="lineCov">        533 :         std::string replicated_signal = promoteReplicationExpr(expr, mod, preferred_name, is_procedural, current_drivers);</span></a>
 <a name="1205"><span class="lineNum">    1205 </span><span class="lineCov">        533 :         if (!replicated_signal.empty()) return replicated_signal;</span></a>
 <a name="1206"><span class="lineNum">    1206 </span><span class="lineCov">        533 :     }</span></a>
 <a name="1207"><span class="lineNum">    1207 </span>            : </a>
-<a name="1208"><span class="lineNum">    1208 </span><span class="lineCov">      60888 :     if (isInverterOperation(expr)) {</span></a>
+<a name="1208"><span class="lineNum">    1208 </span><span class="lineCov">      60890 :     if (isInverterOperation(expr)) {</span></a>
 <a name="1209"><span class="lineNum">    1209 </span>            :         // `~(a &amp; b &amp; ...)` / `~(a | b | ...)` / `~(a ^ b ^ ...)` render as one</a>
 <a name="1210"><span class="lineNum">    1210 </span>            :         // NAND/NOR/XNOR gate with a negated-output bubble, not a separate</a>
 <a name="1211"><span class="lineNum">    1211 </span>            :         // inverter feeding a separate AND/OR/XOR node. (`~(a ~^ b)` is excluded:</a>
@@ -1290,12 +1290,12 @@
 <a name="1228"><span class="lineNum">    1228 </span><span class="lineCov">       3237 :         if (!inverted_signal.empty()) return inverted_signal;</span></a>
 <a name="1229"><span class="lineNum">    1229 </span><span class="lineCov">       3237 :     }</span></a>
 <a name="1230"><span class="lineNum">    1230 </span>            : </a>
-<a name="1231"><span class="lineNum">    1231 </span><span class="lineCov">      56091 :     if (isGateOperation(expr)) {</span></a>
+<a name="1231"><span class="lineNum">    1231 </span><span class="lineCov">      56093 :     if (isGateOperation(expr)) {</span></a>
 <a name="1232"><span class="lineNum">    1232 </span><span class="lineCov">       8060 :         std::string gate_signal = promoteGateExpr(expr, mod, preferred_name, is_procedural, current_drivers, false, expr);</span></a>
 <a name="1233"><span class="lineNum">    1233 </span><span class="lineCov">       8060 :         if (!gate_signal.empty()) return gate_signal;</span></a>
 <a name="1234"><span class="lineNum">    1234 </span><span class="lineCov">       8060 :     }</span></a>
 <a name="1235"><span class="lineNum">    1235 </span>            : </a>
-<a name="1236"><span class="lineNum">    1236 </span><span class="lineCov">      48152 :     if (isConditionalOperation(expr)) {</span></a>
+<a name="1236"><span class="lineNum">    1236 </span><span class="lineCov">      48154 :     if (isConditionalOperation(expr)) {</span></a>
 <a name="1237"><span class="lineNum">    1237 </span><span class="lineCov">        909 :         std::string mux_signal = promoteMuxExpr(expr, mod, preferred_name, is_procedural, current_drivers);</span></a>
 <a name="1238"><span class="lineNum">    1238 </span><span class="lineCov">        909 :         if (!mux_signal.empty()) return mux_signal;</span></a>
 <a name="1239"><span class="lineNum">    1239 </span><span class="lineCov">        909 :     }</span></a>
@@ -1307,18 +1307,18 @@
 <a name="1245"><span class="lineNum">    1245 </span>            :     // doesn't walk it either) and ends up naming its lone output port after the caller's</a>
 <a name="1246"><span class="lineNum">    1246 </span>            :     // `preferred_name` — a synthetic label, not the real signal — leaving a node with no</a>
 <a name="1247"><span class="lineNum">    1247 </span>            :     // real inputs standing in for a plain signal reference.</a>
-<a name="1248"><span class="lineNum">    1248 </span><span class="lineCov">      47243 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == vpiHierPath || isLiteralExpr(expr)) {</span></a>
-<a name="1249"><span class="lineNum">    1249 </span><span class="lineCov">      40213 :         return getSignalName(expr, current_drivers);</span></a>
+<a name="1248"><span class="lineNum">    1248 </span><span class="lineCov">      47245 :     if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == vpiHierPath || isLiteralExpr(expr)) {</span></a>
+<a name="1249"><span class="lineNum">    1249 </span><span class="lineCov">      40214 :         return getSignalName(expr, current_drivers);</span></a>
 <a name="1250"><span class="lineNum">    1250 </span>            :     }</a>
 <a name="1251"><span class="lineNum">    1251 </span>            : </a>
-<a name="1252"><span class="lineNum">    1252 </span><span class="lineCov">       7030 :     if (type == vpiBitSelect || type == vpiPartSelect || type == 606 || type == 607 || type == 130) {</span></a>
+<a name="1252"><span class="lineNum">    1252 </span><span class="lineCov">       7031 :     if (type == vpiBitSelect || type == vpiPartSelect || type == 606 || type == 607 || type == 130) {</span></a>
 <a name="1253"><span class="lineNum">    1253 </span><span class="lineCov">       3940 :         return processBusSelect(expr, mod);</span></a>
 <a name="1254"><span class="lineNum">    1254 </span>            :     }</a>
 <a name="1255"><span class="lineNum">    1255 </span>            : </a>
-<a name="1256"><span class="lineNum">    1256 </span><span class="lineCov">       3090 :     if (isAluOperation(expr)) {</span></a>
-<a name="1257"><span class="lineNum">    1257 </span><span class="lineCov">        557 :         std::string alu_signal = promoteAluExpr(expr, mod, preferred_name, is_procedural, current_drivers);</span></a>
-<a name="1258"><span class="lineNum">    1258 </span><span class="lineCov">        557 :         if (!alu_signal.empty()) return alu_signal;</span></a>
-<a name="1259"><span class="lineNum">    1259 </span><span class="lineCov">        557 :     }</span></a>
+<a name="1256"><span class="lineNum">    1256 </span><span class="lineCov">       3091 :     if (isAluOperation(expr)) {</span></a>
+<a name="1257"><span class="lineNum">    1257 </span><span class="lineCov">        558 :         std::string alu_signal = promoteAluExpr(expr, mod, preferred_name, is_procedural, current_drivers);</span></a>
+<a name="1258"><span class="lineNum">    1258 </span><span class="lineCov">        558 :         if (!alu_signal.empty()) return alu_signal;</span></a>
+<a name="1259"><span class="lineNum">    1259 </span><span class="lineCov">        558 :     }</span></a>
 <a name="1260"><span class="lineNum">    1260 </span>            : </a>
 <a name="1261"><span class="lineNum">    1261 </span><span class="lineCov">       2581 :     if (isComparatorOperation(expr)) {</span></a>
 <a name="1262"><span class="lineNum">    1262 </span><span class="lineCov">        723 :         std::string comparator_signal = promoteComparatorExpr(expr, mod, preferred_name, is_procedural, current_drivers);</span></a>

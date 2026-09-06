@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-06 04:09:42</td>
+            <td class="headerValue">2026-09-06 06:15:26</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -70,26 +70,26 @@
 <a name="8"><span class="lineNum">       8 </span>            : </a>
 <a name="9"><span class="lineNum">       9 </span>            : using json = nlohmann::json;</a>
 <a name="10"><span class="lineNum">      10 </span>            : </a>
-<a name="11"><span class="lineNum">      11 </span><span class="lineCov">       3409 : int main(int argc, char** argv) {</span></a>
-<a name="12"><span class="lineNum">      12 </span><span class="lineCov">       3409 :     if (argc &lt; 2) {</span></a>
+<a name="11"><span class="lineNum">      11 </span><span class="lineCov">       3408 : int main(int argc, char** argv) {</span></a>
+<a name="12"><span class="lineNum">      12 </span><span class="lineCov">       3408 :     if (argc &lt; 2) {</span></a>
 <a name="13"><span class="lineNum">      13 </span><span class="lineNoCov">          0 :         std::cerr &lt;&lt; &quot;Usage: &quot; &lt;&lt; argv[0] &lt;&lt; &quot; &lt;uhdm_file&gt; [target_module|--list-only]&quot; &lt;&lt; std::endl;</span></a>
 <a name="14"><span class="lineNum">      14 </span><span class="lineNoCov">          0 :         return 1;</span></a>
 <a name="15"><span class="lineNum">      15 </span>            :     }</a>
 <a name="16"><span class="lineNum">      16 </span>            : </a>
-<a name="17"><span class="lineNum">      17 </span><span class="lineCov">       3409 :     std::string filename = argv[1];</span></a>
-<a name="18"><span class="lineNum">      18 </span><span class="lineCov">       3409 :     std::string targetModule = (argc &gt;= 3) ? argv[2] : &quot;&quot;;</span></a>
-<a name="19"><span class="lineNum">      19 </span><span class="lineCov">       3409 :     std::string workspaceRoot = (argc &gt;= 4) ? argv[3] : &quot;&quot;;</span></a>
-<a name="20"><span class="lineNum">      20 </span><span class="lineCov">       3409 :     bool listOnly = (targetModule == &quot;--list-only&quot;);</span></a>
+<a name="17"><span class="lineNum">      17 </span><span class="lineCov">       3408 :     std::string filename = argv[1];</span></a>
+<a name="18"><span class="lineNum">      18 </span><span class="lineCov">       3408 :     std::string targetModule = (argc &gt;= 3) ? argv[2] : &quot;&quot;;</span></a>
+<a name="19"><span class="lineNum">      19 </span><span class="lineCov">       3408 :     std::string workspaceRoot = (argc &gt;= 4) ? argv[3] : &quot;&quot;;</span></a>
+<a name="20"><span class="lineNum">      20 </span><span class="lineCov">       3408 :     bool listOnly = (targetModule == &quot;--list-only&quot;);</span></a>
 <a name="21"><span class="lineNum">      21 </span>            :     </a>
-<a name="22"><span class="lineNum">      22 </span><span class="lineCov">       3409 :     UHDM::Serializer serializer;</span></a>
-<a name="23"><span class="lineNum">      23 </span><span class="lineCov">       3409 :     std::vector&lt;vpiHandle&gt; designs = serializer.Restore(filename);</span></a>
+<a name="22"><span class="lineNum">      22 </span><span class="lineCov">       3408 :     UHDM::Serializer serializer;</span></a>
+<a name="23"><span class="lineNum">      23 </span><span class="lineCov">       3408 :     std::vector&lt;vpiHandle&gt; designs = serializer.Restore(filename);</span></a>
 <a name="24"><span class="lineNum">      24 </span>            : </a>
-<a name="25"><span class="lineNum">      25 </span><span class="lineCov">       3409 :     if (designs.empty()) {</span></a>
+<a name="25"><span class="lineNum">      25 </span><span class="lineCov">       3408 :     if (designs.empty()) {</span></a>
 <a name="26"><span class="lineNum">      26 </span><span class="lineNoCov">          0 :         std::cerr &lt;&lt; &quot;Failed to restore UHDM design from &quot; &lt;&lt; filename &lt;&lt; std::endl;</span></a>
 <a name="27"><span class="lineNum">      27 </span><span class="lineNoCov">          0 :         return 1;</span></a>
 <a name="28"><span class="lineNum">      28 </span>            :     }</a>
 <a name="29"><span class="lineNum">      29 </span>            : </a>
-<a name="30"><span class="lineNum">      30 </span><span class="lineCov">       3409 :     if (listOnly) {</span></a>
+<a name="30"><span class="lineNum">      30 </span><span class="lineCov">       3408 :     if (listOnly) {</span></a>
 <a name="31"><span class="lineNum">      31 </span><span class="lineNoCov">          0 :         vpiHandle design = designs[0];</span></a>
 <a name="32"><span class="lineNum">      32 </span><span class="lineNoCov">          0 :         json output = json::object();</span></a>
 <a name="33"><span class="lineNum">      33 </span><span class="lineNoCov">          0 :         output[&quot;modules&quot;] = json::array();</span></a>
@@ -129,14 +129,14 @@
 <a name="67"><span class="lineNum">      67 </span><span class="lineNoCov">          0 :         return 0;</span></a>
 <a name="68"><span class="lineNum">      68 </span><span class="lineNoCov">          0 :     }</span></a>
 <a name="69"><span class="lineNum">      69 </span>            : </a>
-<a name="70"><span class="lineNum">      70 </span><span class="lineCov">       3409 :     svsch::DesignExtractor extractor(designs[0]);</span></a>
-<a name="71"><span class="lineNum">      71 </span><span class="lineCov">       3409 :     extractor.workspace_root = workspaceRoot;</span></a>
-<a name="72"><span class="lineNum">      72 </span><span class="lineCov">       3409 :     json output = extractor.extract(targetModule);</span></a>
+<a name="70"><span class="lineNum">      70 </span><span class="lineCov">       3408 :     svsch::DesignExtractor extractor(designs[0]);</span></a>
+<a name="71"><span class="lineNum">      71 </span><span class="lineCov">       3408 :     extractor.workspace_root = workspaceRoot;</span></a>
+<a name="72"><span class="lineNum">      72 </span><span class="lineCov">       3408 :     json output = extractor.extract(targetModule);</span></a>
 <a name="73"><span class="lineNum">      73 </span>            : </a>
-<a name="74"><span class="lineNum">      74 </span><span class="lineCov">       3409 :     std::cout &lt;&lt; output.dump(2) &lt;&lt; std::endl;</span></a>
+<a name="74"><span class="lineNum">      74 </span><span class="lineCov">       3408 :     std::cout &lt;&lt; output.dump(2) &lt;&lt; std::endl;</span></a>
 <a name="75"><span class="lineNum">      75 </span>            : </a>
-<a name="76"><span class="lineNum">      76 </span><span class="lineCov">       3409 :     return 0;</span></a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">       3409 : }</span></a>
+<a name="76"><span class="lineNum">      76 </span><span class="lineCov">       3408 :     return 0;</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">       3408 : }</span></a>
 </pre>
       </td>
     </tr>
