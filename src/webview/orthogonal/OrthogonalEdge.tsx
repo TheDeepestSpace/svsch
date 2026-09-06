@@ -883,7 +883,7 @@ export function OrthogonalEdge({
           shift/ctrl-click on each node), and hovering the Cut/Reroute control
           of a multi-wire selection. */}
       {(selected ||
-        (isGroupSelected && isLeaderInNet) ||
+        (isGroupSelected && (isLeaderInNet || isCutStub)) ||
         isPendingCutTarget ||
         isPendingRerouteTarget) && (
         <g className="svsch-edge-net-highlight-group">

@@ -283,6 +283,15 @@ struct AggregateSegment {
     int low = 0;
 };
 
+struct LoweredAggregate {
+    bool assigned = false;
+    LoweredValue value;
+    std::string tag;
+    SourceInfo source;
+    std::vector<AggregateSegment> lhsSegments;
+    int lhsSize = 0;
+};
+
 class DesignExtractor {
 public:
     DesignExtractor() = default;
@@ -332,10 +341,18 @@ private:
     vpiHandle findFirstCase(vpiHandle stmt);
     bool containsIf(vpiHandle stmt);
     void collectAssignmentTargets(vpiHandle stmt, std::set<std::string>& targets);
+    vpiHandle unwrapSingleStatement(vpiHandle stmt);
+    void collectAggregateTargetOrder(vpiHandle lhs, std::vector<std::string>& targets);
+    bool isUniformAggregateIfChain(vpiHandle stmt, std::vector<std::string>& targets, bool& needs_hold);
+    LoweredValue composeAggregateHoldValue(vpiHandle stmt, Module& mod, const LoweredAggregate& shape, const std::map<std::string, LoweredValue>& current_drivers);
+    LoweredValue lowerUniformAggregateIfTree(vpiHandle stmt, Module& mod, bool is_clocked, const LoweredValue& hold_value, const std::map<std::string, LoweredValue>& current_drivers, const std::string& aggregate_width, bool final_output);
+    std::optional<std::map<std::string, LoweredValue>> lowerUniformAggregateIfStatement(vpiHandle stmt, Module& mod, bool is_clocked, const std::map<std::string, std::string>& desired_outputs, vpiHandle source_handle, const std::map<std::string, LoweredValue>& current_drivers);
     std::map<std::string, LoweredValue> lowerStatement(vpiHandle stmt, Module& mod, bool is_clocked, const std::map<std::string, std::string>& desired_outputs, vpiHandle source_handle, const std::map<std::string, LoweredValue>& current_drivers = {});
     std::map<std::string, LoweredValue> lowerIfStatement(vpiHandle stmt, Module& mod, bool is_clocked, const std::map<std::string, std::string>& desired_outputs, vpiHandle source_handle, const std::map<std::string, LoweredValue>& current_drivers);
     std::map<std::string, LoweredValue> lowerCaseStatement(vpiHandle stmt, Module& mod, bool is_clocked, const std::map<std::string, std::string>& desired_outputs, vpiHandle source_handle, const std::map<std::string, LoweredValue>& current_drivers);
     LoweredValue lowerAssignment(vpiHandle assign_handle, Module& mod, const std::string& preferred_signal, bool is_clocked, const std::map<std::string, LoweredValue>& current_drivers = {});
+    LoweredAggregate lowerAggregateValue(vpiHandle assign_handle, Module& mod, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers = {});
+    std::map<std::string, LoweredValue> lowerAggregateBreakout(const LoweredAggregate& aggregate, Module& mod, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers = {}, const std::string& output_suffix = "", const std::map<std::string, std::string>& desired_outputs = {});
     std::map<std::string, LoweredValue> lowerAggregateAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers = {}, const std::string& output_suffix = "", const std::map<std::string, std::string>& desired_outputs = {});
     void ensureInferredLatch(Module& mod, const std::string& target, const std::string& input_signal, const std::string& width, vpiHandle source_handle);
     bool tryProcessArrayCompositionAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural);

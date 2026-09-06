@@ -1383,6 +1383,243 @@ void DesignExtractor::collectAssignmentTargets(vpiHandle stmt, std::set<std::str
     }
 }
 
+vpiHandle DesignExtractor::unwrapSingleStatement(vpiHandle stmt) {
+    while (stmt) {
+        int type = vpi_get(vpiType, stmt);
+        if (type != vpiBegin && type != vpiNamedBegin && type != vpiFork && type != vpiNamedFork) {
+            return stmt;
+        }
+
+        vpiHandle itr = vpi_iterate(vpiStmt, stmt);
+        if (!itr) return nullptr;
+        vpiHandle only = vpi_scan(itr);
+        vpiHandle extra = vpi_scan(itr);
+        vpi_release_handle(itr);
+        if (!only || extra) return nullptr;
+        stmt = only;
+    }
+    return nullptr;
+}
+
+void DesignExtractor::collectAggregateTargetOrder(vpiHandle lhs, std::vector<std::string>& targets) {
+    if (!lhs) return;
+    if (isConcatOperation(lhs)) {
+        for (vpiHandle operand : concatOperands(lhs)) {
+            collectAggregateTargetOrder(operand, targets);
+        }
+        return;
+    }
+
+    std::string target = getSignalName(lhs);
+    if (!target.empty()) targets.push_back(target);
+}
+
+bool DesignExtractor::isUniformAggregateIfChain(
+    vpiHandle stmt,
+    std::vector<std::string>& targets,
+    bool& needs_hold
+) {
+    stmt = unwrapSingleStatement(stmt);
+    if (!stmt) return false;
+    int type = vpi_get(vpiType, stmt);
+    if (type != vpiIf && type != vpiIfElse) return false;
+
+    auto matches_shape = [&](vpiHandle branch) {
+        branch = unwrapSingleStatement(branch);
+        if (!branch) return false;
+        int branch_type = vpi_get(vpiType, branch);
+        if (branch_type != vpiAssignment && branch_type != 84 && branch_type != 85) return false;
+
+        vpiHandle lhs = vpi_handle(vpiLhs, branch);
+        if (!isConcatOperation(lhs)) return false;
+        std::vector<std::string> branch_targets;
+        collectAggregateTargetOrder(lhs, branch_targets);
+        if (branch_targets.size() < 2) return false;
+        std::set<std::string> unique_targets(branch_targets.begin(), branch_targets.end());
+        if (unique_targets.size() != branch_targets.size()) return false;
+
+        if (targets.empty()) targets = branch_targets;
+        return branch_targets == targets;
+    };
+
+    if (!matches_shape(vpi_handle(vpiStmt, stmt))) return false;
+
+    vpiHandle false_stmt = vpi_handle(vpiElseStmt, stmt);
+    if (!false_stmt) {
+        needs_hold = true;
+        return true;
+    }
+
+    vpiHandle normalized_false = unwrapSingleStatement(false_stmt);
+    if (!normalized_false) return false;
+    int false_type = vpi_get(vpiType, normalized_false);
+    if (false_type == vpiIf || false_type == vpiIfElse) {
+        return isUniformAggregateIfChain(normalized_false, targets, needs_hold);
+    }
+    return matches_shape(normalized_false);
+}
+
+LoweredValue DesignExtractor::composeAggregateHoldValue(
+    vpiHandle stmt,
+    Module& mod,
+    const LoweredAggregate& shape,
+    const std::map<std::string, LoweredValue>& current_drivers
+) {
+    LoweredValue value;
+    if (!shape.assigned || shape.lhsSegments.empty()) return value;
+
+    std::string nid = nextId();
+    std::string hold_signal = "aggregate_hold_" + nid;
+    std::string tag = "aggregate_hold:" + std::to_string(getLine(stmt)) + ":" +
+        std::to_string(getCol(stmt)) + ":" + nid;
+
+    Node compose;
+    compose.id = sanitizeId("bus:" + mod.name + ":" + tag + ":compose");
+    compose.kind = "bus";
+    compose.label = "compose";
+    compose.source = getSourceInfo(stmt);
+    compose.metadata.expression = "[aggregate-compose]";
+    compose.metadata.reason = "implicit aggregate hold";
+    compose.metadata.isProcedural = true;
+    compose.ports.push_back({"out", "output", hold_signal, shape.value.width, "out"});
+
+    int current_bit = shape.lhsSize - 1;
+    for (size_t i = 0; i < shape.lhsSegments.size(); ++i) {
+        const auto& segment = shape.lhsSegments[i];
+        int size = std::max(1, segment.size);
+        std::string label = size > 1
+            ? "[" + std::to_string(current_bit) + ":" + std::to_string(current_bit - size + 1) + "]"
+            : "[" + std::to_string(current_bit) + "]";
+        std::string signal = segment.signal;
+        auto current = current_drivers.find(segment.signal);
+        if (current != current_drivers.end() && current->second.assigned) {
+            signal = current->second.signal;
+        }
+        compose.ports.push_back({"hold" + std::to_string(i), "input", signal, segment.width, label});
+        current_bit -= size;
+    }
+    mod.nodes.push_back(compose);
+    return {true, hold_signal, shape.value.width};
+}
+
+LoweredValue DesignExtractor::lowerUniformAggregateIfTree(
+    vpiHandle stmt,
+    Module& mod,
+    bool is_clocked,
+    const LoweredValue& hold_value,
+    const std::map<std::string, LoweredValue>& current_drivers,
+    const std::string& aggregate_width,
+    bool final_output
+) {
+    stmt = unwrapSingleStatement(stmt);
+    if (!stmt) return {};
+
+    vpiHandle cond = vpi_handle(vpiCondition, stmt);
+    vpiHandle true_stmt = unwrapSingleStatement(vpi_handle(vpiStmt, stmt));
+    vpiHandle false_stmt = vpi_handle(vpiElseStmt, stmt);
+
+    auto true_aggregate = lowerAggregateValue(true_stmt, mod, is_clocked, current_drivers);
+    if (!true_aggregate.assigned) return {};
+
+    LoweredValue false_value = hold_value;
+    if (false_stmt) {
+        vpiHandle normalized_false = unwrapSingleStatement(false_stmt);
+        int false_type = normalized_false ? vpi_get(vpiType, normalized_false) : 0;
+        if (false_type == vpiIf || false_type == vpiIfElse) {
+            false_value = lowerUniformAggregateIfTree(
+                normalized_false, mod, is_clocked, hold_value, current_drivers,
+                aggregate_width, false);
+        } else {
+            auto false_aggregate = lowerAggregateValue(
+                normalized_false, mod, is_clocked, current_drivers);
+            false_value = false_aggregate.value;
+        }
+    }
+    if (!false_value.assigned) return {};
+
+    std::string sel_signal = getOrPromoteExpr(
+        cond, mod, "if_sel_" + nextId(), is_clocked, current_drivers);
+    std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
+    if (sel_width.empty()) sel_width = getWidth(cond);
+
+    std::string nid = nextId();
+    std::string output_signal = (final_output ? "aggregate_next_" : "aggregate_if_") + nid;
+    Node mux;
+    mux.id = sanitizeId("mux:" + mod.name + ":aggregate:" + sel_signal + ":" + output_signal);
+    mux.kind = "mux";
+    mux.label = "if " + sel_signal;
+    mux.source = getSourceInfo(stmt);
+    const char* sel_expr = vpi_get_str(vpiDecompile, cond);
+    if (sel_expr) mux.metadata.expression = sel_expr;
+    mux.metadata.isProcedural = true;
+    mux.ports.push_back({"sel", "input", sel_signal, sel_width});
+    mux.ports.push_back({"true", "input", true_aggregate.value.signal, true_aggregate.value.width, "true"});
+    mux.ports.push_back({"false", "input", false_value.signal, false_value.width, "false"});
+    mux.ports.push_back({"out", "output", output_signal, aggregate_width});
+    mod.nodes.push_back(mux);
+    return {true, output_signal, aggregate_width};
+}
+
+std::optional<std::map<std::string, LoweredValue>>
+DesignExtractor::lowerUniformAggregateIfStatement(
+    vpiHandle stmt,
+    Module& mod,
+    bool is_clocked,
+    const std::map<std::string, std::string>& desired_outputs,
+    vpiHandle source_handle,
+    const std::map<std::string, LoweredValue>& current_drivers
+) {
+    if (!is_clocked) return std::nullopt;
+
+    std::vector<std::string> targets;
+    bool needs_hold = false;
+    if (!isUniformAggregateIfChain(stmt, targets, needs_hold)) return std::nullopt;
+
+    vpiHandle root = unwrapSingleStatement(stmt);
+    vpiHandle first_assignment = root
+        ? unwrapSingleStatement(vpi_handle(vpiStmt, root))
+        : nullptr;
+    vpiHandle lhs = first_assignment ? vpi_handle(vpiLhs, first_assignment) : nullptr;
+    auto lhs_segments = flattenAggregateSegments(
+        lhs, mod, true, is_clocked, "aggregate_if_shape", current_drivers);
+    if (lhs_segments.size() != targets.size()) return std::nullopt;
+
+    int lhs_size = 0;
+    for (const auto& segment : lhs_segments) lhs_size += std::max(1, segment.size);
+    if (lhs_size <= 0) return std::nullopt;
+    std::string aggregate_width = lhs_size > 1
+        ? "[" + std::to_string(lhs_size - 1) + ":0]"
+        : "[0:0]";
+
+    std::string nid = nextId();
+    LoweredAggregate shape;
+    shape.assigned = true;
+    shape.value = {true, "", aggregate_width};
+    shape.tag = "aggregate_if:" + std::to_string(getLine(stmt)) + ":" +
+        std::to_string(getCol(stmt)) + ":" + nid;
+    shape.source = getSourceInfo(stmt ? stmt : source_handle);
+    shape.lhsSegments = std::move(lhs_segments);
+    shape.lhsSize = lhs_size;
+
+    LoweredValue hold_value;
+    if (needs_hold) {
+        hold_value = composeAggregateHoldValue(stmt, mod, shape, current_drivers);
+    }
+    LoweredValue mux_value = lowerUniformAggregateIfTree(
+        stmt, mod, is_clocked, hold_value, current_drivers, aggregate_width, true);
+    if (!mux_value.assigned) return std::nullopt;
+    shape.value = mux_value;
+
+    std::map<std::string, std::string> aggregate_outputs = desired_outputs;
+    for (const auto& target : targets) {
+        if (!aggregate_outputs.count(target)) {
+            aggregate_outputs[target] = target + "_branch_" + nextId();
+        }
+    }
+    return lowerAggregateBreakout(
+        shape, mod, is_clocked, current_drivers, "", aggregate_outputs);
+}
+
 LoweredValue DesignExtractor::lowerAssignment(vpiHandle assign_handle, Module& mod, const std::string& preferred_signal, bool is_clocked, const std::map<std::string, LoweredValue>& current_drivers) {
     LoweredValue value;
     vpiHandle lhs = vpi_handle(vpiLhs, assign_handle);
@@ -1547,6 +1784,11 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
     vpiHandle source_handle,
     const std::map<std::string, LoweredValue>& current_drivers
 ) {
+    if (auto aggregate_result = lowerUniformAggregateIfStatement(
+            stmt, mod, is_clocked, desired_outputs, source_handle, current_drivers)) {
+        return *aggregate_result;
+    }
+
     std::map<std::string, LoweredValue> result = current_drivers;
     vpiHandle cond = vpi_handle(vpiCondition, stmt);
     vpiHandle true_stmt = vpi_handle(vpiStmt, stmt);
