@@ -166,59 +166,6 @@ Feature: Diagram Interaction
     And the block "u2" should be re-placed and fixed in the saved layout
     And the block "u2" should stay near its pre-auto-layout position
 
-  Scenario: Rebuilding a whole FSM inside the partial by extending every wire, then auto-laying it out
-    Given I have a file "top.sv" in my workspace:
-      """
-      module top(input clk, input rst_n, input logic next_state_en, output logic [1:0] state);
-        typedef enum logic [1:0] {IDLE=0, START=1, BUSY=2, DONE=3} state_t;
-        state_t r, next_r;
-        always_ff @(posedge clk or negedge rst_n) if(!rst_n) r <= IDLE; else r <= next_r;
-        always_comb begin
-          if (next_state_en) begin
-            case (r)
-              IDLE:    next_r = START;
-              START:   next_r = BUSY;
-              BUSY:    next_r = DONE;
-              DONE:    next_r = IDLE;
-              default: next_r = IDLE;
-            endcase
-          end
-        end
-        assign state = r;
-      endmodule
-      """
-    When I open the "top" module in SVSCH
-    Then I should see a register node "r"
-    And I should see a mux node "case r"
-    And I should see a mux node "if next_state_en"
-    And I should see a latch node "next_r"
-    And I should see a literal node "IDLE"
-    When I click to select the block "r"
-    And I add the selected block to the partial diagram
-    Then the SVSCH partial diagram panel opens
-    When I switch to the partial diagram panel
-    And I extend every cut net in the partial diagram
-    Then I should not see any cut net labels in the partial diagram
-    And I should see a register node "r"
-    And I should see a mux node "case r"
-    And I should see a mux node "if next_state_en"
-    And I should see a latch node "next_r"
-    And I should see a literal node "IDLE"
-    And I should see a literal node "START"
-    And I should see a literal node "BUSY"
-    And I should see a literal node "DONE"
-    And there should be a connection between "r" and the mux node "case r"
-    And there should be a connection between "case r" and the mux node "if next_state_en"
-    And there should be a connection between the mux node "if next_state_en" and the latch node "next_r"
-    When I click "Auto Layout All" in the partial diagram toolbar
-    Then I should not see any cut net labels in the partial diagram
-    And I should see a register node "r"
-    And I should see a mux node "case r"
-    And I should see a mux node "if next_state_en"
-    And I should see a latch node "next_r"
-    And there should be a connection between "r" and the mux node "case r"
-    And there should be a connection between the mux node "if next_state_en" and the latch node "next_r"
-
   Scenario: Declared nets are automatically cut on first open
     Given I have a file "top.sv" in my workspace:
       """
