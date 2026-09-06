@@ -187,7 +187,12 @@ test.describe('Add to Partial — every supported node kind', () => {
           hasText: 'Add to Partial',
         });
         await expect(addToPartialButton).toBeVisible();
-        await addToPartialButton.click();
+        // force: true for the same reason as clickSystemNode above — the
+        // floating selection toolbar can sit over the canvas's own
+        // pointer-catching pane (or a hovering module-parameter tooltip) at
+        // these un-auto-laid-out positions. The countPartialPaneBlocks poll
+        // right below still verifies the click actually did something.
+        await addToPartialButton.click({ force: true });
 
         await expect
           .poll(() => countPartialPaneBlocks(workbox), { timeout: 30_000 })
