@@ -200,6 +200,18 @@ test.describe('Add to Partial — every supported node kind', () => {
         await workbox.waitForTimeout(300);
         await expect(workbox).toHaveScreenshot(`partial-diagram-node-${targetKind}.png`);
 
+        // Undo the merge from above: split the partial editor back into its
+        // own group now that the screenshot is taken. Leaving it merged into
+        // the main diagram's group backgrounds the main webview (it's no
+        // longer the active tab in that group), and without
+        // retainContextWhenHidden it gets torn down — the next loop
+        // iteration's findSystemNodeId(mainWebview, ...) then times out
+        // waiting on a main diagram that has to fully re-render from scratch.
+        await evaluateInVSCode((vscode) =>
+          vscode.commands.executeCommand('workbench.action.splitEditorRight'),
+        );
+        await workbox.waitForTimeout(300);
+
         // Every case reuses module name "top" (that's what the syntax book's
         // fixtures are all called) but with entirely different content each
         // time. PartialDiagramPanel only restarts its state when the source
