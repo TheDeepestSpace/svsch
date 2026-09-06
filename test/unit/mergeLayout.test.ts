@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import { runParser } from '../helper';
 import {
   buildViewModel,
+  cutStubRouteAroundSizeOverrides,
   defaultNetCutLabel,
   elkNodeForDiagramNode,
   elkRoutingNodeForDiagramNode,
@@ -25,6 +26,7 @@ import {
   mergeRerouteLayout,
   removeNetCut,
   renameCutNet,
+  renderedLeadPoint,
   resetCutLabelPosition,
   revertCutNetLabel,
   revertNodeSize,
@@ -1056,6 +1058,88 @@ describe('layout merge', () => {
         expect(overriddenMaxY).toBeGreaterThan(baselineMaxY);
       },
     );
+
+    // Regression for a report on #393: same-row expanded frames commonly
+    // share a top/bottom edge (ELK lays same-layer nodes out at the same y),
+    // so a detour lane picked to clear the frame it's routing around can
+    // still run flush along a second, unrelated frame that merely happens to
+    // sit at the same row. cutStubRouteAroundSizeOverrides must reject that
+    // lane and fall through to one that actually clears every frame.
+    it('keeps a cut-stub detour clear of an unrelated same-row expanded frame', () => {
+      const nodesById = new Map<string, DiagramNode>();
+      const nodePositions = new Map<string, { x: number; y: number }>();
+
+      const sourceId = 'port:src';
+      nodesById.set(sourceId, {
+        id: sourceId,
+        kind: 'port',
+        label: 'y',
+        ports: [{ id: 'y', name: 'y', direction: 'input' }],
+      });
+      nodePositions.set(sourceId, { x: -576, y: -300 });
+      const sourceLead = renderedLeadPoint(
+        sourceId,
+        'y',
+        nodesById,
+        nodePositions,
+        true,
+        'source',
+      )!;
+
+      const labelId = 'cut-label:src:y';
+      nodesById.set(labelId, {
+        id: labelId,
+        kind: 'netLabel',
+        label: 'mem_to_reg',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+      });
+      // The label sits flush against the "in the way" frame's right edge —
+      // an ordinary consequence of column-snapped layout, not something the
+      // detour chose. It must not count against the frame it's pinned to.
+      nodePositions.set(labelId, { x: 840, y: sourceLead.point.y - 24 });
+
+      // The frame directly between source and label — the direct route runs
+      // straight through it, so this is the one the detour must route around.
+      const inTheWayId = 'instance:in-the-way';
+      nodePositions.set(inTheWayId, { x: -192, y: -360 });
+      // A second, unrelated frame far off to the side. Its own "clear the
+      // bottom edge by a grid" lane lands exactly on the in-the-way frame's
+      // top edge, since both frames are 288 tall and one grid (24) apart in
+      // y — this is what previously let the detour hug in-the-way's border.
+      const unrelatedId = 'instance:unrelated';
+      nodePositions.set(unrelatedId, { x: 2544, y: -672 });
+
+      const sizeOverrides = {
+        [inTheWayId]: { width: 1032, height: 288 },
+        [unrelatedId]: { width: 1032, height: 288 },
+      };
+      for (const id of [inTheWayId, unrelatedId]) {
+        nodesById.set(id, {
+          id,
+          kind: 'instance',
+          label: id,
+          ports: [{ id: 'y', name: 'y', direction: 'output' }],
+          sizeOverride: { width: 1032 / 24, height: 288 / 24 },
+        });
+      }
+
+      const edge: DiagramEdge = {
+        id: 'cut-stub:src:y:source',
+        source: sourceId,
+        sourcePort: 'y',
+        target: labelId,
+        targetPort: 'cut',
+      };
+
+      const route = cutStubRouteAroundSizeOverrides(edge, sizeOverrides, nodesById, nodePositions);
+      expect(route).toBeDefined();
+      const inTheWayTop = -360;
+      const inTheWayBottom = -360 + 288;
+      // The detour's horizontal run must clear in-the-way's top edge by a
+      // full grid, not just avoid its interior.
+      const laneY = route!.find((point) => point.y !== route![0].y)!.y;
+      expect(laneY <= inTheWayTop - diagramSizing.gridSize || laneY >= inTheWayBottom).toBe(true);
+    });
   });
 
   it('preserves saved node positions on the snap grid', async () => {

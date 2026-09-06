@@ -40,7 +40,7 @@ import {
   interfaceTopPortX,
 } from '../diagram/interfaceGeometry';
 import { routeDiagramWithLibavoid } from './libavoidRouter';
-import { routingObstacleMargins } from './routingObstacleGeometry';
+import { ROUTING_OBSTACLE_MARGIN, routingObstacleMargins } from './routingObstacleGeometry';
 import { isInputSidePort } from '../diagram/portDirection';
 
 interface AutoLayoutResult {
@@ -2940,7 +2940,7 @@ function directRenderedLeadRoute(
 // case synthesize the shortest single-lane detour around the transient frame
 // rectangles. Keeping this scoped to size overrides preserves the ordinary
 // cut appearance everywhere else.
-function cutStubRouteAroundSizeOverrides(
+export function cutStubRouteAroundSizeOverrides(
   edge: DiagramEdge,
   sizeOverrides: Record<string, { width: number; height: number }> | undefined,
   nodesById: Map<string, DiagramNode>,
@@ -2988,6 +2988,34 @@ function cutStubRouteAroundSizeOverrides(
   const currentRoute = edge.routePoints?.length ? edge.routePoints : direct;
   if (!intersects(currentRoute)) return undefined;
 
+  // Preferred over the plain interior check above: a candidate lane is
+  // picked to clear whichever frame *triggered* the detour by a full grid,
+  // but two same-row expanded frames commonly share a top/bottom edge, so a
+  // lane clearing one can still run flush along another's border — plain
+  // interior intersection (segmentIntersectsRectInterior's epsilon excludes
+  // the boundary itself) would wave that lane through. Only the lanes'
+  // straight run needs this stricter clearance; the short connector into a
+  // pinned endpoint may legitimately sit this close to a frame the endpoint
+  // itself already abuts, so it's checked with the plain obstacles instead.
+  const clearanceObstacles = obstacles.map((rect) => ({
+    x: rect.x - ROUTING_OBSTACLE_MARGIN,
+    y: rect.y - ROUTING_OBSTACLE_MARGIN,
+    width: rect.width + ROUTING_OBSTACLE_MARGIN * 2,
+    height: rect.height + ROUTING_OBSTACLE_MARGIN * 2,
+  }));
+  const laneIsClear = (route: Array<{ x: number; y: number }>) => {
+    for (let index = 1; index <= route.length - 3; index += 1) {
+      if (
+        clearanceObstacles.some((rect) =>
+          segmentIntersectsRectInterior(route[index], route[index + 1], rect),
+        )
+      ) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   const source = direct[0];
   const target = direct[direct.length - 1];
   const grid = diagramSizing.gridSize;
@@ -3014,9 +3042,11 @@ function cutStubRouteAroundSizeOverrides(
         makeOrthogonalRoute([source, { x, y: source.y }, { x, y: target.y }, target]),
       ),
     ),
-  ].sort((a, b) => routeManhattanLength(a) - routeManhattanLength(b));
+  ]
+    .filter((candidate) => !intersects(candidate))
+    .sort((a, b) => routeManhattanLength(a) - routeManhattanLength(b));
 
-  return candidates.find((candidate) => !intersects(candidate));
+  return candidates.find(laneIsClear) ?? candidates[0];
 }
 
 function directLeadRoute(
