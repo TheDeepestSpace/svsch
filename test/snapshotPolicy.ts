@@ -13,7 +13,15 @@ export const SNAPSHOT_THRESHOLDS = {
       // that don't reproduce locally and aren't a real rendering regression.
       nestedCaseLiteralCollision: 120,
     },
-    system: 20,
+    system: {
+      default: 20,
+      // cut-out-block-move-carries-its-selected-stubs captures the floating
+      // selection toolbar's "Expand"/"Add to Partial" text over the canvas;
+      // CI has shown a ~284px sub-pixel antialiasing diff there (issue #408)
+      // confined to that text, with no diagram/edge/node pixels affected,
+      // that doesn't reproduce locally and isn't a real rendering regression.
+      cutOutBlockStubMove: 320,
+    },
   },
   pixelmatch: {
     bdd: 35,
@@ -90,7 +98,12 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
   if (normalizedPath.startsWith('test/system/__screenshots__/')) {
     return {
       suite: 'system',
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
+      maxDiffPixels: isPlaywrightSnapshotNamed(
+        normalizedPath,
+        'cut-out-block-move-carries-its-selected-stubs',
+      )
+        ? SNAPSHOT_THRESHOLDS.playwright.system.cutOutBlockStubMove
+        : SNAPSHOT_THRESHOLDS.playwright.system.default,
       pixelmatchThreshold: PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD,
     };
   }

@@ -33,7 +33,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     toHaveScreenshot: {
       // Repeated full-window renders differed by at most 119 pixels. Keep a
       // small buffer for Electron anti-aliasing without masking UI changes.
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system.default,
     },
   },
   use: {
