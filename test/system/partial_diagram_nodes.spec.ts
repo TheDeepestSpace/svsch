@@ -470,7 +470,16 @@ async function clickSystemNode(webview: FrameLocator, nodeId: string): Promise<v
   // case's editor-group merge/split from above is still settling — can go
   // stale and land the click on whatever now occupies those coordinates
   // instead of retrying against the node's current position.
-  await webview.locator(`.react-flow__node[data-id="${nodeId}"]`).click();
+  //
+  // force: true because several syntax-book fixtures render their nodes at
+  // their raw, un-auto-laid-out positions (this loop never runs "Auto Layout
+  // All"), which lets an adjacent node's real, visible hitbox genuinely and
+  // persistently overlap this one — not a transient animation Playwright's
+  // default retrying would resolve on its own. The .selected poll right
+  // below still verifies the click actually landed on the intended node.
+  const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
+  await node.waitFor({ state: 'visible' });
+  await node.click({ force: true });
 
   await expect
     .poll(
