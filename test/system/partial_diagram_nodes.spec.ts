@@ -168,6 +168,21 @@ test.describe('Add to Partial — every supported node kind', () => {
           .poll(() => countPartialPaneBlocks(workbox), { timeout: 30_000 })
           .toBeGreaterThan(partialBlocksBefore ?? 0);
 
+        const partialTabs = workbox.locator(
+          '.tab[aria-label*="SVSCH Partial Diagram"], .tab[title*="SVSCH Partial Diagram"]',
+        );
+        // The pane opens beside the main diagram (ViewColumn.Beside, see
+        // src/partialDiagramPanel.ts), splitting the window in two. Move it
+        // into the main diagram's own tab group so the screenshot below
+        // captures the partial diagram at full window width while it's being
+        // assembled, rather than a half-width split view.
+        await partialTabs.first().click();
+        await evaluateInVSCode((vscode) =>
+          vscode.commands.executeCommand('workbench.action.moveEditorToFirstGroup'),
+        );
+        // Let the now-single-group relayout settle before the next capture.
+        await workbox.waitForTimeout(300);
+
         const partialFrameIndex = await findFrameIndex(workbox, 'partial');
         const partialWebview = workbox
           .frameLocator('iframe.webview')
@@ -192,9 +207,6 @@ test.describe('Add to Partial — every supported node kind', () => {
         // src/partialDiagramPanel.ts), so close the pane after each case
         // instead of relying on that name-based reset — the next "Add to
         // Partial" click then always builds a genuinely fresh pane.
-        const partialTabs = workbox.locator(
-          '.tab[aria-label*="SVSCH Partial Diagram"], .tab[title*="SVSCH Partial Diagram"]',
-        );
         await partialTabs.first().click();
         await workbox.waitForTimeout(300);
         await evaluateInVSCode((vscode) =>
