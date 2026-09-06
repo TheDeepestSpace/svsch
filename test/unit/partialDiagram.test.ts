@@ -158,6 +158,38 @@ describe('buildPartialViewModel', () => {
   });
 });
 
+// port:d fans out to comb_a and comb_b on the same net — resolveExtendTarget
+// should pull in every branch at once (there's no partially-cut-net mechanic).
+const fanoutModule: DesignModule = {
+  name: 'fan',
+  file: 'fan.sv',
+  ports: [],
+  nodes: [
+    {
+      id: 'port:d',
+      kind: 'port',
+      label: 'd',
+      ports: [{ id: 'p:d', name: 'd', direction: 'input' }],
+    },
+    {
+      id: 'comb_a',
+      kind: 'comb',
+      label: 'comb_a',
+      ports: [{ id: 'in', name: 'in', direction: 'input' }],
+    },
+    {
+      id: 'comb_b',
+      kind: 'comb',
+      label: 'comb_b',
+      ports: [{ id: 'in', name: 'in', direction: 'input' }],
+    },
+  ],
+  edges: [
+    { id: 'e-d-comb_a', source: 'port:d', target: 'comb_a', sourcePort: 'p:d', targetPort: 'in' },
+    { id: 'e-d-comb_b', source: 'port:d', target: 'comb_b', sourcePort: 'p:d', targetPort: 'in' },
+  ],
+};
+
 describe('resolveExtendTarget', () => {
   const state: PartialDiagramState = {
     sourceModuleName: 'top',
@@ -168,6 +200,16 @@ describe('resolveExtendTarget', () => {
   it('resolves the far end of the clicked label edge', () => {
     const target = resolveExtendTarget(sourceModule, state, 'reg1:q', 'e-reg1-comb1');
     expect(target?.newNodeIds).toEqual(['comb1']);
+  });
+
+  it('pulls in every branch of a fanout net at once, not just the clicked one', () => {
+    const fanoutState: PartialDiagramState = {
+      sourceModuleName: 'fan',
+      includedNodeIds: ['comb_a'],
+      tiedNetKeys: [],
+    };
+    const target = resolveExtendTarget(fanoutModule, fanoutState, 'port:d:p:d', 'e-d-comb_a');
+    expect(new Set(target?.newNodeIds)).toEqual(new Set(['port:d', 'comb_b']));
   });
 
   it('falls back to the net boundary edge without an originalEdgeId', () => {

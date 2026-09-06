@@ -175,16 +175,11 @@ Feature: Partial diagram
     When I click the extend arrow on the cut net "dflt"
     Then I should see a port node "dflt"
     And there should be a connection between "dflt" and the mux node "case sel_a"
-    # "dflt" still feeds "case sel_b" too — tying the branch that was just
-    # extended must not silently drop the other one; a fresh cut end for it
-    # stays on "dflt" until that branch is extended on its own.
-    And I should not see a mux node "case sel_b"
-    And I should see 1 cut net labels named "dflt"
-    When I click the extend arrow on the cut net "dflt"
-    Then I should see a mux node "case sel_b"
-    And there should be a connection between "dflt" and the mux node "case sel_a"
+    # A net is either fully cut or fully tied — there's no partially-cut-net
+    # mechanic — so extending "dflt" brings in every node it fanouts to in one
+    # step, not just the branch that was clicked.
+    And I should see a mux node "case sel_b"
     And there should be a connection between "dflt" and the mux node "case sel_b"
-    # Every branch of the fanout is now tied — no cut end is left on "dflt".
     # The muxes' own other nets (selects, outputs, literal feeds) stay cut:
     # extending one net never silently pulls in the rest of the module.
     And I should not see cut net labels named "dflt"

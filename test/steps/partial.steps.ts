@@ -160,11 +160,12 @@ Then(
 // latch) get an anonymous "NET_n" fallback label (see defaultNetCutLabel in
 // mergeLayout.ts) whose exact text and numbering shift as the partial grows,
 // so asserting against it here would be asserting an implementation detail
-// rather than the feature. A successful extend either pulls in a new real
-// block (the far end of that label's own edge — see extendNet in
-// partialDiagramPanel.ts) or, when both ends are already included, just ties
-// the net and drops its cut labels — so the poll below waits for either the
-// block count to grow or the set of cut labels to change.
+// rather than the feature. A successful extend either pulls in every node the
+// net touches that isn't already included (a fanout net comes in whole, not
+// branch by branch — see resolveExtendTarget in partialDiagram.ts) or, when
+// every end is already included, just ties the net and drops its cut labels —
+// so the poll below waits for either the block count to grow or the set of
+// cut labels to change.
 When('I extend every cut net in the partial diagram', async function (this: BddWorld) {
   const netLabels = this.webviewPage.locator('[data-node-kind="netLabel"]');
   const labelIdsSnapshot = () =>

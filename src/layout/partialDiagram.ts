@@ -314,11 +314,16 @@ export async function buildPartialViewModel(
 
 /**
  * Resolves what an "extend" click on a cut end means against the *source*
- * module's full edge list: which node sits on the other end of the net, and
- * therefore which node joins the partial when this net is tied. Prefers the
- * exact edge the clicked label was derived from (originalEdgeId); falls back
- * to the net's first boundary edge. `newNodeIds` is empty when both ends are
- * already included — the extend then just ties the net.
+ * module's full edge list: which node the clicked label was derived from
+ * (used to pick the label's rendered edge style), and which nodes join the
+ * partial when this net is tied. Since a net is either fully cut or fully
+ * tied — there's no partially-cut-net mechanic — tying a fanout net brings in
+ * *every* node it touches in one step, not just the branch the user clicked;
+ * otherwise the still-outside branches would be left with a hanging cut end
+ * on an already-tied net. Prefers the exact edge the clicked label was
+ * derived from (originalEdgeId) for that display edge; falls back to the
+ * net's first boundary edge. `newNodeIds` is empty when every node on the net
+ * is already included — the extend then just ties the net.
  */
 export function resolveExtendTarget(
   sourceModule: DesignModule,
@@ -339,7 +344,7 @@ export function resolveExtendTarget(
   const boundary = netEdges.find((edge) => included.has(edge.source) !== included.has(edge.target));
   const edge = preferred ?? boundary ?? netEdges[0];
   const nodeIds = new Set(sourceModule.nodes.map((node) => node.id));
-  const newNodeIds = [...new Set([edge.source, edge.target])].filter(
+  const newNodeIds = [...new Set(netEdges.flatMap((e) => [e.source, e.target]))].filter(
     (id) => !included.has(id) && nodeIds.has(id),
   );
   return { edge, newNodeIds };
