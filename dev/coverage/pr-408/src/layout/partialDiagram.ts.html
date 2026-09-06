@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.95% </span>
+                <span class="strong">97% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>95/99</span>
+                <span class='fraction'>97/100</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">94.73% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>16/18</span>
+                <span class='fraction'>18/19</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.74% </span>
+                <span class="strong">96.8% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>90/94</span>
+                <span class='fraction'>91/94</span>
             </div>
         
             
@@ -409,7 +409,12 @@
 <a name='L344'></a><a href='#L344'>344</a>
 <a name='L345'></a><a href='#L345'>345</a>
 <a name='L346'></a><a href='#L346'>346</a>
-<a name='L347'></a><a href='#L347'>347</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L347'></a><a href='#L347'>347</a>
+<a name='L348'></a><a href='#L348'>348</a>
+<a name='L349'></a><a href='#L349'>349</a>
+<a name='L350'></a><a href='#L350'>350</a>
+<a name='L351'></a><a href='#L351'>351</a>
+<a name='L352'></a><a href='#L352'>352</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -737,23 +742,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type {
   DesignGraph,
@@ -1071,11 +1081,16 @@ export async function buildPartialViewModel(
 &nbsp;
 /**
  * Resolves what an "extend" click on a cut end means against the *source*
- * module's full edge list: which node sits on the other end of the net, and
- * therefore which node joins the partial when this net is tied. Prefers the
- * exact edge the clicked label was derived from (originalEdgeId); falls back
- * to the net's first boundary edge. `newNodeIds` is empty when both ends are
- * already included — the extend then just ties the net.
+ * module's full edge list: which node the clicked label was derived from
+ * (used to pick the label's rendered edge style), and which nodes join the
+ * partial when this net is tied. Since a net is either fully cut or fully
+ * tied — there's no partially-cut-net mechanic — tying a fanout net brings in
+ * *every* node it touches in one step, not just the branch the user clicked;
+ * otherwise the still-outside branches would be left with a hanging cut end
+ * on an already-tied net. Prefers the exact edge the clicked label was
+ * derived from (originalEdgeId) for that display edge; falls back to the
+ * net's first boundary edge. `newNodeIds` is empty when every node on the net
+ * is already included — the extend then just ties the net.
  */
 export function resolveExtendTarget(
   sourceModule: DesignModule,
@@ -1086,7 +1101,7 @@ export function resolveExtendTarget(
   const included = new Set(state.includedNodeIds);
   const netEdges = sourceModule.edges
     .filter((edge) =&gt; edgeNetKey(edge) === netKey)
-    .<span class="fstat-no" title="function not covered" >sort((a</span>, b) =&gt; <span class="cstat-no" title="statement not covered" >a.id.localeCompare(b.id))</span>;
+    .sort((a, b) =&gt; a.id.localeCompare(b.id));
   if (netEdges.length === 0) {
     return undefined;
   }
@@ -1096,7 +1111,7 @@ export function resolveExtendTarget(
   const boundary = netEdges.find((edge) =&gt; included.has(edge.source) !== included.has(edge.target));
   const edge = preferred ?? boundary ?? <span class="branch-2 cbranch-no" title="branch not covered" >netEdges[0];</span>
   const nodeIds = new Set(sourceModule.nodes.map((node) =&gt; node.id));
-  const newNodeIds = [...new Set([edge.source, edge.target])].filter(
+  const newNodeIds = [...new Set(netEdges.flatMap((e) =&gt; [e.source, e.target]))].filter(
     (id) =&gt; !included.has(id) &amp;&amp; nodeIds.has(id),
   );
   return { edge, newNodeIds };
@@ -1108,7 +1123,7 @@ export function resolveExtendTarget(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-06T00:54:25.497Z
+                at 2026-09-06T03:15:39.226Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

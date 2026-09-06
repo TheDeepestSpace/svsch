@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/1097</span>
+                <span class='fraction'>0/1107</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/727</span>
+                <span class='fraction'>0/731</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/259</span>
+                <span class='fraction'>0/260</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/942</span>
+                <span class='fraction'>0/951</span>
             </div>
         
             
@@ -2978,7 +2978,28 @@
 <a name='L2913'></a><a href='#L2913'>2913</a>
 <a name='L2914'></a><a href='#L2914'>2914</a>
 <a name='L2915'></a><a href='#L2915'>2915</a>
-<a name='L2916'></a><a href='#L2916'>2916</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L2916'></a><a href='#L2916'>2916</a>
+<a name='L2917'></a><a href='#L2917'>2917</a>
+<a name='L2918'></a><a href='#L2918'>2918</a>
+<a name='L2919'></a><a href='#L2919'>2919</a>
+<a name='L2920'></a><a href='#L2920'>2920</a>
+<a name='L2921'></a><a href='#L2921'>2921</a>
+<a name='L2922'></a><a href='#L2922'>2922</a>
+<a name='L2923'></a><a href='#L2923'>2923</a>
+<a name='L2924'></a><a href='#L2924'>2924</a>
+<a name='L2925'></a><a href='#L2925'>2925</a>
+<a name='L2926'></a><a href='#L2926'>2926</a>
+<a name='L2927'></a><a href='#L2927'>2927</a>
+<a name='L2928'></a><a href='#L2928'>2928</a>
+<a name='L2929'></a><a href='#L2929'>2929</a>
+<a name='L2930'></a><a href='#L2930'>2930</a>
+<a name='L2931'></a><a href='#L2931'>2931</a>
+<a name='L2932'></a><a href='#L2932'>2932</a>
+<a name='L2933'></a><a href='#L2933'>2933</a>
+<a name='L2934'></a><a href='#L2934'>2934</a>
+<a name='L2935'></a><a href='#L2935'>2935</a>
+<a name='L2936'></a><a href='#L2936'>2936</a>
+<a name='L2937'></a><a href='#L2937'>2937</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -5369,6 +5390,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -8284,6 +8326,27 @@ function <span class="fstat-no" title="function not covered" >NodeSelectionToolb
       })),
       spliceMapRef.current,
     );
+    // The cut instance and its newly-created cut-net-end stubs should stay
+    // selected so the user can immediately drag the group — mirrors
+    // handleClick's pendingReselectIdsRef handoff. Id format matches
+    // cutLabelNodeId() in mergeLayout.ts, which is what actually creates
+    // these nodes once the host processes the cut. Only the stub(s)
+    // directly attached to a cut-out node belong in the group: a fanout
+    // net's sink stub at some other, non-selected receiver stays put, so
+    // adding it unconditionally (keyed only on netKey) would have swept in
+    // ends that don't move with this drag.
+    const selectedIds = <span class="cstat-no" title="statement not covered" >new Set(selected.<span class="fstat-no" title="function not covered" >map((n</span>ode) =&gt; <span class="cstat-no" title="statement not covered" >node.id)</span>);</span>
+    const reselectIds = <span class="cstat-no" title="statement not covered" >new Set(selectedIds);</span>
+<span class="cstat-no" title="statement not covered" >    for (const edge of diagramEdges) {</span>
+      const netKey = <span class="cstat-no" title="statement not covered" >edgeNetKey(edge);</span>
+<span class="cstat-no" title="statement not covered" >      if (selectedIds.has(edge.source)) {</span>
+<span class="cstat-no" title="statement not covered" >        reselectIds.add(`cut-label:${netKey}:source`);</span>
+      }
+<span class="cstat-no" title="statement not covered" >      if (selectedIds.has(edge.target)) {</span>
+<span class="cstat-no" title="statement not covered" >        reselectIds.add(`cut-label:${netKey}:sink:${edge.id}`);</span>
+      }
+    }
+<span class="cstat-no" title="statement not covered" >    pendingReselectIdsRef.current = reselectIds;</span>
 <span class="cstat-no" title="statement not covered" >    if (diagramEdges.length === 1) {</span>
 <span class="cstat-no" title="statement not covered" >      vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
@@ -8815,7 +8878,7 @@ function <span class="fstat-no" title="function not covered" >snapRegionBounds(<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-06T00:54:25.497Z
+                at 2026-09-06T03:15:39.226Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
