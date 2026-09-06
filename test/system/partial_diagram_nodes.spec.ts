@@ -135,6 +135,15 @@ test.describe('Add to Partial — every supported node kind', () => {
         await expect
           .poll(() => currentGraphCount(evaluateInVSCode), { timeout: 30_000 })
           .toBeGreaterThan(graphCountBefore);
+        // The config write above (now Workspace-scope so it actually takes
+        // effect, see the comment on that update() call) also fires
+        // vscodeElaborationHost's own onDidChangeConfiguration listener, which
+        // schedules a second, debounced rebuild ~250ms later independent of
+        // the explicit svsch.rebuildDiagram command above. Wait for the graph
+        // count to stop changing before searching for a node, or that second
+        // rebuild can swap the main webview's DOM out from under
+        // findSystemNodeId/clickSystemNode right as they're mid-interaction.
+        await waitForGraphCountStable(evaluateInVSCode);
 
         const mainFrameIndex = await findFrameIndex(workbox, 'main');
         const mainWebview = workbox
@@ -255,6 +264,27 @@ async function currentGraphCount(evaluateInVSCode: EvaluateInVSCode): Promise<nu
     void vscode;
     return (global as any).__svschGraphCount ?? 0;
   });
+}
+
+// Waits until __svschGraphCount holds still for a full window rather than
+// just "has changed once" — see the call site for why a second, debounced
+// rebuild can otherwise still be in flight.
+async function waitForGraphCountStable(evaluateInVSCode: EvaluateInVSCode): Promise<void> {
+  const quietWindowMs = 500;
+  const deadline = Date.now() + 30_000;
+  let lastCount = await currentGraphCount(evaluateInVSCode);
+  let lastChangedAt = Date.now();
+  while (Date.now() - lastChangedAt < quietWindowMs) {
+    if (Date.now() > deadline) {
+      throw new Error('Graph count never settled within 30s');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const count = await currentGraphCount(evaluateInVSCode);
+    if (count !== lastCount) {
+      lastCount = count;
+      lastChangedAt = Date.now();
+    }
+  }
 }
 
 async function dismissSystemNotifications(workbox: Page): Promise<void> {
