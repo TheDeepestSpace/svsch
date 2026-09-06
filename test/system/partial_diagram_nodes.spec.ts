@@ -101,14 +101,18 @@ test.describe('Add to Partial — every supported node kind', () => {
 
         const graphCountBefore = await currentGraphCount(evaluateInVSCode);
 
-        // Global, not Workspace: this must not write to the checked-in
-        // test/.vscode/settings.json — it only needs to live for the
-        // duration of this single Electron launch.
+        // Workspace, not Global: test/.vscode/settings.json already pins
+        // svsch.projectFolder at the workspace scope, which always shadows a
+        // Global-scope value — writing Global here silently no-ops and every
+        // iteration keeps elaborating the original ./fixtures project. This
+        // does briefly rewrite the checked-out (not committed) settings.json
+        // on disk for the duration of this Electron launch; the `finally`
+        // block below restores it before the process exits.
         await evaluateInVSCode(
           (vscode, folder) =>
             vscode.workspace
               .getConfiguration('svsch')
-              .update('projectFolder', folder, vscode.ConfigurationTarget.Global),
+              .update('projectFolder', folder, vscode.ConfigurationTarget.Workspace),
           tmpDir,
         );
 
@@ -231,7 +235,7 @@ test.describe('Add to Partial — every supported node kind', () => {
         (vscode, folder) =>
           vscode.workspace
             .getConfiguration('svsch')
-            .update('projectFolder', folder, vscode.ConfigurationTarget.Global),
+            .update('projectFolder', folder, vscode.ConfigurationTarget.Workspace),
         originalProjectFolder,
       );
       for (const dir of tmpDirs) {
