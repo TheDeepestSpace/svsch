@@ -1559,9 +1559,12 @@ Then(
         `(${pos.x}, ${pos.y})`,
       // A released block with an active net cut reserves extra ELK margin for its
       // dangling end, which shifts where the layered algorithm settles it by a
-      // bit more than an uncut block — widen the (already approximate) tolerance
-      // to cover that.
-    ).toBeLessThan(diagramGrid.size * 8);
+      // bit more than an uncut block — and the dangling end itself is pulled
+      // back against the block after layout (see pulledInCutLabelPosition),
+      // which compacts the group's shape around the anchored centroid and
+      // shifts each member a little further still. Widen the (already
+      // approximate) tolerance to cover both.
+    ).toBeLessThan(diagramGrid.size * 10);
   },
 );
 
