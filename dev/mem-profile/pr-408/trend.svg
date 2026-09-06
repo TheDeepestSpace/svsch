@@ -16,39 +16,37 @@
   <text x="48" y="82" font-size="14" font-weight="600" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif">Peak RSS per category, per master push (MB) — dashed segment is this PR, not yet merged</text>
 <line x1="60" y1="472" x2="1976" y2="472" stroke="#e1e0d9" stroke-width="1" />
 <text x="50" y="476" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="60" y1="434" x2="1976" y2="434" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="438" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">500</text>
-<line x1="60" y1="396" x2="1976" y2="396" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="400" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1000</text>
-<line x1="60" y1="358" x2="1976" y2="358" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="362" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1500</text>
-<line x1="60" y1="320" x2="1976" y2="320" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="324" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2000</text>
-<line x1="60" y1="282" x2="1976" y2="282" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="286" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2500</text>
-<line x1="60" y1="244" x2="1976" y2="244" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="248" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3000</text>
-<line x1="60" y1="206" x2="1976" y2="206" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="210" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3500</text>
-<line x1="60" y1="168" x2="1976" y2="168" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="172" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4000</text>
-<line x1="60" y1="130" x2="1976" y2="130" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="134" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4500</text>
+<line x1="60" y1="429.77777777777777" x2="1976" y2="429.77777777777777" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="433.77777777777777" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">500</text>
+<line x1="60" y1="387.55555555555554" x2="1976" y2="387.55555555555554" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="391.55555555555554" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1000</text>
+<line x1="60" y1="345.3333333333333" x2="1976" y2="345.3333333333333" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="349.3333333333333" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1500</text>
+<line x1="60" y1="303.1111111111111" x2="1976" y2="303.1111111111111" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="307.1111111111111" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2000</text>
+<line x1="60" y1="260.8888888888889" x2="1976" y2="260.8888888888889" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="264.8888888888889" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">2500</text>
+<line x1="60" y1="218.66666666666666" x2="1976" y2="218.66666666666666" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="222.66666666666666" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3000</text>
+<line x1="60" y1="176.44444444444446" x2="1976" y2="176.44444444444446" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="180.44444444444446" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">3500</text>
+<line x1="60" y1="134.22222222222223" x2="1976" y2="134.22222222222223" stroke="#e1e0d9" stroke-width="1" />
+<text x="50" y="138.22222222222223" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4000</text>
 <line x1="60" y1="92" x2="1976" y2="92" stroke="#e1e0d9" stroke-width="1" />
-<text x="50" y="96" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">5000</text>
+<text x="50" y="96" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">4500</text>
 <line x1="60" y1="472" x2="1976" y2="472" stroke="#c3c2b7" stroke-width="1.5" />
-<path d="M 60 191.253921875 Q 1609.7085580427222 191.6809765625 1792.854279021361 190.00152994791668 Q 1609.7085580427222 191.6809765625 1976 188.32208333333335" fill="none" stroke="#2a78d6" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
-<path d="M 60 277.98446875 Q 1609.7085580427222 278.5676796875 1792.854279021361 278.7793268229167 Q 1609.7085580427222 278.5676796875 1976 278.99097395833337" fill="none" stroke="#7c4dcc" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
-<path d="M 60 278.303609375 Q 1609.7085580427222 278.32320312499996 1792.854279021361 276.7124583333333 Q 1609.7085580427222 278.32320312499996 1976 275.10171354166664" fill="none" stroke="#0f9188" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
-<path d="M 60 191.253921875 L 1609.7085580427222 192.10803125" fill="none" stroke="#2a78d6" stroke-width="2" />
-<path d="M 1609.7085580427222 192.10803125 L 1976 181.604296875" fill="none" stroke="#2a78d6" stroke-width="2" stroke-dasharray="5,4" />
-<circle cx="1976" cy="181.604296875" r="5" fill="#e8890c" stroke="#2a78d6" stroke-width="2" />
-<path d="M 60 277.98446875 L 1609.7085580427222 279.150890625" fill="none" stroke="#7c4dcc" stroke-width="2" />
-<path d="M 1609.7085580427222 279.150890625 L 1976 279.8375625" fill="none" stroke="#7c4dcc" stroke-width="2" stroke-dasharray="5,4" />
-<circle cx="1976" cy="279.8375625" r="5" fill="#e8890c" stroke="#7c4dcc" stroke-width="2" />
-<path d="M 60 278.303609375 L 1609.7085580427222 278.342796875" fill="none" stroke="#0f9188" stroke-width="2" />
-<path d="M 1609.7085580427222 278.342796875 L 1976 268.658734375" fill="none" stroke="#0f9188" stroke-width="2" stroke-dasharray="5,4" />
-<circle cx="1976" cy="268.658734375" r="5" fill="#e8890c" stroke="#0f9188" stroke-width="2" />
+<path d="M 60 160.05991319444445 Q 1551.647713175632 160.53441840277776 1763.823856587816 160.88091001157406 Q 1551.647713175632 160.53441840277776 1976 161.22740162037036" fill="none" stroke="#2a78d6" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
+<path d="M 60 256.4271875 Q 1551.647713175632 257.07519965277777 1763.823856587816 257.6259302662037 Q 1551.647713175632 257.07519965277777 1976 258.1766608796296" fill="none" stroke="#7c4dcc" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
+<path d="M 60 256.7817881944444 Q 1551.647713175632 256.80355902777774 1763.823856587816 255.73299479166664 Q 1551.647713175632 256.80355902777774 1976 254.66243055555555" fill="none" stroke="#0f9188" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
+<path d="M 60 160.05991319444445 L 1551.647713175632 161.00892361111113" fill="none" stroke="#2a78d6" stroke-width="2" />
+<path d="M 1551.647713175632 161.00892361111113 L 1976 162.61336805555555" fill="none" stroke="#2a78d6" stroke-width="2" stroke-dasharray="5,4" />
+<circle cx="1976" cy="162.61336805555555" r="5" fill="#e8890c" stroke="#2a78d6" stroke-width="2" />
+<path d="M 60 256.4271875 L 1551.647713175632 257.72321180555554" fill="none" stroke="#7c4dcc" stroke-width="2" />
+<path d="M 1551.647713175632 257.72321180555554 L 1976 260.37958333333336" fill="none" stroke="#7c4dcc" stroke-width="2" stroke-dasharray="5,4" />
+<circle cx="1976" cy="260.37958333333336" r="5" fill="#e8890c" stroke="#7c4dcc" stroke-width="2" />
+<path d="M 60 256.7817881944444 L 1551.647713175632 256.8253298611111" fill="none" stroke="#0f9188" stroke-width="2" />
+<path d="M 1551.647713175632 256.8253298611111 L 1976 250.3801736111111" fill="none" stroke="#0f9188" stroke-width="2" stroke-dasharray="5,4" />
+<circle cx="1976" cy="250.3801736111111" r="5" fill="#e8890c" stroke="#0f9188" stroke-width="2" />
   <text x="1976" y="490" font-size="10" text-anchor="middle" fill="#0b0b0b" font-family="system-ui, -apple-system, sans-serif" font-weight="600">this PR</text>
   
 </svg>
