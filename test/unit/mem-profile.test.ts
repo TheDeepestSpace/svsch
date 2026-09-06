@@ -11,6 +11,7 @@ import {
   mergeMemProfileHistory,
   parseArtifactFilename,
   relativeJsonPath,
+  renderMemProfileSection,
   renderMemProfileTrendChart,
 } from '../../scripts/mem-profile.mjs';
 
@@ -191,5 +192,13 @@ describe('renderMemProfileTrendChart', () => {
       currentLabel: 'this PR',
     });
     expect(svg).toContain('this PR');
+  });
+});
+
+describe('renderMemProfileSection', () => {
+  it('links/embeds via paths relative to dev/, not dev/mem-profile/', () => {
+    const section = renderMemProfileSection();
+    expect(section).toContain('mem-profile/trend.svg');
+    expect(section).toContain('mem-profile/index.html');
   });
 });

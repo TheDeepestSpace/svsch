@@ -29,6 +29,13 @@ const COLORS = {
   // the dataviz skill's validator (`validate_palette.js`), since blue+purple
   // alone already sit right at that validator's normal-vision floor.
   teal: '#0f9188',
+  // Three more categorical line colors (coverage-history.mjs's/
+  // backend-coverage-history.mjs's per-metric trend charts — #412) chosen the
+  // same way: validated together (and alongside teal, for coverage's 4-series
+  // chart) via the dataviz skill's validator rather than picked by eye.
+  indigo: '#1f6feb',
+  amber: '#b5892a',
+  magenta: '#9d3fae',
 };
 
 // Bars fill the whole plot width regardless of how many there are — a

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { COLORS, renderHistoryTrendChart, mergeBenchmarkHistory } from './render-benchmark-charts.mjs';
+import { renderDashboardPage, renderDashboardSection } from './dashboard-page-shell.mjs';
 
 // gh-pages paths for the memory (RSS) profiling history (#400) — one
 // {sha, date, visualPeakBytes, systemPeakBytes, bddPeakBytes} entry per
@@ -14,6 +15,11 @@ import { COLORS, renderHistoryTrendChart, mergeBenchmarkHistory } from './render
 export const HISTORY_PATH = 'dev/mem-profile/history.json';
 export const TREND_SVG_PATH = 'dev/mem-profile/trend.svg';
 export const INDEX_HTML_PATH = 'dev/mem-profile/index.html';
+// The combined dev/index.html master dashboard's per-metric section
+// fragment (#413) — joined in by generate-master-dashboard.mjs alongside the
+// other metrics' own. Paths inside it are relative to dev/ (where it ends up
+// embedded), not to dev/mem-profile/ (where this file itself lives).
+export const SECTION_HTML_PATH = 'dev/mem-profile/section.html';
 
 const NETWORK_TIMEOUT_MS = 60_000;
 
@@ -170,42 +176,24 @@ export function computeTrailingMedianPeakBytes(history, category, windowSize = 2
 // "just an <img> embedding a static SVG" approach, since duration's own note
 // on why it doesn't reuse github-action-benchmark's dashboard applies here
 // too: a differently-shaped history file doesn't fit that generator).
-export const INDEX_HTML = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
-    <style>
-      html {
-        font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-        -webkit-font-smoothing: antialiased;
-        background-color: #fff;
-        font-size: 16px;
-      }
-      body {
-        color: #4a4a4a;
-        margin: 8px;
-      }
-      h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
-      }
-      img {
-        max-width: 100%;
-      }
-      .small {
-        font-size: 0.75rem;
-      }
-    </style>
-    <title>Memory profiling</title>
-  </head>
-  <body>
-    <h1>Memory (RSS) profiling</h1>
-    <p class="small">Worst shard/leg peak RSS per category, per master push. Raw data: <a href="history.json">history.json</a>. Per-PR per-shard/leg detail: see that PR's stats comment for a link to its own report.</p>
-    <img src="trend.svg" alt="Memory profiling trend" />
-  </body>
-</html>
-`;
+export const INDEX_HTML = renderDashboardPage({
+  title: 'Memory profiling',
+  heading: 'Memory (RSS) profiling',
+  description:
+    'Worst shard/leg peak RSS per category, per master push. Raw data: <a href="history.json">history.json</a>. Per-PR per-shard/leg detail: see that PR\'s stats comment for a link to its own report.',
+  bodyHtml: '<img src="trend.svg" alt="Memory profiling trend" />',
+});
+
+// This metric's section on the combined dev/index.html master dashboard
+// (#413) — same trend chart, but linking/embedding via paths relative to
+// dev/ (see SECTION_HTML_PATH above) rather than dev/mem-profile/.
+export function renderMemProfileSection() {
+  return renderDashboardSection({
+    heading: 'Memory (RSS) profiling',
+    bodyHtml: '<img src="mem-profile/trend.svg" alt="Memory profiling trend" />',
+    href: 'mem-profile/index.html',
+  });
+}
 
 function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
@@ -278,8 +266,11 @@ export async function publishMemProfileHistory({ freshEntries, githubToken, desc
         'utf8',
       );
       fs.writeFileSync(path.join(worktreeDir, INDEX_HTML_PATH), INDEX_HTML, 'utf8');
+      fs.writeFileSync(path.join(worktreeDir, SECTION_HTML_PATH), renderMemProfileSection(), 'utf8');
 
-      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH], { cwd: worktreeDir });
+      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH, SECTION_HTML_PATH], {
+        cwd: worktreeDir,
+      });
       const message = describeCommit(addedCount);
       git(
         [
