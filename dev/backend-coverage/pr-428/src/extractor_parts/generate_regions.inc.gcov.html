@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-06 18:30:25</td>
+            <td class="headerValue">2026-09-06 18:33:52</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">44</td>
@@ -1028,13 +1028,13 @@
 <a name="966"><span class="lineNum">     966 </span>            :         }</a>
 <a name="967"><span class="lineNum">     967 </span>            :     }</a>
 <a name="968"><span class="lineNum">     968 </span>            : </a>
-<a name="969"><span class="lineNum">     969 </span><span class="lineCov">     142842 :     for (auto&amp; edge : mod.edges) {</span></a>
-<a name="970"><span class="lineNum">     970 </span><span class="lineCov">     120227 :         auto sourceRegion = regionByNode.find(edge.source);</span></a>
-<a name="971"><span class="lineNum">     971 </span><span class="lineCov">     120227 :         auto targetRegion = regionByNode.find(edge.target);</span></a>
-<a name="972"><span class="lineNum">     972 </span><span class="lineCov">     120227 :         if (sourceRegion != regionByNode.end()) {</span></a>
+<a name="969"><span class="lineNum">     969 </span><span class="lineCov">     142840 :     for (auto&amp; edge : mod.edges) {</span></a>
+<a name="970"><span class="lineNum">     970 </span><span class="lineCov">     120225 :         auto sourceRegion = regionByNode.find(edge.source);</span></a>
+<a name="971"><span class="lineNum">     971 </span><span class="lineCov">     120225 :         auto targetRegion = regionByNode.find(edge.target);</span></a>
+<a name="972"><span class="lineNum">     972 </span><span class="lineCov">     120225 :         if (sourceRegion != regionByNode.end()) {</span></a>
 <a name="973"><span class="lineNum">     973 </span><span class="lineCov">       1763 :             edge.generateRegionId = sourceRegion-&gt;second.id;</span></a>
 <a name="974"><span class="lineNum">     974 </span><span class="lineCov">       1763 :             edge.generateActiveState = sourceRegion-&gt;second.activeState;</span></a>
-<a name="975"><span class="lineNum">     975 </span><span class="lineCov">     118464 :         } else if (targetRegion != regionByNode.end()) {</span></a>
+<a name="975"><span class="lineNum">     975 </span><span class="lineCov">     118462 :         } else if (targetRegion != regionByNode.end()) {</span></a>
 <a name="976"><span class="lineNum">     976 </span><span class="lineCov">       1711 :             edge.generateRegionId = targetRegion-&gt;second.id;</span></a>
 <a name="977"><span class="lineNum">     977 </span><span class="lineCov">       1711 :             edge.generateActiveState = targetRegion-&gt;second.activeState;</span></a>
 <a name="978"><span class="lineNum">     978 </span>            :         }</a>
