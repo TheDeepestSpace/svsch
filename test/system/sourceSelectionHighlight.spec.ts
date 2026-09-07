@@ -8,6 +8,7 @@ import {
   clearSystemLayout,
   openSystemDiagram,
   openSystemModule,
+  waitForViewportToSettle,
 } from './helpers';
 import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
@@ -111,6 +112,104 @@ test('highlights the declared diagram nodes for each selected source construct',
     await clearSystemLayout();
   }
 });
+
+test('brings an off-screen highlighted node into view on a large, zoomed-in diagram', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    await evaluateInVSCode(async (vscode) => {
+      await vscode.commands.executeCommand('vscode.setEditorLayout', {
+        orientation: 1,
+        groups: [{}, {}],
+      });
+    });
+
+    // fixtures/long_register_chain.sv is a 15-stage register chain, laid out
+    // left to right — far wider than any reasonable viewport at 100% zoom.
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'long_register_chain');
+
+    // Zoom in on the chain's first stage, putting the last stage ("q") well
+    // off screen — the state a user zoomed into one part of a large diagram
+    // would be in.
+    await webview.locator('html').evaluate(() => {
+      const rf = (window as any).reactFlowInstance;
+      const firstNode = rf
+        .getNodes()
+        .find(
+          (node: any) => node.data?.node?.kind === 'register' && node.data?.node?.label === 's1',
+        );
+      rf.setViewport(
+        { x: 100 - firstNode.position.x, y: 100 - firstNode.position.y, zoom: 1 },
+        { duration: 0 },
+      );
+    });
+    await waitForViewportToSettle(webview);
+
+    // Confirm the setup: "q" starts off screen.
+    await expect(registerNodeIsOnScreen(webview, 'q')).resolves.toBe(false);
+
+    await selectSourceText(
+      evaluateInVSCode,
+      'fixtures/long_register_chain.sv',
+      'always_ff @(posedge clk) q <= s14;',
+    );
+
+    // The register lights up...
+    await expect
+      .poll(
+        () =>
+          webview.locator('html').evaluate(() => {
+            const rf = (window as any).reactFlowInstance;
+            return (rf?.getNodes() ?? []).some(
+              (node: any) =>
+                node.data?.node?.kind === 'register' &&
+                node.data?.node?.label === 'q' &&
+                node.selected === true,
+            );
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+
+    // ...and the diagram pans/zooms so it's actually visible, not just
+    // selected somewhere off in the distance.
+    await waitForViewportToSettle(webview);
+    await expect.poll(() => registerNodeIsOnScreen(webview, 'q'), { timeout: 10_000 }).toBe(true);
+  } finally {
+    await clearSystemLayout();
+  }
+});
+
+// True if the given register node's DOM element is fully within the
+// diagram pane's visible bounds (not just present in the DOM — React Flow
+// keeps off-screen nodes mounted, just transformed out of view).
+async function registerNodeIsOnScreen(webview: FrameLocator, label: string): Promise<boolean> {
+  return webview.locator('html').evaluate((_el, targetLabel) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = (rf?.getNodes() ?? []).find(
+      (n: any) => n.data?.node?.kind === 'register' && n.data?.node?.label === targetLabel,
+    );
+    if (!node) return false;
+    const nodeElement = document.querySelector(`.react-flow__node[data-id="${node.id}"]`);
+    const container = document.querySelector('.react-flow');
+    if (!nodeElement || !container) return false;
+    const nodeRect = nodeElement.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    return (
+      nodeRect.left >= containerRect.left &&
+      nodeRect.top >= containerRect.top &&
+      nodeRect.right <= containerRect.right &&
+      nodeRect.bottom <= containerRect.bottom
+    );
+  }, label);
+}
 
 // Mirrors the BDD "I select the source text {string} in {string}" step.
 async function selectSourceText(
