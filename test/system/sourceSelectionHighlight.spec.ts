@@ -104,7 +104,11 @@ test('highlights the declared diagram nodes for each selected source construct',
             highlightCase.id === 'inverter-not-expression'
               ? SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression
               : undefined;
-          await expect(workbox).toHaveScreenshot(screenshotName, { maxDiffPixels });
+          // TEMP DIAGNOSTIC (PR #376): soft so one CI run surfaces every
+          // baseline the new long_register_chain.sv fixture's explorer-row
+          // shift broke, instead of aborting at the first. Revert to a
+          // strict expect() once every affected baseline is re-captured.
+          await expect.soft(workbox).toHaveScreenshot(screenshotName, { maxDiffPixels });
         }
       });
     }
