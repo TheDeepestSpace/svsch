@@ -19,12 +19,12 @@
 <line x1="60" y1="92" x2="1976" y2="92" stroke="#e1e0d9" stroke-width="1" />
 <text x="50" y="96" font-size="11" text-anchor="end" fill="#898781" font-family="system-ui, -apple-system, sans-serif">1</text>
 <line x1="60" y1="472" x2="1976" y2="472" stroke="#c3c2b7" stroke-width="1.5" />
-<path d="M 1018 -32170.000000000004" fill="none" stroke="#1f6feb" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
-<path d="M 1018 -35894" fill="none" stroke="#b5892a" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
-<path d="M 1018 NaN" fill="none" stroke="#9d3fae" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
-<path d="M 1018 -32170.000000000004" fill="none" stroke="#1f6feb" stroke-width="2" />
-<path d="M 1018 -35894" fill="none" stroke="#b5892a" stroke-width="2" />
-<path d="M 1018 NaN" fill="none" stroke="#9d3fae" stroke-width="2" />
+<path d="M 60 -32170.000000000004 L 1976 -32170.000000000004" fill="none" stroke="#1f6feb" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
+<path d="M 60 -35894 L 1976 -35894" fill="none" stroke="#b5892a" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
+<path d="M 60 NaN L 1976 NaN" fill="none" stroke="#9d3fae" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />
+<path d="M 60 -32170.000000000004 L 1976 -32170.000000000004" fill="none" stroke="#1f6feb" stroke-width="2" />
+<path d="M 60 -35894 L 1976 -35894" fill="none" stroke="#b5892a" stroke-width="2" />
+<path d="M 60 NaN L 1976 NaN" fill="none" stroke="#9d3fae" stroke-width="2" />
   
   
 </svg>
