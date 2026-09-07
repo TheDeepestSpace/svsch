@@ -139,7 +139,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, mux]
-      selectedText: "assign y = sel1 ? (sel2 ? a : b) : c;"
+      selectedText: "sel2 ? a : b"
 
   - id: mux-ternary-in-expression
     title: Ternary Inside an Arithmetic Expression
