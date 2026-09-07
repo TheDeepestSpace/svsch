@@ -187,6 +187,12 @@ export function compareGraphState(
   const snapshotMissingOrEmpty =
     !fs.existsSync(snapshotPath) || fs.statSync(snapshotPath).size === 0;
   if (snapshotMissingOrEmpty) {
+    // TEMP DIAGNOSTIC (PR #376): local VS Code E2E harness is unavailable in
+    // the current sandbox, so dump the computed graph to CI logs to hand-author
+    // the baseline from there. Revert before merge.
+    if (!updateSnapshots && process.env.CI) {
+      console.error(`[TEMP DIAGNOSTIC] actual graph JSON for "${snapshotPath}":\n${actualJson}`);
+    }
     assertBaselineCreatable(snapshotPath, updateSnapshots);
     const parentDir = path.dirname(snapshotPath);
     if (!fs.existsSync(parentDir)) {
