@@ -32,6 +32,12 @@ concurrency:
   # loop (#380).
   group: gh-pages-publish
   cancel-in-progress: false
+  # Default queueing (`single`) only keeps one run pending and cancels any
+  # further arrival outright — with this many producers sharing the group
+  # (five report_*_stats jobs in ci.yml alone, per #421/#422) that would
+  # leave the dashboard stuck showing a stale section instead of just
+  # delaying the refresh.
+  queue: max
 
 jobs:
   publish:
