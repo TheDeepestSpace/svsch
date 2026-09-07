@@ -105,6 +105,21 @@ Then('the SVSCH partial diagram panel is closed', async function (this: BddWorld
 });
 
 When('I switch to the partial diagram panel', async function (this: BddWorld) {
+  // The pane opens beside the main diagram (ViewColumn.Beside, see
+  // src/partialDiagramPanel.ts), splitting the window in two. Move it into
+  // the main diagram's own tab group first so every screenshot from here on
+  // captures the partial diagram at full window width instead of a
+  // half-width split view. This has to happen before switchToPanel: that
+  // call fixes the outer iframe index by current DOM order, and the move
+  // changes that order.
+  const partialTab = this.workbox.locator(PARTIAL_TAB_SELECTOR).first();
+  await expect(partialTab).toBeVisible();
+  await partialTab.click();
+  await this.evaluateInVSCode((vscode) =>
+    (vscode as any).commands.executeCommand('workbench.action.moveEditorToFirstGroup'),
+  );
+  // Let the now-single-group relayout settle before switching panels.
+  await this.workbox.waitForTimeout(300);
   await this.switchToPanel('partial');
   // Wait for content: the partial always holds at least the block it was
   // opened with.
