@@ -237,6 +237,16 @@ test.describe('Add to Partial — every supported node kind', () => {
         await workbox.waitForTimeout(300);
 
         const partialFrameIndex = await findFrameIndex(workbox, 'partial');
+        // A fixed 300ms wait isn't a reliable proxy for "the editor-group
+        // relayout has finished": if the outer iframe is still animating
+        // from its half-width split-view size toward the full-width
+        // merged-group size when main.tsx's one-shot-per-module fitView
+        // effect fires, fitView computes its padding against a too-narrow
+        // container and never gets a second chance to correct (see the
+        // comment on waitForViewportToSettle). Wait for the iframe's own
+        // width to hold steady before trusting the pane is really
+        // full-width.
+        await waitForOuterFrameWidthToSettle(workbox, partialFrameIndex);
         const partialWebview = workbox
           .frameLocator('iframe.webview')
           .nth(partialFrameIndex)
@@ -421,6 +431,22 @@ async function findFrameIndex(workbox: Page, panel: 'main' | 'partial'): Promise
   }
 }
 
+// Mirrors waitForOuterFrameWidthToSettle in partial_diagram_interactions.spec.ts.
+async function waitForOuterFrameWidthToSettle(workbox: Page, frameIndex: number): Promise<void> {
+  const outerFrame = workbox.locator('iframe.webview').nth(frameIndex);
+  let lastWidth = -1;
+  let stable = 0;
+  for (let i = 0; i < 100; i++) {
+    await workbox.waitForTimeout(50);
+    const box = await outerFrame.boundingBox();
+    const width = box?.width ?? -1;
+    stable = width === lastWidth && width > 0 ? stable + 1 : 0;
+    lastWidth = width;
+    if (stable >= 5) return;
+  }
+  throw new Error('Partial pane iframe width did not settle within 5 seconds');
+}
+
 // The number of real (non-label) blocks currently rendered in the partial
 // pane, or null while no partial pane webview exists yet — mirrors
 // partialPaneBlockCount in test/steps/partial.steps.ts.
@@ -465,14 +491,32 @@ async function centerViewOnNode(webview: FrameLocator, nodeId: string): Promise<
 
 async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
   await webview.locator('body').evaluate(async () => {
-    const getTransform = () =>
-      (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
-    let last = getTransform();
+    // main.tsx's fitView effect only fires once per module name
+    // (fittedModuleNameRef) as soon as the node count first matches the
+    // extension host's view — which can be before ELK has actually
+    // positioned the newly added node(s). The outer viewport's own
+    // transform is then stable for good (fitView never runs again for this
+    // module), but individual nodes can still jump to their real ELK
+    // position afterward, changing what's on screen without the pane's
+    // camera transform ever moving — a settle check on the viewport alone
+    // misses that and can screenshot mid-reflow (observed in CI as the same
+    // two nodes rendered at a different scale/position between runs). Track
+    // every node's own transform alongside the viewport's.
+    const getSignature = () => {
+      const viewportTransform =
+        (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
+      const nodeTransforms = Array.from(document.querySelectorAll('.react-flow__node'))
+        .map((el) => `${el.getAttribute('data-id')}:${(el as HTMLElement).style.transform}`)
+        .sort()
+        .join('|');
+      return `${viewportTransform}::${nodeTransforms}`;
+    };
+    let last = getSignature();
     let stable = 0;
     for (let i = 0; i < 100; i++) {
       await new Promise((r) => setTimeout(r, 50));
-      const current = getTransform();
-      stable = current === last && current !== '' ? stable + 1 : 0;
+      const current = getSignature();
+      stable = current === last && current !== '::' ? stable + 1 : 0;
       last = current;
       if (stable >= 5) break;
     }
