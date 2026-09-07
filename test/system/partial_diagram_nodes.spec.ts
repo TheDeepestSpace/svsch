@@ -82,21 +82,17 @@ const NODE_CASES = loadOneCasePerNodeKind();
 const SYSTEM_LAYOUTS_DIR = path.resolve(__dirname, '../.svsch/layouts');
 
 test.describe('Add to Partial — every supported node kind', () => {
-  // Disabled pending further investigation (issue #408 CI thread): this test
-  // has never passed since it was introduced. Five distinct real bugs in it
-  // were found and fixed across two sessions (a config-scope no-op, an
-  // editor-group leak, the unselectable `interface` kind, two element-overlap
-  // click issues), each fix advancing the loop by exactly one case before the
-  // next one surfaced — most recently stalling on `submodule-instance`, the
-  // only one of the 18 cases whose fixture spans two files. The CI-only
-  // symptom there (a 30s timeout waiting for the partial pane to appear,
-  // with the extension's own log showing a *third* elaboration cycle start
-  // suspiciously late and never finish) points at a rebuild/config-change
-  // timing race that head-only CI log forensics couldn't pin down — it needs
-  // a live VS Code + Playwright session to instrument and confirm. Re-enable
-  // once that's diagnosed, or scope NODE_CASES down to single-file fixtures
-  // if the race turns out to be specific to multi-file elaboration.
-  test.fixme(`clones one node of each of the ${NODE_CASES.length} supported kinds into the partial diagram`, async ({
+  // Root cause of the "stalls on submodule-instance" symptom tracked in
+  // issue #408: every case here reuses module name "top" (see NODE_CASES'
+  // comment), so main.tsx's fitView-once-per-module-name guard
+  // (fittedModuleNameRef) only fits the viewport for the very first case —
+  // later cases' nodes render at whatever raw position their (unrelated)
+  // project happens to produce, which can land outside the viewport the
+  // first case settled on. `submodule-instance` was the first case whose
+  // instance node happened to render off-screen, so its click never landed.
+  // Fixed by explicitly recentering on the target node before clicking (see
+  // centerViewOnNode below) instead of relying on the app's own fitView.
+  test(`clones one node of each of the ${NODE_CASES.length} supported kinds into the partial diagram`, async ({
     workbox,
     evaluateInVSCode,
   }) => {
@@ -195,6 +191,19 @@ test.describe('Add to Partial — every supported node kind', () => {
         }
 
         const partialBlocksBefore = await countPartialPaneBlocks(workbox);
+
+        // Every case reuses module name "top" (see the comment on NODE_CASES
+        // above), so main.tsx's fitView-once-per-module-name guard
+        // (fittedModuleNameRef, see src/webview/main.tsx) only fires for the
+        // very first case here — later cases' nodes render at whatever raw
+        // ELK/backend position their project happens to produce, which can
+        // land well outside the viewport the first case's fitView settled
+        // on (observed for the two-file "submodule-instance" case: its
+        // instance node rendered off the right edge of the canvas, so the
+        // click below landed on empty space and .selected never flipped).
+        // Recenter on the target node before clicking, same as
+        // centerViewOnNode in test/steps/diagram.steps.ts.
+        await centerViewOnNode(mainWebview, nodeId);
 
         await clickSystemNode(mainWebview, nodeId);
         const addToPartialButton = mainWebview.locator('.svsch-selection-toolbar button', {
@@ -423,6 +432,24 @@ async function countPartialPaneBlocks(workbox: Page): Promise<number | null> {
     }
   }
   return null;
+}
+
+// Mirrors centerViewOnNode in test/steps/diagram.steps.ts: pans/zooms the
+// React Flow viewport so the given node is centered on screen before a real
+// (non-forced-through-actionability) click needs to land on it.
+async function centerViewOnNode(webview: FrameLocator, nodeId: string): Promise<void> {
+  await webview.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes().find((n: any) => n.id === id);
+    if (!rf || !node) return;
+    const width = node.measured?.width ?? node.width ?? 0;
+    const height = node.measured?.height ?? node.height ?? 0;
+    rf.setCenter(node.position.x + width / 2, node.position.y + height / 2, {
+      zoom: 1,
+      duration: 0,
+    });
+  }, nodeId);
+  await waitForViewportToSettle(webview);
 }
 
 async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
