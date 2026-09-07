@@ -408,6 +408,7 @@ jobs:
       # serialized repo-wide, not just within this workflow/ref (#380).
       group: gh-pages-publish
       cancel-in-progress: false
+      queue: max
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1111,6 +1112,7 @@ jobs:
       # serialized repo-wide, not just within this workflow/ref (#380).
       group: gh-pages-publish
       cancel-in-progress: false
+      queue: max
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1194,6 +1196,7 @@ jobs:
       # serialized repo-wide, not just within this workflow/ref (#380).
       group: gh-pages-publish
       cancel-in-progress: false
+      queue: max
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1272,6 +1275,7 @@ jobs:
       # serialized repo-wide, not just within this workflow/ref (#380).
       group: gh-pages-publish
       cancel-in-progress: false
+      queue: max
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1338,6 +1342,7 @@ jobs:
       # serialized repo-wide, not just within this workflow/ref (#380).
       group: gh-pages-publish
       cancel-in-progress: false
+      queue: max
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1402,6 +1407,7 @@ jobs:
       # serialized repo-wide, not just within this workflow/ref (#380).
       group: gh-pages-publish
       cancel-in-progress: false
+      queue: max
     steps:
       - *checkout_step
       - *restore_npm_step
