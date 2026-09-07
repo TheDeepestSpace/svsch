@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COLORS,
   computeBenchmarkHistory,
   computeHistoryTrendData,
   computeMonthTicks,
   computeMovingAverages,
   mergeBenchmarkHistory,
   renderHistoryTrendChart,
+  renderMemoryTimeseriesChart,
 } from '../../scripts/render-benchmark-charts.mjs';
 
 function benchmarkEntry(commitId: string, date: number, values: number[]) {
@@ -284,5 +286,34 @@ describe('computeHistoryTrendData with a custom series', () => {
     expect(points).toEqual([
       { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
     ]);
+  });
+});
+
+describe('renderMemoryTimeseriesChart', () => {
+  it('renders a valid SVG with a peak marker for a non-empty timeseries', () => {
+    const svg = renderMemoryTimeseriesChart({
+      title: 'visual — shard 1',
+      samples: [
+        { t: 0, rss: 100 * 1024 * 1024 },
+        { t: 250, rss: 250 * 1024 * 1024 },
+        { t: 500, rss: 180 * 1024 * 1024 },
+      ],
+      color: COLORS.teal,
+    });
+    expect(svg).toContain('<svg');
+    expect(svg).toContain('visual — shard 1');
+    expect(svg).toContain('peak 250 MB');
+    expect(svg).toContain(COLORS.teal);
+  });
+
+  it('renders a placeholder rather than throwing when there are no samples', () => {
+    const svg = renderMemoryTimeseriesChart({ title: 'empty shard', samples: [] });
+    expect(svg).toContain('<svg');
+    expect(svg).toContain('No samples recorded');
+  });
+
+  it('defaults to blue when no color is given', () => {
+    const svg = renderMemoryTimeseriesChart({ title: 't', samples: [{ t: 0, rss: 1024 * 1024 }] });
+    expect(svg).toContain(COLORS.blue);
   });
 });

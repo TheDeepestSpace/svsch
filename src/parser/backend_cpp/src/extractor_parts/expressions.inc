@@ -185,25 +185,23 @@ std::vector<AggregateSegment> DesignExtractor::flattenAggregateSegments(
     return segments;
 }
 
-std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
+LoweredAggregate DesignExtractor::lowerAggregateValue(
     vpiHandle assign_handle,
     Module& mod,
     bool is_procedural,
-    const std::map<std::string, LoweredValue>& current_drivers,
-    const std::string& output_suffix,
-    const std::map<std::string, std::string>& desired_outputs
+    const std::map<std::string, LoweredValue>& current_drivers
 ) {
-    std::map<std::string, LoweredValue> result = current_drivers;
+    LoweredAggregate aggregate;
     vpiHandle lhs = vpi_handle(vpiLhs, assign_handle);
     vpiHandle rhs = vpi_handle(vpiRhs, assign_handle);
-    if (!lhs || !rhs || !isConcatOperation(lhs)) return result;
+    if (!lhs || !rhs || !isConcatOperation(lhs)) return aggregate;
 
     std::string tag = "aggregate_assign:" + std::to_string(getLine(assign_handle)) + ":" + std::to_string(getCol(assign_handle)) + ":" + nextId();
     std::string aggregate_signal = sanitize("aggregate_assign_" + tag.substr(tag.rfind(':') + 1));
 
     auto lhs_segments = flattenAggregateSegments(lhs, mod, true, is_procedural, tag, current_drivers);
     auto rhs_segments = flattenAggregateSegments(rhs, mod, false, is_procedural, tag, current_drivers);
-    if (lhs_segments.empty() || rhs_segments.empty()) return result;
+    if (lhs_segments.empty() || rhs_segments.empty()) return aggregate;
 
     int lhs_size = 0;
     for (auto& seg : lhs_segments) lhs_size += std::max(1, seg.size);
@@ -241,18 +239,38 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
     }
     mod.nodes.push_back(compose);
 
+    aggregate.assigned = true;
+    aggregate.value = {true, aggregate_signal, aggregate_width};
+    aggregate.tag = tag;
+    aggregate.source = getSourceInfo(assign_handle);
+    aggregate.lhsSegments = std::move(lhs_segments);
+    aggregate.lhsSize = lhs_size;
+    return aggregate;
+}
+
+std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateBreakout(
+    const LoweredAggregate& aggregate,
+    Module& mod,
+    bool is_procedural,
+    const std::map<std::string, LoweredValue>& current_drivers,
+    const std::string& output_suffix,
+    const std::map<std::string, std::string>& desired_outputs
+) {
+    std::map<std::string, LoweredValue> result = current_drivers;
+    if (!aggregate.assigned || !aggregate.value.assigned || aggregate.lhsSegments.empty()) return result;
+
     Node breakout;
-    breakout.id = sanitizeId("bus:" + mod.name + ":" + tag + ":breakout");
+    breakout.id = sanitizeId("bus:" + mod.name + ":" + aggregate.tag + ":breakout");
     breakout.kind = "bus";
     breakout.label = "breakout";
-    breakout.source = getSourceInfo(assign_handle);
+    breakout.source = aggregate.source;
     breakout.metadata.expression = "[aggregate-breakout]";
     breakout.metadata.isProcedural = is_procedural;
-    breakout.ports.push_back({"in", "input", aggregate_signal, aggregate_width, "in"});
+    breakout.ports.push_back({"in", "input", aggregate.value.signal, aggregate.value.width, "in"});
 
-    current_bit = lhs_size - 1;
-    for (size_t i = 0; i < lhs_segments.size(); ++i) {
-        auto seg = lhs_segments[i];
+    int current_bit = aggregate.lhsSize - 1;
+    for (size_t i = 0; i < aggregate.lhsSegments.size(); ++i) {
+        auto seg = aggregate.lhsSegments[i];
         if (seg.signal.empty()) continue;
         std::string target_signal = seg.signal;
         auto desired_output = desired_outputs.find(target_signal);
@@ -290,6 +308,19 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
     }
     mod.nodes.push_back(breakout);
     return result;
+}
+
+std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
+    vpiHandle assign_handle,
+    Module& mod,
+    bool is_procedural,
+    const std::map<std::string, LoweredValue>& current_drivers,
+    const std::string& output_suffix,
+    const std::map<std::string, std::string>& desired_outputs
+) {
+    auto aggregate = lowerAggregateValue(assign_handle, mod, is_procedural, current_drivers);
+    return lowerAggregateBreakout(
+        aggregate, mod, is_procedural, current_drivers, output_suffix, desired_outputs);
 }
 
 int DesignExtractor::getConstantInt(vpiHandle handle) {

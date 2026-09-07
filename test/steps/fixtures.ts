@@ -851,6 +851,11 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
       './no-sv-files-here',
       (_vscode as any).ConfigurationTarget.Workspace,
     );
+    await configuration.update(
+      'fileList',
+      undefined,
+      (_vscode as any).ConfigurationTarget.Workspace,
+    );
   });
 
   await closeOpenSvschTabs(workbox, evaluateInVSCode);
@@ -871,6 +876,7 @@ After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
       './no-sv-files-here',
       _vscode.ConfigurationTarget.Workspace,
     );
+    await configuration.update('fileList', undefined, _vscode.ConfigurationTarget.Workspace);
   }).catch(() => {});
 
   // Clean up .sv files written to bdd-workspace during this scenario

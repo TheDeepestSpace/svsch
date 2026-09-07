@@ -1,11 +1,51 @@
 {
   "nodes": [
     {
+      "id": "cut-label:reg:instr_mem:mem:q:sink:edge:reg:instr_mem:mem:mux:instr_mem:mem_read_addr:mem",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 240
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:instr_mem:mem:q:source",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 48
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "mux:instr_mem:mem_read_addr",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 72
+        "x": 552,
+        "y": 216
       },
       "width": 144,
       "height": 96,
@@ -35,7 +75,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 36
+        "y": 156
       },
       "width": 216,
       "height": 24,
@@ -54,8 +94,8 @@
       "id": "port:instr_mem:instr",
       "type": "hdl",
       "position": {
-        "x": 816,
-        "y": 108
+        "x": 912,
+        "y": 252
       },
       "width": 240,
       "height": 24,
@@ -69,16 +109,52 @@
           }
         ]
       }
+    },
+    {
+      "id": "reg:instr_mem:mem",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 24
+      },
+      "width": 240,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          }
+        ]
+      }
     }
   ],
   "edges": [
+    {
+      "id": "cut-stub:reg:instr_mem:mem:q:sink:edge:reg:instr_mem:mem:mux:instr_mem:mem_read_addr:mem",
+      "source": "cut-label:reg:instr_mem:mem:q:sink:edge:reg:instr_mem:mem:mux:instr_mem:mem_read_addr:mem",
+      "target": "mux:instr_mem:mem_read_addr",
+      "sourceHandle": "cut",
+      "targetHandle": "in:in",
+      "path": "M 538.5 270 L 552 270"
+    },
+    {
+      "id": "cut-stub:reg:instr_mem:mem:q:source",
+      "source": "reg:instr_mem:mem",
+      "target": "cut-label:reg:instr_mem:mem:q:source",
+      "sourceHandle": "q",
+      "targetHandle": "cut",
+      "path": "M 274.5 78 L 280.5 78"
+    },
     {
       "id": "edge:mux:instr_mem:mem_read_addr:port:instr_mem:instr:instr",
       "source": "mux:instr_mem:mem_read_addr",
       "target": "port:instr_mem:instr",
       "sourceHandle": "out",
       "targetHandle": "port:instr",
-      "path": "M 600 120 L 624 120 L 792 120 L 816 120"
+      "path": "M 696 264 L 720 264 L 888 264 L 912 264"
     },
     {
       "id": "edge:port:instr_mem:addr:mux:instr_mem:mem_read_addr:addr",
@@ -86,7 +162,7 @@
       "target": "mux:instr_mem:mem_read_addr",
       "sourceHandle": "port:addr",
       "targetHandle": "sel",
-      "path": "M 240 48 L 264 48 L 528 48 L 528 96"
+      "path": "M 240 168 L 264 168 L 624 168 L 624 192 L 624 240"
     }
   ]
 }

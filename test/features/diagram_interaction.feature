@@ -823,7 +823,6 @@ Feature: Diagram Interaction
     When I open the "top" module in SVSCH
     And I click to select the block "u1"
     And I click the "Cut out" button
-    And I click to select the block "u1"
     Then the "Cut out" button should not be visible
 
   Scenario: Auto-laying out one connection's blocks anchors the result, leaves the other connection untouched, and carries cut net ends along
