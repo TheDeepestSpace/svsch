@@ -22,6 +22,11 @@ concurrency:
   # loop (#380).
   group: gh-pages-publish
   cancel-in-progress: false
+  # Default queueing (`single`) only keeps one run pending and cancels any
+  # further arrival outright — with this many producers sharing the group
+  # (five report_*_stats jobs in ci.yml alone, per #421/#422) that would
+  # silently drop history recordings instead of just delaying them.
+  queue: max
 
 jobs:
   record:

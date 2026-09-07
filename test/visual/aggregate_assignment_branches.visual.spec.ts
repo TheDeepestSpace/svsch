@@ -1,15 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { expectGraphAndScreenshot, fitGraphView, openFixture, paddedAllNodesClip } from './helper';
 
-// Regression coverage for #257: a concat-LHS non-blocking assign repeated
-// across an if/else-if chain used to get lowered twice, producing duplicate
-// register nodes with a 5-way driver-edge fan-in and a node displaced an
-// order of magnitude away from the rest of the (tiny) module by ELK's
-// layered cycle-breaking. This is the exact module from the bug report.
+// Regression coverage for #257 and #314. The repeated concat-LHS assignment
+// should create each register once, then preserve the source-level aggregate
+// through one mux per condition before a single final breakout.
 test.describe('aggregate assignment branches visual rendering', () => {
-  test('renders a concat-LHS register driven by one priority mux per branch chain', async ({
-    page,
-  }) => {
+  test('renders one aggregate priority-mux chain and one final breakout', async ({ page }) => {
     const view = await openFixture(
       page,
       'aggregate_assignment_branches.sv',
@@ -23,13 +19,25 @@ test.describe('aggregate assignment branches visual rendering', () => {
       'reg:aggregate_assignment_branches:data_valid',
     ]);
 
+    const breakouts = view.nodes.filter((node) => node.kind === 'bus' && node.label === 'breakout');
+    expect(breakouts).toHaveLength(1);
+    expect(view.nodes.filter((node) => node.kind === 'mux')).toHaveLength(3);
+
     for (const register of registers) {
       const dDrivers = view.edges.filter(
         (edge) => edge.target === register.id && edge.targetPort === 'd',
       );
       expect(dDrivers).toHaveLength(1);
-      expect(view.nodes.find((node) => node.id === dDrivers[0].source)?.kind).toBe('mux');
+      expect(dDrivers[0].source).toBe(breakouts[0].id);
     }
+
+    expect(
+      view.edges.filter(
+        (edge) =>
+          view.nodes.find((node) => node.id === edge.source)?.kind === 'mux' &&
+          edge.target === breakouts[0].id,
+      ),
+    ).toHaveLength(1);
 
     // Guards the layout-displacement symptom directly: before the fix, the
     // duplicate-fed registers landed ~10000px below the rest of this

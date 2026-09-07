@@ -59,42 +59,42 @@ function publishFiles(contentByFilename) {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-ci-duration-charts-'));
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
-      gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
-      if (attempt > 1) {
-        git(['worktree', 'remove', '--force', worktreeDir]);
-      }
-      git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
-
-      const chartsDir = path.join(worktreeDir, 'dev', 'ci-duration-charts', `pr-${PR_NUMBER}`);
-      fs.mkdirSync(chartsDir, { recursive: true });
-      for (const [filename, content] of contentByFilename) {
-        fs.writeFileSync(path.join(chartsDir, filename), content, 'utf8');
-      }
-
-      git(['add', '-A'], { cwd: worktreeDir });
-      const status = git(['status', '--porcelain'], { cwd: worktreeDir }).trim();
-      if (!status) {
-        return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
-      }
-
-      git(
-        [
-          '-c',
-          'user.name=github-actions[bot]',
-          '-c',
-          'user.email=github-actions[bot]@users.noreply.github.com',
-          'commit',
-          '-m',
-          `Update CI duration chart for PR #${PR_NUMBER}`,
-        ],
-        { cwd: worktreeDir },
-      );
       try {
+        gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
+        if (attempt > 1) {
+          git(['worktree', 'remove', '--force', worktreeDir]);
+        }
+        git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
+
+        const chartsDir = path.join(worktreeDir, 'dev', 'ci-duration-charts', `pr-${PR_NUMBER}`);
+        fs.mkdirSync(chartsDir, { recursive: true });
+        for (const [filename, content] of contentByFilename) {
+          fs.writeFileSync(path.join(chartsDir, filename), content, 'utf8');
+        }
+
+        git(['add', '-A'], { cwd: worktreeDir });
+        const status = git(['status', '--porcelain'], { cwd: worktreeDir }).trim();
+        if (!status) {
+          return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
+        }
+
+        git(
+          [
+            '-c',
+            'user.name=github-actions[bot]',
+            '-c',
+            'user.email=github-actions[bot]@users.noreply.github.com',
+            'commit',
+            '-m',
+            `Update CI duration chart for PR #${PR_NUMBER}`,
+          ],
+          { cwd: worktreeDir },
+        );
         gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
         return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
       } catch (err) {
         if (attempt === 3) throw err;
-        // Someone else pushed to gh-pages first — refetch and retry.
+        // Retry transient fetch failures and concurrent push races.
       }
     }
     throw new Error('Failed to publish CI duration chart after 3 attempts');
