@@ -242,6 +242,17 @@ test.describe('Add to Partial — every supported node kind', () => {
           .nth(partialFrameIndex)
           .frameLocator('iframe#active-frame');
 
+        // Mirrors the main-webview lookup above with an expect.poll rather
+        // than a one-shot check: the partial pane's own elaboration (see the
+        // "SVSCH: Elaborating project..." notification racing this in a
+        // captured failure) can still be in flight right after the pane
+        // opens, so a single findSystemNodeId call here was observed to flake.
+        await expect
+          .poll(
+            async () => (await findSystemNodeId(partialWebview, targetLabel, targetKind)) !== null,
+            { timeout: 15_000 },
+          )
+          .toBe(true);
         const partialNodeId = await findSystemNodeId(partialWebview, targetLabel, targetKind);
         expect(
           partialNodeId,
