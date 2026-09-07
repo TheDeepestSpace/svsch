@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 96
+        "y": 120
       },
       "width": 96,
       "height": 48,
@@ -194,7 +194,7 @@
       "id": "port:top:dflt",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": -144,
         "y": 156
       },
       "width": 120,
@@ -218,7 +218,7 @@
       "target": "mux:top:out_a:sel_a:out_a",
       "sourceHandle": "cut",
       "targetHandle": "in:1_b1",
-      "path": "M 120 120 L 120 120 L 120 144 L 144 144"
+      "path": "M 120 144 L 120 144 L 144 144"
     },
     {
       "id": "cut-stub:literal:top:out_a_1_b1:1_b1:sink:edge:literal:top:out_a_1_b1:1_b1:mux:top:out_b:sel_b:out_b:out_b_1_b1",
@@ -266,7 +266,7 @@
       "target": "mux:top:out_a:sel_a:out_a",
       "sourceHandle": "port:dflt",
       "targetHandle": "in:default",
-      "path": "M 144 168 L 168 168 L 120 168 L 144 168"
+      "path": "M -24 168 L 0 168 L 120 168 L 144 168"
     },
     {
       "id": "edge:port:top:dflt:mux:top:out_b:sel_b:out_b:dflt",
@@ -274,7 +274,7 @@
       "target": "mux:top:out_b:sel_b:out_b",
       "sourceHandle": "port:dflt",
       "targetHandle": "in:default",
-      "path": "M 144 168 L 168 168 L 192 168 L 192 360 L 432 360 L 456 360"
+      "path": "M -24 168 L 0 168 L 120 168 L 120 360 L 432 360 L 456 360"
     }
   ]
 }
