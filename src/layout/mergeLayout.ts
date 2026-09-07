@@ -2730,8 +2730,13 @@ export function enforceMinimumBlockGaps(
   positions: Map<string, { x: number; y: number }>,
   moduleLayout: SavedModuleLayout,
 ): void {
-  const blocks = nodes.filter(
-    (node) => isBlockSpacingNode(node) && !moduleLayout.nodes[node.id]?.fixed,
+  // FIXED nodes must still act as obstacles here — a newly-placed movable
+  // node (e.g. a component ELK couldn't connect to anything already FIXED,
+  // see the partial diagram's locked-node layout) can otherwise land
+  // exactly on top of one instead of being nudged clear of it.
+  const blocks = nodes.filter((node) => isBlockSpacingNode(node));
+  const movableIds = new Set(
+    blocks.filter((node) => !moduleLayout.nodes[node.id]?.fixed).map((node) => node.id),
   );
   const geometries = new Map(
     blocks.map((node) => {
@@ -2748,8 +2753,15 @@ export function enforceMinimumBlockGaps(
   );
   const minGap = diagramSizing.gridSize;
 
+  // A FIXED node's true rendered position is always its saved x/y (see
+  // buildViewModel's initialPositioned, which never trusts the ELK-derived
+  // position for a fixed node) — never `positions.get`, which for a FIXED
+  // node only reflects wherever ELK's layered/network-simplex pass happened
+  // to nudge it internally while satisfying *other* nodes' layering, and can
+  // drift from the saved coordinate it's actually locked to.
   const boundsFor = (node: DiagramNode): RegionBounds | undefined => {
-    const position = positions.get(node.id);
+    const saved = moduleLayout.nodes[node.id];
+    const position = saved?.fixed ? { x: saved.x, y: saved.y } : positions.get(node.id);
     const geometry = geometries.get(node.id);
     if (!position || !geometry) return undefined;
     return {
@@ -2762,10 +2774,19 @@ export function enforceMinimumBlockGaps(
 
   for (let pass = 0; pass < blocks.length; pass++) {
     let moved = false;
-    const ordered = [...blocks].sort((a, b) => (boundsFor(a)?.y ?? 0) - (boundsFor(b)?.y ?? 0));
+    // On a y-tie, a FIXED node must sort before a movable one so it's
+    // treated as the anchor the movable node gets pushed clear of, rather
+    // than the reverse (which the "only push, never move a FIXED node"
+    // rule below can't express).
+    const ordered = [...blocks].sort((a, b) => {
+      const dy = (boundsFor(a)?.y ?? 0) - (boundsFor(b)?.y ?? 0);
+      if (dy !== 0) return dy;
+      return Number(movableIds.has(a.id)) - Number(movableIds.has(b.id));
+    });
 
     for (let i = 1; i < ordered.length; i++) {
       const node = ordered[i];
+      if (!movableIds.has(node.id)) continue;
       const pos = positions.get(node.id);
       const geometry = geometries.get(node.id);
       const bounds = boundsFor(node);
