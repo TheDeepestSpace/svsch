@@ -9,6 +9,7 @@ import {
   openSystemDiagram,
   openSystemModule,
 } from './helpers';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 interface HighlightExpectation {
   kind: string;
@@ -96,7 +97,13 @@ test('highlights the declared diagram nodes for each selected source construct',
           // on the right, matching diagram node(s) highlighted on the left.
           const screenshotName =
             index === 0 ? `${highlightCase.id}.png` : `${highlightCase.id}--${index}.png`;
-          await expect(workbox).toHaveScreenshot(screenshotName);
+          // See SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression
+          // for why this case needs a wider tolerance (PR #376).
+          const maxDiffPixels =
+            highlightCase.id === 'inverter-not-expression'
+              ? SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression
+              : undefined;
+          await expect(workbox).toHaveScreenshot(screenshotName, { maxDiffPixels });
         }
       });
     }

@@ -13,7 +13,14 @@ export const SNAPSHOT_THRESHOLDS = {
       // that don't reproduce locally and aren't a real rendering regression.
       nestedCaseLiteralCollision: 120,
     },
-    system: 20,
+    system: {
+      default: 20,
+      // inverter-not-expression's full-window capture has shown a 117px
+      // sub-pixel antialiasing diff on VS Code 1.90.0 (the oldest pinned
+      // build, PR #376) that doesn't reproduce on newer builds and isn't a
+      // real rendering regression.
+      inverterNotExpression: 120,
+    },
   },
   pixelmatch: {
     bdd: 35,
@@ -88,9 +95,16 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
   }
 
   if (normalizedPath.startsWith('test/system/__screenshots__/')) {
+    let maxDiffPixels: number = SNAPSHOT_THRESHOLDS.playwright.system.default;
+    if (
+      normalizedPath.includes('/sourceSelectionHighlight.spec.ts-snapshots/') &&
+      isPlaywrightSnapshotNamed(normalizedPath, 'inverter-not-expression')
+    ) {
+      maxDiffPixels = SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression;
+    }
     return {
       suite: 'system',
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
+      maxDiffPixels,
       pixelmatchThreshold: PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD,
     };
   }
