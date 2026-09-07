@@ -215,9 +215,10 @@ When('I extend every cut net in the partial diagram', async function (this: BddW
         { timeout: 10_000 },
       )
       .toBe(true);
+    // Clear the hover so each build-up screenshot isn't captured mid-reveal.
+    await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
+    await this.takeScreenshot(`After extending cut net ${i + 1}`);
   }
-  // Clear the hover so the following screenshot isn't captured mid-reveal.
-  await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
   await expect(netLabels).toHaveCount(0, { timeout: 10_000 });
   await this.takeScreenshot('After extending every cut net in the partial diagram');
 });
