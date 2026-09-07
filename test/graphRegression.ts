@@ -161,14 +161,8 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
 // silently creating one would make the test pass without checking anything.
 // Locally, auto-create so a dev adding a new scenario can generate the
 // initial baseline and commit it. UPDATE_SNAPSHOTS always wins, CI included.
-// TEMP DIAGNOSTIC (PR #376): the CI-only throw below is disabled so a linear
-// BDD scenario with several missing baselines runs to completion in one pass
-// instead of stopping at the first — lets every remaining screenshot step's
-// attachment/graph-JSON get captured in a single CI round. Revert before merge.
-const DIAGNOSTIC_SKIP_MISSING_BASELINE_THROW = true;
-
 export function assertBaselineCreatable(snapshotPath: string, updateSnapshots: boolean): void {
-  if (!updateSnapshots && process.env.CI && !DIAGNOSTIC_SKIP_MISSING_BASELINE_THROW) {
+  if (!updateSnapshots && process.env.CI) {
     throw new Error(
       `No baseline snapshot committed for "${snapshotPath}".\n` +
         `Run the test locally to generate it (or with UPDATE_SNAPSHOTS=true to regenerate), ` +
@@ -193,12 +187,6 @@ export function compareGraphState(
   const snapshotMissingOrEmpty =
     !fs.existsSync(snapshotPath) || fs.statSync(snapshotPath).size === 0;
   if (snapshotMissingOrEmpty) {
-    // TEMP DIAGNOSTIC (PR #376): local VS Code E2E harness is unavailable in
-    // the current sandbox, so dump the computed graph to CI logs to hand-author
-    // the baseline from there. Revert before merge.
-    if (!updateSnapshots && process.env.CI) {
-      console.error(`[TEMP DIAGNOSTIC] actual graph JSON for "${snapshotPath}":\n${actualJson}`);
-    }
     assertBaselineCreatable(snapshotPath, updateSnapshots);
     const parentDir = path.dirname(snapshotPath);
     if (!fs.existsSync(parentDir)) {
