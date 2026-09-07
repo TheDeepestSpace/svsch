@@ -182,6 +182,7 @@ export async function buildPartialViewModel(
 
   const view = await buildViewModel(graph, partialModule.name, layout, {
     extraPortMargins: partialCutLabelMargins(plan, included),
+    enforceFixedPeerPortSeparation: true,
   });
 
   const moduleLayout = layout.modules[partialModule.name] ?? { nodes: {} };

@@ -101,6 +101,17 @@ export interface BuildViewModelOptions {
    * right where those labels are about to land.
    */
   extraPortMargins?: Map<string, Map<string, { width: number; height: number }>>;
+  /**
+   * Guards against a leaf port ending up flush against an already-FIXED peer
+   * with no visible wire between them. Only the partial diagram's locked-node
+   * layout (see layout/partialDiagram.ts) hits this: extending a cut net adds
+   * an upstream port next to a block ELK already anchored in a previous
+   * render, and ELK's incremental layout doesn't reliably leave room for it.
+   * Left off by default — outside that incremental-extend flow, every node in
+   * a render is laid out together and already gets ELK's own (sometimes
+   * intentionally tighter) spacing, which this would otherwise widen.
+   */
+  enforceFixedPeerPortSeparation?: boolean;
 }
 
 export async function buildViewModel(
@@ -145,6 +156,7 @@ export async function buildViewModel(
     armRegions,
     cutMargins,
     options?.elkSizeOverrides,
+    options?.enforceFixedPeerPortSeparation,
   );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
@@ -1523,6 +1535,7 @@ async function autoLayoutMissingNodes(
   generateRegions: GenerateRegion[] = [],
   netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map(),
   sizeOverrides?: Record<string, { width: number; height: number }>,
+  enforceFixedPeerPortSeparation = false,
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
@@ -1600,9 +1613,15 @@ async function autoLayoutMissingNodes(
       }
     }
     alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
+    if (enforceFixedPeerPortSeparation) {
+      separateLeafPortsFromFixedPeers(nodes, edges, positions, moduleLayout);
+    }
     if (!useCompoundGenerateLayout) {
       enforceMinimumBlockGaps(nodes, positions, moduleLayout);
       alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
+      if (enforceFixedPeerPortSeparation) {
+        separateLeafPortsFromFixedPeers(nodes, edges, positions, moduleLayout);
+      }
     }
 
     const fixedRoutePositions = new Map<string, { x: number; y: number }>();
@@ -2598,6 +2617,89 @@ function alignSimpleLeafNodes(
       y: snapToGrid(peerPosition.y + peerOffset.y - ownOffset.y, node.kind),
     };
     if (!wouldOverlapOtherNode(node, candidate)) {
+      positions.set(node.id, candidate);
+    }
+  }
+}
+
+/**
+ * A leaf port with more than one connection (fan-out) never qualifies for
+ * alignSimpleLeafNodes' single-peer alignment above, so its x is left exactly
+ * where ELK's layered pass put it. That's fine when every node in the graph
+ * is free to move, but the partial diagram's locked-node layout (see
+ * partialDiagram.ts) pins every previously rendered block in place, and ELK's
+ * incremental layout doesn't reliably leave room in front of an already-FIXED
+ * node for an upstream port added later — the two can end up flush against
+ * each other with no visible wire between them. This is a narrow safety net:
+ * it only nudges a still-movable port away from a FIXED peer it would
+ * otherwise overlap or crowd, along the same WEST/EAST axis ELK already uses
+ * to route that peer's port.
+ */
+function separateLeafPortsFromFixedPeers(
+  nodes: DiagramNode[],
+  edges: DiagramEdge[],
+  positions: Map<string, { x: number; y: number }>,
+  moduleLayout: SavedModuleLayout,
+): void {
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
+  for (const node of nodes) {
+    if (node.kind !== 'port' || moduleLayout.nodes[node.id]?.fixed) {
+      continue;
+    }
+    const position = positions.get(node.id);
+    if (!position) continue;
+    const ownWidth = resolvedNodeDimensions(node).width;
+
+    let minX = -Infinity;
+    let maxX = Infinity;
+
+    for (const edge of edges) {
+      if (edge.source !== node.id && edge.target !== node.id) continue;
+      const isSource = edge.source === node.id;
+      const peer = nodesById.get(isSource ? edge.target : edge.source);
+      const savedPeer = peer ? moduleLayout.nodes[peer.id] : undefined;
+      if (!peer || peer.id === node.id || !savedPeer?.fixed) continue;
+      // Fixed nodes are pinned to their saved coordinates for the final
+      // render regardless of where this layout pass's ELK run placed them —
+      // read that ground truth rather than the (possibly stale) positions map.
+      const peerPosition = { x: savedPeer.x, y: savedPeer.y };
+
+      const peerRole: 'source' | 'target' = isSource ? 'target' : 'source';
+      const peerPortId = isSource ? edge.targetPort : edge.sourcePort;
+      const peerElkNode = elkNodeForDiagramNode(peer, false);
+      const peerElkPort = peerElkNode.ports.find(
+        (candidate) => candidate.id === endpointId(peer.id, peerPortId, peer, peerRole),
+      );
+      const peerSide = peerElkPort?.properties['org.eclipse.elk.port.side'];
+      if (peerSide !== 'WEST' && peerSide !== 'EAST') continue;
+
+      const peerBounds = leafBounds(peer, peerPosition);
+      if (peerSide === 'WEST') {
+        // Peer reads from its west side: this port must sit to the peer's left.
+        maxX = Math.min(maxX, peerBounds.x - diagramSizing.minNodeSeparation - ownWidth);
+      } else {
+        // Peer writes from its east side: this port must sit to the peer's right.
+        minX = Math.max(minX, peerBounds.x + peerBounds.width + diagramSizing.minNodeSeparation);
+      }
+    }
+
+    if (minX > maxX) continue; // Conflicting constraints — leave ELK's placement alone.
+
+    let x = position.x;
+    if (maxX !== Infinity) x = Math.min(x, maxX);
+    if (minX !== -Infinity) x = Math.max(x, minX);
+    const candidate = { ...position, x: snapToGrid(x) };
+    if (candidate.x === position.x) continue;
+
+    const candidateBounds = leafBounds(node, candidate);
+    const overlapsOther = nodes.some((other) => {
+      if (other.id === node.id) return false;
+      const otherPosition = positions.get(other.id);
+      if (!otherPosition) return false;
+      return boundsOverlap(candidateBounds, leafBounds(other, otherPosition));
+    });
+    if (!overlapsOther) {
       positions.set(node.id, candidate);
     }
   }
