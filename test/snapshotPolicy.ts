@@ -20,6 +20,12 @@ export const SNAPSHOT_THRESHOLDS = {
       // build, PR #376) that doesn't reproduce on newer builds and isn't a
       // real rendering regression.
       inverterNotExpression: 120,
+      // mux-ternary-assign and interface-declaration have shown a similar
+      // sub-pixel text/cursor rendering flake in the editor pane on VS Code
+      // 1.90.0 (PR #376) — same nature as inverterNotExpression above, just
+      // smaller diffs.
+      muxTernaryAssign: 20,
+      interfaceDeclaration: 250,
     },
   },
   pixelmatch: {

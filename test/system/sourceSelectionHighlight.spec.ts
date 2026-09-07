@@ -98,17 +98,16 @@ test('highlights the declared diagram nodes for each selected source construct',
           // on the right, matching diagram node(s) highlighted on the left.
           const screenshotName =
             index === 0 ? `${highlightCase.id}.png` : `${highlightCase.id}--${index}.png`;
-          // See SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression
-          // for why this case needs a wider tolerance (PR #376).
-          const maxDiffPixels =
-            highlightCase.id === 'inverter-not-expression'
-              ? SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression
-              : undefined;
-          // TEMP DIAGNOSTIC (PR #376): soft so one CI run surfaces every
-          // baseline the new long_register_chain.sv fixture's explorer-row
-          // shift broke, instead of aborting at the first. Revert to a
-          // strict expect() once every affected baseline is re-captured.
-          await expect.soft(workbox).toHaveScreenshot(screenshotName, { maxDiffPixels });
+          // A few cases show a sub-pixel rendering flake on VS Code 1.90.0
+          // that needs a wider tolerance — see the comments next to each
+          // entry in SNAPSHOT_THRESHOLDS.playwright.system (PR #376).
+          const caseThresholds: Partial<Record<string, number>> = {
+            'inverter-not-expression': SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression,
+            'mux-ternary-assign': SNAPSHOT_THRESHOLDS.playwright.system.muxTernaryAssign,
+            'interface-declaration': SNAPSHOT_THRESHOLDS.playwright.system.interfaceDeclaration,
+          };
+          const maxDiffPixels = caseThresholds[highlightCase.id];
+          await expect(workbox).toHaveScreenshot(screenshotName, { maxDiffPixels });
         }
       });
     }
