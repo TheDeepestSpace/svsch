@@ -2703,6 +2703,15 @@ Then(
   },
 );
 
+Then(
+  'the workspace file {string} should match the exported SVG snapshot',
+  async function (this: BddWorld, filename: string) {
+    if (!this.workspaceDir) throw new Error('No open workspace');
+    const content = await fs.promises.readFile(path.join(this.workspaceDir, filename), 'utf8');
+    await persistSvgSnapshot(this, content, 'exported-svg');
+  },
+);
+
 Then('I should see a loop block', async function (this: BddWorld) {
   await expect(this.webviewPage.locator('[data-node-kind="loop"]')).toBeVisible();
 });
@@ -3664,12 +3673,16 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   );
 }
 
-async function persistSvgSnapshot(world: BddWorld, svgContent: string) {
+async function persistSvgSnapshot(
+  world: BddWorld,
+  svgContent: string,
+  label: string = 'cli-svg',
+) {
   if (!world.scenarioName) return;
   const snapshotStepCounter = consumeCliSnapshotStepCounter(world);
   const safe = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
   const sid = world.isScenarioOutline ? `-${world.scenarioExampleIndex}` : '';
-  const snapshotName = `${safe}${sid}--${snapshotStepCounter.toString().padStart(2, '0')}--cli-svg`;
+  const snapshotName = `${safe}${sid}--${snapshotStepCounter.toString().padStart(2, '0')}--${label}`;
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);

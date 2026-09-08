@@ -267,6 +267,7 @@ Feature: Partial diagram
     # make it into the exported markup.
     And the workspace file "top_partial.svg" should contain "leaf"
     And the workspace file "top_partial.svg" should contain "hdl-net-label"
+    And the workspace file "top_partial.svg" should match the exported SVG snapshot
 
   Scenario Outline: Removing a block drops its own cut ends and cuts nets it was tied to
     Given I have a file "top.sv" in my workspace:
