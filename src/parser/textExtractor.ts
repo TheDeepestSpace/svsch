@@ -56,14 +56,10 @@ interface PromotedTextExpression {
 }
 
 interface RegisterTimingInfo {
-  clockSignal?: string;
+  clockSignal: string;
   resetSignal?: string;
   resetKind: 'none' | 'async' | 'sync';
   resetActiveLow?: boolean;
-  /** Event-control identifiers that are neither the clock nor the reset (e.g. a
-   *  compound `always_ff @(posedge a or posedge b or negedge c)` sensitivity list
-   *  where at most one signal each can be classified as clock/reset by name). */
-  otherEventSignals?: string[];
 }
 
 export interface TextExtractorOptions {
@@ -526,9 +522,8 @@ function extractRegisters(
     target: string;
     expression: string;
     resetExpression?: string;
-    clk?: string;
+    clk: string;
     reset?: string;
-    otherEventSignals?: string[];
     sourceRange: { file: string; startLine: number; endLine: number };
   }> = [];
   const alwaysRegex =
@@ -574,10 +569,8 @@ function extractRegisters(
       const registerPorts: DiagramPort[] = [
         { id: stableId('d'), name: 'D', direction: 'input', width: signalWidths.get(target) },
         { id: stableId('q'), name: 'Q', direction: 'output', width: signalWidths.get(target) },
+        { id: stableId('clk'), name: timing.clockSignal, direction: 'input' },
       ];
-      if (timing.clockSignal) {
-        registerPorts.push({ id: stableId('clk'), name: timing.clockSignal, direction: 'input' });
-      }
       if (timing.resetSignal) {
         registerPorts.push({ id: stableId('reset'), name: timing.resetSignal, direction: 'input' });
         if (expressions.reset && isNonZeroExpression(expressions.reset)) {
@@ -588,13 +581,6 @@ function extractRegisters(
             width: signalWidths.get(target),
           });
         }
-      }
-      for (const eventSignal of timing.otherEventSignals ?? []) {
-        registerPorts.push({
-          id: stableId('event', eventSignal),
-          name: eventSignal,
-          direction: 'input',
-        });
       }
 
       nodes.push({
@@ -622,7 +608,6 @@ function extractRegisters(
             : undefined,
         clk: timing.clockSignal,
         reset: timing.resetSignal,
-        otherEventSignals: timing.otherEventSignals,
         sourceRange,
       });
     }
@@ -811,21 +796,6 @@ function extractRegisters(
       }
     }
 
-    for (const eventSignal of assignment.otherEventSignals ?? []) {
-      const eventPort = modulePorts.find((port) => port.name === eventSignal);
-      if (eventPort) {
-        edges.push({
-          id: edgeId(stableId('port', match.name, eventPort.name), assignment.nodeId, eventSignal),
-          source: stableId('port', match.name, eventPort.name),
-          target: assignment.nodeId,
-          sourcePort: eventPort.id,
-          targetPort: stableId('event', eventSignal),
-          label: eventSignal,
-          signal: eventSignal,
-        });
-      }
-    }
-
     const targetPort = modulePorts.find((port) => port.name === assignment.target);
     if (targetPort) {
       edges.push({
@@ -850,54 +820,26 @@ function parseAlwaysFfTiming(
   clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
   resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
 ): RegisterTimingInfo {
-  const rawEdgeTerms = [
-    ...eventExpression.matchAll(/\b(posedge|negedge)\s+([A-Za-z_$][\w$]*)/g),
-  ].map((term) => ({
-    edge: term[1],
-    signal: term[2],
-  }));
+  const edgeTerms = [...eventExpression.matchAll(/\b(posedge|negedge)\s+([A-Za-z_$][\w$]*)/g)].map(
+    (term) => ({
+      edge: term[1],
+      signal: term[2],
+    }),
+  );
 
-  // De-dupe by signal, preserving first-seen order (a compound expression could
-  // repeat a signal, e.g. `posedge a or negedge a`).
-  const seenSignals = new Set<string>();
-  const edgeTerms = rawEdgeTerms.filter((term) => {
-    if (seenSignals.has(term.signal)) return false;
-    seenSignals.add(term.signal);
-    return true;
-  });
-
-  // A two-signal async sensitivity list can only ever be a clock paired with a
-  // reset (SystemVerilog convention), so positional inference is safe there. A
-  // compound list of three or more signals has no such guarantee -- collapsing
-  // arbitrary extra identifiers into clock/reset roles by position would
-  // misclassify (and auto-cut) unrelated nets, so only configured-name matches
-  // count once there are more than two signals.
-  const allowPositionalFallback = edgeTerms.length === 2;
-
+  const fallbackClock = edgeTerms[0]?.signal ?? 'clk';
   const clockTerm =
-    edgeTerms.find((term) => matchesSignalNameList(term.signal, clockSignalNames)) ??
-    (allowPositionalFallback ? edgeTerms[0] : undefined);
-  const clockSignal = clockTerm?.signal;
-
-  const remainingTerms = edgeTerms.filter((term) => term !== clockTerm);
-  const resetTerm =
-    remainingTerms.find((term) => matchesSignalNameList(term.signal, resetSignalNames)) ??
-    (allowPositionalFallback && clockTerm ? remainingTerms[0] : undefined);
-
+    edgeTerms.find((term) => matchesSignalNameList(term.signal, clockSignalNames)) ?? edgeTerms[0];
+  const clockSignal = clockTerm?.signal ?? fallbackClock;
+  const resetTerm = edgeTerms.find((term) => term.signal !== clockSignal);
   if (resetTerm) {
-    const otherEventSignals = remainingTerms
-      .filter((term) => term !== resetTerm)
-      .map((term) => term.signal);
     return {
       clockSignal,
       resetSignal: resetTerm.signal,
       resetKind: 'async',
       resetActiveLow: resetTerm.edge === 'negedge',
-      otherEventSignals: otherEventSignals.length > 0 ? otherEventSignals : undefined,
     };
   }
-
-  const otherEventSignals = remainingTerms.map((term) => term.signal);
 
   const syncReset = detectSynchronousReset(block, clockSignal, resetSignalNames);
   if (syncReset) {
@@ -906,20 +848,18 @@ function parseAlwaysFfTiming(
       resetSignal: syncReset.signal,
       resetKind: 'sync',
       resetActiveLow: syncReset.activeLow,
-      otherEventSignals: otherEventSignals.length > 0 ? otherEventSignals : undefined,
     };
   }
 
   return {
     clockSignal,
     resetKind: 'none',
-    otherEventSignals: otherEventSignals.length > 0 ? otherEventSignals : undefined,
   };
 }
 
 function detectSynchronousReset(
   block: string,
-  clockSignal: string | undefined,
+  clockSignal: string,
   resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
 ): { signal: string; activeLow: boolean } | undefined {
   const condition = block.match(/\bif\s*\(([^)]*)\)/)?.[1];
@@ -934,17 +874,9 @@ function detectSynchronousReset(
     return undefined;
   }
 
-  // An if/else condition can be an arbitrary boolean (e.g. a plain mux select),
-  // unlike an async sensitivity list where every identifier present is
-  // necessarily a clock or reset signal -- so there is no positional fallback
-  // here: only treat this as a synchronous reset when a configured/default
-  // reset name actually matches.
-  const resetSignal = identifiers.find((identifier) =>
-    matchesSignalNameList(identifier, resetSignalNames),
-  );
-  if (!resetSignal) {
-    return undefined;
-  }
+  const resetSignal =
+    identifiers.find((identifier) => matchesSignalNameList(identifier, resetSignalNames)) ??
+    identifiers[0];
   return {
     signal: resetSignal,
     activeLow: isActiveLowResetCondition(condition, resetSignal),
