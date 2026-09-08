@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-09-08 03:24:46</td>
+            <td class="headerValue">2026-09-08 04:00:11</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">18</td>
@@ -105,23 +105,23 @@
 <a name="43"><span class="lineNum">      43 </span>            : </a>
 <a name="44"><span class="lineNum">      44 </span>            : } // namespace</a>
 <a name="45"><span class="lineNum">      45 </span>            : </a>
-<a name="46"><span class="lineNum">      46 </span><span class="lineCov">       4001 : std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module&amp; mod) {</span></a>
-<a name="47"><span class="lineNum">      47 </span><span class="lineCov">       4001 :     int type = vpi_get(vpiType, select_handle);</span></a>
-<a name="48"><span class="lineNum">      48 </span><span class="lineCov">       4001 :     std::string select_str = getSignalName(select_handle);</span></a>
+<a name="46"><span class="lineNum">      46 </span><span class="lineCov">       4004 : std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module&amp; mod) {</span></a>
+<a name="47"><span class="lineNum">      47 </span><span class="lineCov">       4004 :     int type = vpi_get(vpiType, select_handle);</span></a>
+<a name="48"><span class="lineNum">      48 </span><span class="lineCov">       4004 :     std::string select_str = getSignalName(select_handle);</span></a>
 <a name="49"><span class="lineNum">      49 </span>            : </a>
-<a name="50"><span class="lineNum">      50 </span><span class="lineCov">       4001 :     vpiHandle index_h = vpi_handle(vpiIndex, select_handle);</span></a>
-<a name="51"><span class="lineNum">      51 </span><span class="lineCov">       4001 :     if (!index_h &amp;&amp; (type == 606 || type == 607 || type == 130)) {</span></a>
+<a name="50"><span class="lineNum">      50 </span><span class="lineCov">       4004 :     vpiHandle index_h = vpi_handle(vpiIndex, select_handle);</span></a>
+<a name="51"><span class="lineNum">      51 </span><span class="lineCov">       4004 :     if (!index_h &amp;&amp; (type == 606 || type == 607 || type == 130)) {</span></a>
 <a name="52"><span class="lineNum">      52 </span><span class="lineCov">        309 :         index_h = vpi_handle(vpiBaseExpr, select_handle);</span></a>
 <a name="53"><span class="lineNum">      53 </span>            :     }</a>
 <a name="54"><span class="lineNum">      54 </span>            : </a>
-<a name="55"><span class="lineNum">      55 </span><span class="lineCov">       4001 :     bool is_variable = false;</span></a>
-<a name="56"><span class="lineNum">      56 </span><span class="lineCov">       4001 :     if (index_h) {</span></a>
-<a name="57"><span class="lineNum">      57 </span><span class="lineCov">       3068 :         if (!isLiteralExpr(index_h)) {</span></a>
-<a name="58"><span class="lineNum">      58 </span><span class="lineCov">        700 :             is_variable = true;</span></a>
+<a name="55"><span class="lineNum">      55 </span><span class="lineCov">       4004 :     bool is_variable = false;</span></a>
+<a name="56"><span class="lineNum">      56 </span><span class="lineCov">       4004 :     if (index_h) {</span></a>
+<a name="57"><span class="lineNum">      57 </span><span class="lineCov">       3071 :         if (!isLiteralExpr(index_h)) {</span></a>
+<a name="58"><span class="lineNum">      58 </span><span class="lineCov">        703 :             is_variable = true;</span></a>
 <a name="59"><span class="lineNum">      59 </span>            :         }</a>
 <a name="60"><span class="lineNum">      60 </span>            :     }</a>
 <a name="61"><span class="lineNum">      61 </span>            : </a>
-<a name="62"><span class="lineNum">      62 </span><span class="lineCov">       4001 :     if (!is_variable) {</span></a>
+<a name="62"><span class="lineNum">      62 </span><span class="lineCov">       4004 :     if (!is_variable) {</span></a>
 <a name="63"><span class="lineNum">      63 </span><span class="lineCov">       3301 :         size_t pos = select_str.find('[');</span></a>
 <a name="64"><span class="lineNum">      64 </span><span class="lineCov">       3301 :         if (pos != std::string::npos) {</span></a>
 <a name="65"><span class="lineNum">      65 </span><span class="lineCov">       3301 :             std::string label = select_str.substr(pos);</span></a>
@@ -134,40 +134,40 @@
 <a name="72"><span class="lineNum">      72 </span><span class="lineCov">       3301 :         }</span></a>
 <a name="73"><span class="lineNum">      73 </span>            :     }</a>
 <a name="74"><span class="lineNum">      74 </span>            : </a>
-<a name="75"><span class="lineNum">      75 </span><span class="lineCov">       4001 :     if (is_variable) {</span></a>
-<a name="76"><span class="lineNum">      76 </span><span class="lineCov">        700 :         std::string base_name = getBaseSignalName(select_handle);</span></a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">        700 :         ensureDeclaredArray(mod, base_name);</span></a>
-<a name="78"><span class="lineNum">      78 </span><span class="lineCov">        700 :         if (!base_name.empty() &amp;&amp; mod.arrayDimensions.count(base_name) &gt; 0) {</span></a>
+<a name="75"><span class="lineNum">      75 </span><span class="lineCov">       4004 :     if (is_variable) {</span></a>
+<a name="76"><span class="lineNum">      76 </span><span class="lineCov">        703 :         std::string base_name = getBaseSignalName(select_handle);</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">        703 :         ensureDeclaredArray(mod, base_name);</span></a>
+<a name="78"><span class="lineNum">      78 </span><span class="lineCov">        703 :         if (!base_name.empty() &amp;&amp; mod.arrayDimensions.count(base_name) &gt; 0) {</span></a>
 <a name="79"><span class="lineNum">      79 </span><span class="lineCov">        144 :             return select_str;</span></a>
 <a name="80"><span class="lineNum">      80 </span>            :         }</a>
 <a name="81"><span class="lineNum">      81 </span>            : </a>
-<a name="82"><span class="lineNum">      82 </span><span class="lineCov">       1112 :         std::string select_node_id = &quot;select:&quot; + mod.name + &quot;:&quot; + select_str;</span></a>
-<a name="83"><span class="lineNum">      83 </span><span class="lineCov">        556 :         bool exists = false;</span></a>
-<a name="84"><span class="lineNum">      84 </span><span class="lineCov">       1844 :         for (const auto&amp; n : mod.nodes) {</span></a>
+<a name="82"><span class="lineNum">      82 </span><span class="lineCov">       1118 :         std::string select_node_id = &quot;select:&quot; + mod.name + &quot;:&quot; + select_str;</span></a>
+<a name="83"><span class="lineNum">      83 </span><span class="lineCov">        559 :         bool exists = false;</span></a>
+<a name="84"><span class="lineNum">      84 </span><span class="lineCov">       1847 :         for (const auto&amp; n : mod.nodes) {</span></a>
 <a name="85"><span class="lineNum">      85 </span><span class="lineCov">       1288 :             if (n.id == select_node_id) { exists = true; break; }</span></a>
 <a name="86"><span class="lineNum">      86 </span>            :         }</a>
 <a name="87"><span class="lineNum">      87 </span>            : </a>
-<a name="88"><span class="lineNum">      88 </span><span class="lineCov">        556 :         if (!exists) {</span></a>
-<a name="89"><span class="lineNum">      89 </span><span class="lineCov">       1112 :             std::string sel_name = index_h ? getOrPromoteExpr(index_h, mod, select_str + &quot;_sel&quot;) : &quot;idx&quot;;</span></a>
-<a name="90"><span class="lineNum">      90 </span><span class="lineCov">        556 :             bool is_indexed_part_select = (type == 606 || type == 607 || type == 130);</span></a>
+<a name="88"><span class="lineNum">      88 </span><span class="lineCov">        559 :         if (!exists) {</span></a>
+<a name="89"><span class="lineNum">      89 </span><span class="lineCov">       1118 :             std::string sel_name = index_h ? getOrPromoteExpr(index_h, mod, select_str + &quot;_sel&quot;) : &quot;idx&quot;;</span></a>
+<a name="90"><span class="lineNum">      90 </span><span class="lineCov">        559 :             bool is_indexed_part_select = (type == 606 || type == 607 || type == 130);</span></a>
 <a name="91"><span class="lineNum">      91 </span>            : </a>
-<a name="92"><span class="lineNum">      92 </span><span class="lineCov">        556 :             Node n;</span></a>
-<a name="93"><span class="lineNum">      93 </span><span class="lineCov">        556 :             n.id = select_node_id;</span></a>
-<a name="94"><span class="lineNum">      94 </span><span class="lineCov">        556 :             n.kind = &quot;select&quot;;</span></a>
-<a name="95"><span class="lineNum">      95 </span><span class="lineCov">        556 :             n.label = select_str;</span></a>
-<a name="96"><span class="lineNum">      96 </span><span class="lineCov">        556 :             n.source = getSourceInfo(select_handle);</span></a>
-<a name="97"><span class="lineNum">      97 </span><span class="lineCov">        556 :             n.metadata.expression = select_str;</span></a>
+<a name="92"><span class="lineNum">      92 </span><span class="lineCov">        559 :             Node n;</span></a>
+<a name="93"><span class="lineNum">      93 </span><span class="lineCov">        559 :             n.id = select_node_id;</span></a>
+<a name="94"><span class="lineNum">      94 </span><span class="lineCov">        559 :             n.kind = &quot;select&quot;;</span></a>
+<a name="95"><span class="lineNum">      95 </span><span class="lineCov">        559 :             n.label = select_str;</span></a>
+<a name="96"><span class="lineNum">      96 </span><span class="lineCov">        559 :             n.source = getSourceInfo(select_handle);</span></a>
+<a name="97"><span class="lineNum">      97 </span><span class="lineCov">        559 :             n.metadata.expression = select_str;</span></a>
 <a name="98"><span class="lineNum">      98 </span>            : </a>
-<a name="99"><span class="lineNum">      99 </span><span class="lineCov">        556 :             std::string sel_width = &quot;[0:0]&quot;;</span></a>
-<a name="100"><span class="lineNum">     100 </span><span class="lineCov">        556 :             if (index_h) {</span></a>
-<a name="101"><span class="lineNum">     101 </span><span class="lineCov">        556 :                 sel_width = getDeclaredSignalWidth(mod, sel_name);</span></a>
-<a name="102"><span class="lineNum">     102 </span><span class="lineCov">        556 :                 if (sel_width.empty() || sel_width == &quot;[0:0]&quot;) sel_width = getWidth(index_h);</span></a>
+<a name="99"><span class="lineNum">      99 </span><span class="lineCov">        559 :             std::string sel_width = &quot;[0:0]&quot;;</span></a>
+<a name="100"><span class="lineNum">     100 </span><span class="lineCov">        559 :             if (index_h) {</span></a>
+<a name="101"><span class="lineNum">     101 </span><span class="lineCov">        559 :                 sel_width = getDeclaredSignalWidth(mod, sel_name);</span></a>
+<a name="102"><span class="lineNum">     102 </span><span class="lineCov">        559 :                 if (sel_width.empty() || sel_width == &quot;[0:0]&quot;) sel_width = getWidth(index_h);</span></a>
 <a name="103"><span class="lineNum">     103 </span>            :             }</a>
 <a name="104"><span class="lineNum">     104 </span>            :             </a>
-<a name="105"><span class="lineNum">     105 </span><span class="lineCov">        556 :             n.ports.push_back({&quot;sel&quot;, &quot;input&quot;, sel_name, sel_width, &quot;s&quot;});</span></a>
+<a name="105"><span class="lineNum">     105 </span><span class="lineCov">        559 :             n.ports.push_back({&quot;sel&quot;, &quot;input&quot;, sel_name, sel_width, &quot;s&quot;});</span></a>
 <a name="106"><span class="lineNum">     106 </span>            : </a>
-<a name="107"><span class="lineNum">     107 </span><span class="lineCov">        556 :             std::string select_width = getWidth(select_handle);</span></a>
-<a name="108"><span class="lineNum">     108 </span><span class="lineCov">        556 :             if (is_indexed_part_select) {</span></a>
+<a name="107"><span class="lineNum">     107 </span><span class="lineCov">        559 :             std::string select_width = getWidth(select_handle);</span></a>
+<a name="108"><span class="lineNum">     108 </span><span class="lineCov">        559 :             if (is_indexed_part_select) {</span></a>
 <a name="109"><span class="lineNum">     109 </span><span class="lineCov">        309 :                 vpiHandle width_h = vpi_handle(vpiWidthExpr, select_handle);</span></a>
 <a name="110"><span class="lineNum">     110 </span><span class="lineCov">        309 :                 std::string width_text = width_h ? getExprText(width_h) : &quot;&quot;;</span></a>
 <a name="111"><span class="lineNum">     111 </span><span class="lineCov">        309 :                 int width_bits = width_h ? getConstantInt(width_h) : 0;</span></a>
@@ -187,13 +187,13 @@
 <a name="125"><span class="lineNum">     125 </span><span class="lineCov">        309 :                 }</span></a>
 <a name="126"><span class="lineNum">     126 </span><span class="lineCov">        309 :             }</span></a>
 <a name="127"><span class="lineNum">     127 </span>            :             </a>
-<a name="128"><span class="lineNum">     128 </span><span class="lineCov">        556 :             vpiHandle base_h = vpi_handle(vpiParent, select_handle);</span></a>
-<a name="129"><span class="lineNum">     129 </span><span class="lineCov">        556 :             if (!base_h) base_h = vpi_handle(vpiExpr, select_handle);</span></a>
-<a name="130"><span class="lineNum">     130 </span><span class="lineCov">        556 :             std::string base_width = base_h ? getWidth(base_h) : &quot;&quot;;</span></a>
-<a name="131"><span class="lineNum">     131 </span><span class="lineCov">        556 :             if (base_width.empty() || base_width == &quot;[0:0]&quot;) {</span></a>
-<a name="132"><span class="lineNum">     132 </span><span class="lineCov">        556 :                 base_width = getDeclaredSignalWidth(mod, base_name);</span></a>
+<a name="128"><span class="lineNum">     128 </span><span class="lineCov">        559 :             vpiHandle base_h = vpi_handle(vpiParent, select_handle);</span></a>
+<a name="129"><span class="lineNum">     129 </span><span class="lineCov">        559 :             if (!base_h) base_h = vpi_handle(vpiExpr, select_handle);</span></a>
+<a name="130"><span class="lineNum">     130 </span><span class="lineCov">        559 :             std::string base_width = base_h ? getWidth(base_h) : &quot;&quot;;</span></a>
+<a name="131"><span class="lineNum">     131 </span><span class="lineCov">        559 :             if (base_width.empty() || base_width == &quot;[0:0]&quot;) {</span></a>
+<a name="132"><span class="lineNum">     132 </span><span class="lineCov">        559 :                 base_width = getDeclaredSignalWidth(mod, base_name);</span></a>
 <a name="133"><span class="lineNum">     133 </span>            :             }</a>
-<a name="134"><span class="lineNum">     134 </span><span class="lineCov">        556 :             if (base_width.empty() || base_width == &quot;[0:0]&quot;) {</span></a>
+<a name="134"><span class="lineNum">     134 </span><span class="lineCov">        559 :             if (base_width.empty() || base_width == &quot;[0:0]&quot;) {</span></a>
 <a name="135"><span class="lineNum">     135 </span><span class="lineNoCov">          0 :                 size_t bracket = select_str.find('[');</span></a>
 <a name="136"><span class="lineNum">     136 </span><span class="lineNoCov">          0 :                 if (bracket != std::string::npos) {</span></a>
 <a name="137"><span class="lineNum">     137 </span><span class="lineNoCov">          0 :                     std::string text_base = select_str.substr(0, bracket);</span></a>
@@ -202,13 +202,13 @@
 <a name="140"><span class="lineNum">     140 </span><span class="lineNoCov">          0 :                 }</span></a>
 <a name="141"><span class="lineNum">     141 </span>            :             }</a>
 <a name="142"><span class="lineNum">     142 </span>            :             </a>
-<a name="143"><span class="lineNum">     143 </span><span class="lineCov">        556 :             n.ports.push_back({&quot;in&quot;, &quot;input&quot;, base_name, base_width});</span></a>
-<a name="144"><span class="lineNum">     144 </span><span class="lineCov">        556 :             n.ports.push_back({&quot;out&quot;, &quot;output&quot;, select_str, select_width});</span></a>
+<a name="143"><span class="lineNum">     143 </span><span class="lineCov">        559 :             n.ports.push_back({&quot;in&quot;, &quot;input&quot;, base_name, base_width});</span></a>
+<a name="144"><span class="lineNum">     144 </span><span class="lineCov">        559 :             n.ports.push_back({&quot;out&quot;, &quot;output&quot;, select_str, select_width});</span></a>
 <a name="145"><span class="lineNum">     145 </span>            : </a>
-<a name="146"><span class="lineNum">     146 </span><span class="lineCov">        556 :             mod.nodes.push_back(n);</span></a>
-<a name="147"><span class="lineNum">     147 </span><span class="lineCov">        556 :         }</span></a>
-<a name="148"><span class="lineNum">     148 </span><span class="lineCov">        556 :         return select_str;</span></a>
-<a name="149"><span class="lineNum">     149 </span><span class="lineCov">        700 :     }</span></a>
+<a name="146"><span class="lineNum">     146 </span><span class="lineCov">        559 :             mod.nodes.push_back(n);</span></a>
+<a name="147"><span class="lineNum">     147 </span><span class="lineCov">        559 :         }</span></a>
+<a name="148"><span class="lineNum">     148 </span><span class="lineCov">        559 :         return select_str;</span></a>
+<a name="149"><span class="lineNum">     149 </span><span class="lineCov">        703 :     }</span></a>
 <a name="150"><span class="lineNum">     150 </span>            : </a>
 <a name="151"><span class="lineNum">     151 </span>            :     // Literal select logic (Bus Breakout)</a>
 <a name="152"><span class="lineNum">     152 </span><span class="lineCov">       3301 :     std::string base_name = getBaseSignalName(select_handle);</span></a>
@@ -298,123 +298,123 @@
 <a name="236"><span class="lineNum">     236 </span><span class="lineCov">       3301 :     return select_str;</span></a>
 <a name="237"><span class="lineNum">     237 </span><span class="lineCov">       3301 : }</span></a>
 <a name="238"><span class="lineNum">     238 </span>            : </a>
-<a name="239"><span class="lineNum">     239 </span><span class="lineCov">     285834 : std::optional&lt;StructType&gt; DesignExtractor::getStructType(vpiHandle handle) {</span></a>
-<a name="240"><span class="lineNum">     240 </span><span class="lineCov">     285834 :     if (!handle) return std::nullopt;</span></a>
+<a name="239"><span class="lineNum">     239 </span><span class="lineCov">     286512 : std::optional&lt;StructType&gt; DesignExtractor::getStructType(vpiHandle handle) {</span></a>
+<a name="240"><span class="lineNum">     240 </span><span class="lineCov">     286512 :     if (!handle) return std::nullopt;</span></a>
 <a name="241"><span class="lineNum">     241 </span>            : </a>
-<a name="242"><span class="lineNum">     242 </span><span class="lineCov">     285834 :     vpiHandle ts = vpi_handle(vpiTypespec, handle);</span></a>
-<a name="243"><span class="lineNum">     243 </span><span class="lineCov">     285834 :     if (!ts) ts = vpi_handle(vpiTypedef, handle);</span></a>
-<a name="244"><span class="lineNum">     244 </span><span class="lineCov">     285834 :     if (auto type = getStructTypeFromTypespec(ts)) return type;</span></a>
+<a name="242"><span class="lineNum">     242 </span><span class="lineCov">     286512 :     vpiHandle ts = vpi_handle(vpiTypespec, handle);</span></a>
+<a name="243"><span class="lineNum">     243 </span><span class="lineCov">     286512 :     if (!ts) ts = vpi_handle(vpiTypedef, handle);</span></a>
+<a name="244"><span class="lineNum">     244 </span><span class="lineCov">     286512 :     if (auto type = getStructTypeFromTypespec(ts)) return type;</span></a>
 <a name="245"><span class="lineNum">     245 </span>            : </a>
-<a name="246"><span class="lineNum">     246 </span><span class="lineCov">     284149 :     if (vpi_get(vpiType, handle) == 608) {</span></a>
-<a name="247"><span class="lineNum">     247 </span><span class="lineCov">      80023 :         vpiHandle actual = vpi_handle(vpiActual, handle);</span></a>
-<a name="248"><span class="lineNum">     248 </span><span class="lineCov">      80023 :         if (actual &amp;&amp; actual != handle) return getStructType(actual);</span></a>
+<a name="246"><span class="lineNum">     246 </span><span class="lineCov">     284824 :     if (vpi_get(vpiType, handle) == 608) {</span></a>
+<a name="247"><span class="lineNum">     247 </span><span class="lineCov">      80214 :         vpiHandle actual = vpi_handle(vpiActual, handle);</span></a>
+<a name="248"><span class="lineNum">     248 </span><span class="lineCov">      80214 :         if (actual &amp;&amp; actual != handle) return getStructType(actual);</span></a>
 <a name="249"><span class="lineNum">     249 </span>            :     }</a>
 <a name="250"><span class="lineNum">     250 </span>            : </a>
-<a name="251"><span class="lineNum">     251 </span><span class="lineCov">     204126 :     vpiHandle actual = vpi_handle(vpiActual, handle);</span></a>
-<a name="252"><span class="lineNum">     252 </span><span class="lineCov">     204126 :     if (actual &amp;&amp; actual != handle) {</span></a>
+<a name="251"><span class="lineNum">     251 </span><span class="lineCov">     204610 :     vpiHandle actual = vpi_handle(vpiActual, handle);</span></a>
+<a name="252"><span class="lineNum">     252 </span><span class="lineCov">     204610 :     if (actual &amp;&amp; actual != handle) {</span></a>
 <a name="253"><span class="lineNum">     253 </span><span class="lineNoCov">          0 :         if (auto type = getStructType(actual)) return type;</span></a>
 <a name="254"><span class="lineNum">     254 </span>            :     }</a>
 <a name="255"><span class="lineNum">     255 </span>            : </a>
-<a name="256"><span class="lineNum">     256 </span><span class="lineCov">     204126 :     return std::nullopt;</span></a>
+<a name="256"><span class="lineNum">     256 </span><span class="lineCov">     204610 :     return std::nullopt;</span></a>
 <a name="257"><span class="lineNum">     257 </span>            : }</a>
 <a name="258"><span class="lineNum">     258 </span>            : </a>
-<a name="259"><span class="lineNum">     259 </span><span class="lineCov">     468722 : std::optional&lt;StructType&gt; DesignExtractor::getStructTypeFromTypespec(vpiHandle typespec) {</span></a>
-<a name="260"><span class="lineNum">     260 </span><span class="lineCov">     468722 :     if (!typespec) return std::nullopt;</span></a>
+<a name="259"><span class="lineNum">     259 </span><span class="lineCov">     469859 : std::optional&lt;StructType&gt; DesignExtractor::getStructTypeFromTypespec(vpiHandle typespec) {</span></a>
+<a name="260"><span class="lineNum">     260 </span><span class="lineCov">     469859 :     if (!typespec) return std::nullopt;</span></a>
 <a name="261"><span class="lineNum">     261 </span>            : </a>
-<a name="262"><span class="lineNum">     262 </span><span class="lineCov">     365776 :     int type = vpi_get(vpiType, typespec);</span></a>
-<a name="263"><span class="lineNum">     263 </span><span class="lineCov">     365776 :     if (type == 608 || type == vpiRefTypespec) {</span></a>
-<a name="264"><span class="lineNum">     264 </span><span class="lineCov">     182888 :         vpiHandle actual = vpi_handle(vpiActual, typespec);</span></a>
-<a name="265"><span class="lineNum">     265 </span><span class="lineCov">     182888 :         if (actual &amp;&amp; actual != typespec) {</span></a>
-<a name="266"><span class="lineNum">     266 </span><span class="lineCov">     182888 :             if (auto resolved = getStructTypeFromTypespec(actual)) return resolved;</span></a>
+<a name="262"><span class="lineNum">     262 </span><span class="lineCov">     366694 :     int type = vpi_get(vpiType, typespec);</span></a>
+<a name="263"><span class="lineNum">     263 </span><span class="lineCov">     366694 :     if (type == 608 || type == vpiRefTypespec) {</span></a>
+<a name="264"><span class="lineNum">     264 </span><span class="lineCov">     183347 :         vpiHandle actual = vpi_handle(vpiActual, typespec);</span></a>
+<a name="265"><span class="lineNum">     265 </span><span class="lineCov">     183347 :         if (actual &amp;&amp; actual != typespec) {</span></a>
+<a name="266"><span class="lineNum">     266 </span><span class="lineCov">     183347 :             if (auto resolved = getStructTypeFromTypespec(actual)) return resolved;</span></a>
 <a name="267"><span class="lineNum">     267 </span>            :         }</a>
 <a name="268"><span class="lineNum">     268 </span>            :     }</a>
 <a name="269"><span class="lineNum">     269 </span>            : </a>
-<a name="270"><span class="lineNum">     270 </span><span class="lineCov">     364091 :     if (type != vpiStructTypespec) {</span></a>
-<a name="271"><span class="lineNum">     271 </span><span class="lineCov">     362406 :         vpiHandle nested = vpi_handle(vpiTypespec, typespec);</span></a>
-<a name="272"><span class="lineNum">     272 </span><span class="lineCov">     362406 :         if (nested &amp;&amp; nested != typespec) return getStructTypeFromTypespec(nested);</span></a>
-<a name="273"><span class="lineNum">     273 </span><span class="lineCov">     362406 :         return std::nullopt;</span></a>
+<a name="270"><span class="lineNum">     270 </span><span class="lineCov">     365006 :     if (type != vpiStructTypespec) {</span></a>
+<a name="271"><span class="lineNum">     271 </span><span class="lineCov">     363318 :         vpiHandle nested = vpi_handle(vpiTypespec, typespec);</span></a>
+<a name="272"><span class="lineNum">     272 </span><span class="lineCov">     363318 :         if (nested &amp;&amp; nested != typespec) return getStructTypeFromTypespec(nested);</span></a>
+<a name="273"><span class="lineNum">     273 </span><span class="lineCov">     363318 :         return std::nullopt;</span></a>
 <a name="274"><span class="lineNum">     274 </span>            :     }</a>
 <a name="275"><span class="lineNum">     275 </span>            : </a>
-<a name="276"><span class="lineNum">     276 </span><span class="lineCov">       1685 :     StructType info;</span></a>
-<a name="277"><span class="lineNum">     277 </span><span class="lineCov">       1685 :     const char* name = vpi_get_str(vpiName, typespec);</span></a>
-<a name="278"><span class="lineNum">     278 </span><span class="lineCov">       1685 :     info.name = (name &amp;&amp; strlen(name) &gt; 0) ? name : &quot;struct&quot;;</span></a>
-<a name="279"><span class="lineNum">     279 </span><span class="lineCov">       1685 :     if (info.name.rfind(&quot;work@&quot;, 0) == 0) info.name = info.name.substr(5);</span></a>
-<a name="280"><span class="lineNum">     280 </span><span class="lineCov">       1685 :     info.packed = vpi_get(vpiPacked, typespec) != 0;</span></a>
-<a name="281"><span class="lineNum">     281 </span><span class="lineCov">       1685 :     info.source = getSourceInfo(typespec);</span></a>
+<a name="276"><span class="lineNum">     276 </span><span class="lineCov">       1688 :     StructType info;</span></a>
+<a name="277"><span class="lineNum">     277 </span><span class="lineCov">       1688 :     const char* name = vpi_get_str(vpiName, typespec);</span></a>
+<a name="278"><span class="lineNum">     278 </span><span class="lineCov">       1688 :     info.name = (name &amp;&amp; strlen(name) &gt; 0) ? name : &quot;struct&quot;;</span></a>
+<a name="279"><span class="lineNum">     279 </span><span class="lineCov">       1688 :     if (info.name.rfind(&quot;work@&quot;, 0) == 0) info.name = info.name.substr(5);</span></a>
+<a name="280"><span class="lineNum">     280 </span><span class="lineCov">       1688 :     info.packed = vpi_get(vpiPacked, typespec) != 0;</span></a>
+<a name="281"><span class="lineNum">     281 </span><span class="lineCov">       1688 :     info.source = getSourceInfo(typespec);</span></a>
 <a name="282"><span class="lineNum">     282 </span>            : </a>
-<a name="283"><span class="lineNum">     283 </span><span class="lineCov">       1685 :     int total_bits = 0;</span></a>
-<a name="284"><span class="lineNum">     284 </span><span class="lineCov">       1685 :     vpiHandle member_itr = vpi_iterate(vpiTypespecMember, typespec);</span></a>
-<a name="285"><span class="lineNum">     285 </span><span class="lineCov">       1685 :     if (!member_itr) member_itr = vpi_iterate(vpiMember, typespec);</span></a>
-<a name="286"><span class="lineNum">     286 </span><span class="lineCov">       1685 :     if (member_itr) {</span></a>
-<a name="287"><span class="lineNum">     287 </span><span class="lineCov">       5152 :         while (vpiHandle member = vpi_scan(member_itr)) {</span></a>
-<a name="288"><span class="lineNum">     288 </span><span class="lineCov">       3467 :             StructField field;</span></a>
-<a name="289"><span class="lineNum">     289 </span><span class="lineCov">       3467 :             const char* member_name = vpi_get_str(vpiName, member);</span></a>
-<a name="290"><span class="lineNum">     290 </span><span class="lineCov">       3467 :             field.name = member_name ? member_name : &quot;&quot;;</span></a>
-<a name="291"><span class="lineNum">     291 </span><span class="lineCov">       3467 :             field.width = getWidth(member);</span></a>
-<a name="292"><span class="lineNum">     292 </span><span class="lineCov">       3467 :             if (field.width.empty() || field.width == &quot;[0:0]&quot;) {</span></a>
-<a name="293"><span class="lineNum">     293 </span><span class="lineCov">       3467 :                 vpiHandle member_ts = vpi_handle(vpiTypespec, member);</span></a>
-<a name="294"><span class="lineNum">     294 </span><span class="lineCov">       3467 :                 std::string ts_width = getWidth(member_ts);</span></a>
-<a name="295"><span class="lineNum">     295 </span><span class="lineCov">       3467 :                 vpiHandle actual_ts = member_ts ? vpi_handle(vpiActual, member_ts) : nullptr;</span></a>
-<a name="296"><span class="lineNum">     296 </span><span class="lineCov">       3467 :                 std::string logic_width = explicitTypespecRange(actual_ts);</span></a>
-<a name="297"><span class="lineNum">     297 </span><span class="lineCov">       3467 :                 std::string actual_width = getWidth(actual_ts);</span></a>
-<a name="298"><span class="lineNum">     298 </span><span class="lineCov">       3467 :                 if (!logic_width.empty()) field.width = logic_width;</span></a>
-<a name="299"><span class="lineNum">     299 </span><span class="lineCov">       1479 :                 else if (!actual_width.empty()) field.width = actual_width;</span></a>
-<a name="300"><span class="lineNum">     300 </span><span class="lineCov">       1479 :                 else if (!ts_width.empty()) field.width = ts_width;</span></a>
-<a name="301"><span class="lineNum">     301 </span><span class="lineCov">       3467 :             }</span></a>
-<a name="302"><span class="lineNum">     302 </span><span class="lineCov">       3467 :             total_bits += rangeWidthInBits(field.width);</span></a>
-<a name="303"><span class="lineNum">     303 </span><span class="lineCov">       3467 :             if (!field.name.empty()) info.fields.push_back(field);</span></a>
-<a name="304"><span class="lineNum">     304 </span><span class="lineCov">       3467 :         }</span></a>
+<a name="283"><span class="lineNum">     283 </span><span class="lineCov">       1688 :     int total_bits = 0;</span></a>
+<a name="284"><span class="lineNum">     284 </span><span class="lineCov">       1688 :     vpiHandle member_itr = vpi_iterate(vpiTypespecMember, typespec);</span></a>
+<a name="285"><span class="lineNum">     285 </span><span class="lineCov">       1688 :     if (!member_itr) member_itr = vpi_iterate(vpiMember, typespec);</span></a>
+<a name="286"><span class="lineNum">     286 </span><span class="lineCov">       1688 :     if (member_itr) {</span></a>
+<a name="287"><span class="lineNum">     287 </span><span class="lineCov">       5161 :         while (vpiHandle member = vpi_scan(member_itr)) {</span></a>
+<a name="288"><span class="lineNum">     288 </span><span class="lineCov">       3473 :             StructField field;</span></a>
+<a name="289"><span class="lineNum">     289 </span><span class="lineCov">       3473 :             const char* member_name = vpi_get_str(vpiName, member);</span></a>
+<a name="290"><span class="lineNum">     290 </span><span class="lineCov">       3473 :             field.name = member_name ? member_name : &quot;&quot;;</span></a>
+<a name="291"><span class="lineNum">     291 </span><span class="lineCov">       3473 :             field.width = getWidth(member);</span></a>
+<a name="292"><span class="lineNum">     292 </span><span class="lineCov">       3473 :             if (field.width.empty() || field.width == &quot;[0:0]&quot;) {</span></a>
+<a name="293"><span class="lineNum">     293 </span><span class="lineCov">       3473 :                 vpiHandle member_ts = vpi_handle(vpiTypespec, member);</span></a>
+<a name="294"><span class="lineNum">     294 </span><span class="lineCov">       3473 :                 std::string ts_width = getWidth(member_ts);</span></a>
+<a name="295"><span class="lineNum">     295 </span><span class="lineCov">       3473 :                 vpiHandle actual_ts = member_ts ? vpi_handle(vpiActual, member_ts) : nullptr;</span></a>
+<a name="296"><span class="lineNum">     296 </span><span class="lineCov">       3473 :                 std::string logic_width = explicitTypespecRange(actual_ts);</span></a>
+<a name="297"><span class="lineNum">     297 </span><span class="lineCov">       3473 :                 std::string actual_width = getWidth(actual_ts);</span></a>
+<a name="298"><span class="lineNum">     298 </span><span class="lineCov">       3473 :                 if (!logic_width.empty()) field.width = logic_width;</span></a>
+<a name="299"><span class="lineNum">     299 </span><span class="lineCov">       1482 :                 else if (!actual_width.empty()) field.width = actual_width;</span></a>
+<a name="300"><span class="lineNum">     300 </span><span class="lineCov">       1482 :                 else if (!ts_width.empty()) field.width = ts_width;</span></a>
+<a name="301"><span class="lineNum">     301 </span><span class="lineCov">       3473 :             }</span></a>
+<a name="302"><span class="lineNum">     302 </span><span class="lineCov">       3473 :             total_bits += rangeWidthInBits(field.width);</span></a>
+<a name="303"><span class="lineNum">     303 </span><span class="lineCov">       3473 :             if (!field.name.empty()) info.fields.push_back(field);</span></a>
+<a name="304"><span class="lineNum">     304 </span><span class="lineCov">       3473 :         }</span></a>
 <a name="305"><span class="lineNum">     305 </span>            :     }</a>
 <a name="306"><span class="lineNum">     306 </span>            : </a>
-<a name="307"><span class="lineNum">     307 </span><span class="lineCov">       1685 :     if (info.packed &amp;&amp; total_bits &gt; 1) {</span></a>
-<a name="308"><span class="lineNum">     308 </span><span class="lineCov">       1684 :         info.width = &quot;[&quot; + std::to_string(total_bits - 1) + &quot;:0]&quot;;</span></a>
-<a name="309"><span class="lineNum">     309 </span><span class="lineCov">       1684 :         int next_msb = total_bits - 1;</span></a>
-<a name="310"><span class="lineNum">     310 </span><span class="lineCov">       5149 :         for (auto&amp; field : info.fields) {</span></a>
-<a name="311"><span class="lineNum">     311 </span><span class="lineCov">       3465 :             int bits = rangeWidthInBits(field.width);</span></a>
-<a name="312"><span class="lineNum">     312 </span><span class="lineCov">       3465 :             int lsb = next_msb - bits + 1;</span></a>
+<a name="307"><span class="lineNum">     307 </span><span class="lineCov">       1688 :     if (info.packed &amp;&amp; total_bits &gt; 1) {</span></a>
+<a name="308"><span class="lineNum">     308 </span><span class="lineCov">       1687 :         info.width = &quot;[&quot; + std::to_string(total_bits - 1) + &quot;:0]&quot;;</span></a>
+<a name="309"><span class="lineNum">     309 </span><span class="lineCov">       1687 :         int next_msb = total_bits - 1;</span></a>
+<a name="310"><span class="lineNum">     310 </span><span class="lineCov">       5158 :         for (auto&amp; field : info.fields) {</span></a>
+<a name="311"><span class="lineNum">     311 </span><span class="lineCov">       3471 :             int bits = rangeWidthInBits(field.width);</span></a>
+<a name="312"><span class="lineNum">     312 </span><span class="lineCov">       3471 :             int lsb = next_msb - bits + 1;</span></a>
 <a name="313"><span class="lineNum">     313 </span>            :             field.bitRange = bits == 1</a>
-<a name="314"><span class="lineNum">     314 </span><span class="lineCov">      12382 :                 ? &quot;[&quot; + std::to_string(next_msb) + &quot;]&quot;</span></a>
-<a name="315"><span class="lineNum">     315 </span><span class="lineCov">       8917 :                 : &quot;[&quot; + std::to_string(next_msb) + &quot;:&quot; + std::to_string(lsb) + &quot;]&quot;;</span></a>
-<a name="316"><span class="lineNum">     316 </span><span class="lineCov">       3465 :             next_msb = lsb - 1;</span></a>
+<a name="314"><span class="lineNum">     314 </span><span class="lineCov">      12403 :                 ? &quot;[&quot; + std::to_string(next_msb) + &quot;]&quot;</span></a>
+<a name="315"><span class="lineNum">     315 </span><span class="lineCov">       8932 :                 : &quot;[&quot; + std::to_string(next_msb) + &quot;:&quot; + std::to_string(lsb) + &quot;]&quot;;</span></a>
+<a name="316"><span class="lineNum">     316 </span><span class="lineCov">       3471 :             next_msb = lsb - 1;</span></a>
 <a name="317"><span class="lineNum">     317 </span>            :         }</a>
 <a name="318"><span class="lineNum">     318 </span>            :     }</a>
 <a name="319"><span class="lineNum">     319 </span>            : </a>
-<a name="320"><span class="lineNum">     320 </span><span class="lineCov">       1685 :     return info.fields.empty() ? std::nullopt : std::optional&lt;StructType&gt;(info);</span></a>
-<a name="321"><span class="lineNum">     321 </span><span class="lineCov">       1685 : }</span></a>
+<a name="320"><span class="lineNum">     320 </span><span class="lineCov">       1688 :     return info.fields.empty() ? std::nullopt : std::optional&lt;StructType&gt;(info);</span></a>
+<a name="321"><span class="lineNum">     321 </span><span class="lineCov">       1688 : }</span></a>
 <a name="322"><span class="lineNum">     322 </span>            : </a>
-<a name="323"><span class="lineNum">     323 </span><span class="lineCov">     229123 : void DesignExtractor::collectStructSignal(vpiHandle handle, const std::string&amp; name, Module&amp; mod, const SourceInfo&amp; source) {</span></a>
-<a name="324"><span class="lineNum">     324 </span><span class="lineCov">     435333 :     if (!handle || name.empty() || name == &quot;expr&quot; || name.find('.') != std::string::npos) return;</span></a>
-<a name="325"><span class="lineNum">     325 </span><span class="lineCov">     207895 :     if (mod.structSignals.find(name) != mod.structSignals.end()) return;</span></a>
-<a name="326"><span class="lineNum">     326 </span><span class="lineCov">     205811 :     auto type = getStructType(handle);</span></a>
-<a name="327"><span class="lineNum">     327 </span><span class="lineCov">     205811 :     if (!type) return;</span></a>
-<a name="328"><span class="lineNum">     328 </span><span class="lineCov">       1685 :     mod.structSignals[name] = StructSignal{name, *type, source};</span></a>
-<a name="329"><span class="lineNum">     329 </span><span class="lineCov">     205811 : }</span></a>
+<a name="323"><span class="lineNum">     323 </span><span class="lineCov">     229643 : void DesignExtractor::collectStructSignal(vpiHandle handle, const std::string&amp; name, Module&amp; mod, const SourceInfo&amp; source) {</span></a>
+<a name="324"><span class="lineNum">     324 </span><span class="lineCov">     436340 :     if (!handle || name.empty() || name == &quot;expr&quot; || name.find('.') != std::string::npos) return;</span></a>
+<a name="325"><span class="lineNum">     325 </span><span class="lineCov">     208385 :     if (mod.structSignals.find(name) != mod.structSignals.end()) return;</span></a>
+<a name="326"><span class="lineNum">     326 </span><span class="lineCov">     206298 :     auto type = getStructType(handle);</span></a>
+<a name="327"><span class="lineNum">     327 </span><span class="lineCov">     206298 :     if (!type) return;</span></a>
+<a name="328"><span class="lineNum">     328 </span><span class="lineCov">       1688 :     mod.structSignals[name] = StructSignal{name, *type, source};</span></a>
+<a name="329"><span class="lineNum">     329 </span><span class="lineCov">     206298 : }</span></a>
 <a name="330"><span class="lineNum">     330 </span>            : </a>
-<a name="331"><span class="lineNum">     331 </span><span class="lineCov">     123345 : std::optional&lt;std::pair&lt;std::string, std::string&gt;&gt; DesignExtractor::getStructFieldRef(vpiHandle handle, const Module&amp; mod) {</span></a>
-<a name="332"><span class="lineNum">     332 </span><span class="lineCov">     123345 :     if (!handle) return std::nullopt;</span></a>
+<a name="331"><span class="lineNum">     331 </span><span class="lineCov">     123539 : std::optional&lt;std::pair&lt;std::string, std::string&gt;&gt; DesignExtractor::getStructFieldRef(vpiHandle handle, const Module&amp; mod) {</span></a>
+<a name="332"><span class="lineNum">     332 </span><span class="lineCov">     123539 :     if (!handle) return std::nullopt;</span></a>
 <a name="333"><span class="lineNum">     333 </span>            : </a>
-<a name="334"><span class="lineNum">     334 </span><span class="lineCov">     123336 :     std::string text = getSignalName(handle);</span></a>
-<a name="335"><span class="lineNum">     335 </span><span class="lineCov">     123336 :     if (text.empty() || text == &quot;expr&quot;) {</span></a>
-<a name="336"><span class="lineNum">     336 </span><span class="lineCov">      28224 :         const char* decompile = vpi_get_str(vpiDecompile, handle);</span></a>
-<a name="337"><span class="lineNum">     337 </span><span class="lineCov">      28224 :         if (decompile &amp;&amp; strlen(decompile) &gt; 0) text = decompile;</span></a>
+<a name="334"><span class="lineNum">     334 </span><span class="lineCov">     123530 :     std::string text = getSignalName(handle);</span></a>
+<a name="335"><span class="lineNum">     335 </span><span class="lineCov">     123530 :     if (text.empty() || text == &quot;expr&quot;) {</span></a>
+<a name="336"><span class="lineNum">     336 </span><span class="lineCov">      28269 :         const char* decompile = vpi_get_str(vpiDecompile, handle);</span></a>
+<a name="337"><span class="lineNum">     337 </span><span class="lineCov">      28269 :         if (decompile &amp;&amp; strlen(decompile) &gt; 0) text = decompile;</span></a>
 <a name="338"><span class="lineNum">     338 </span>            :     }</a>
-<a name="339"><span class="lineNum">     339 </span><span class="lineCov">     123336 :     if (text.rfind(&quot;work@&quot;, 0) == 0) text = text.substr(5);</span></a>
+<a name="339"><span class="lineNum">     339 </span><span class="lineCov">     123530 :     if (text.rfind(&quot;work@&quot;, 0) == 0) text = text.substr(5);</span></a>
 <a name="340"><span class="lineNum">     340 </span>            : </a>
-<a name="341"><span class="lineNum">     341 </span><span class="lineCov">     123336 :     size_t dot = text.find('.');</span></a>
-<a name="342"><span class="lineNum">     342 </span><span class="lineCov">     123336 :     if (dot == std::string::npos) return std::nullopt;</span></a>
-<a name="343"><span class="lineNum">     343 </span><span class="lineCov">      19129 :     std::string base = text.substr(0, dot);</span></a>
-<a name="344"><span class="lineNum">     344 </span><span class="lineCov">      19129 :     std::string field = text.substr(dot + 1);</span></a>
-<a name="345"><span class="lineNum">     345 </span><span class="lineCov">      19129 :     size_t stop = field.find_first_of(&quot; [({+-*/&amp;|^~!=?:;,\t\r\n&quot;);</span></a>
-<a name="346"><span class="lineNum">     346 </span><span class="lineCov">      19129 :     if (stop != std::string::npos) field = field.substr(0, stop);</span></a>
+<a name="341"><span class="lineNum">     341 </span><span class="lineCov">     123530 :     size_t dot = text.find('.');</span></a>
+<a name="342"><span class="lineNum">     342 </span><span class="lineCov">     123530 :     if (dot == std::string::npos) return std::nullopt;</span></a>
+<a name="343"><span class="lineNum">     343 </span><span class="lineCov">      19135 :     std::string base = text.substr(0, dot);</span></a>
+<a name="344"><span class="lineNum">     344 </span><span class="lineCov">      19135 :     std::string field = text.substr(dot + 1);</span></a>
+<a name="345"><span class="lineNum">     345 </span><span class="lineCov">      19135 :     size_t stop = field.find_first_of(&quot; [({+-*/&amp;|^~!=?:;,\t\r\n&quot;);</span></a>
+<a name="346"><span class="lineNum">     346 </span><span class="lineCov">      19135 :     if (stop != std::string::npos) field = field.substr(0, stop);</span></a>
 <a name="347"><span class="lineNum">     347 </span>            : </a>
-<a name="348"><span class="lineNum">     348 </span><span class="lineCov">      19129 :     auto it = mod.structSignals.find(base);</span></a>
-<a name="349"><span class="lineNum">     349 </span><span class="lineCov">      19129 :     if (it == mod.structSignals.end()) return std::nullopt;</span></a>
-<a name="350"><span class="lineNum">     350 </span><span class="lineCov">       2276 :     for (const auto&amp; candidate : it-&gt;second.type.fields) {</span></a>
-<a name="351"><span class="lineNum">     351 </span><span class="lineCov">       2276 :         if (candidate.name == field) return std::make_pair(base, field);</span></a>
+<a name="348"><span class="lineNum">     348 </span><span class="lineCov">      19135 :     auto it = mod.structSignals.find(base);</span></a>
+<a name="349"><span class="lineNum">     349 </span><span class="lineCov">      19135 :     if (it == mod.structSignals.end()) return std::nullopt;</span></a>
+<a name="350"><span class="lineNum">     350 </span><span class="lineCov">       2285 :     for (const auto&amp; candidate : it-&gt;second.type.fields) {</span></a>
+<a name="351"><span class="lineNum">     351 </span><span class="lineCov">       2285 :         if (candidate.name == field) return std::make_pair(base, field);</span></a>
 <a name="352"><span class="lineNum">     352 </span>            :     }</a>
 <a name="353"><span class="lineNum">     353 </span>            : </a>
 <a name="354"><span class="lineNum">     354 </span><span class="lineNoCov">          0 :     return std::nullopt;</span></a>
-<a name="355"><span class="lineNum">     355 </span><span class="lineCov">     123336 : }</span></a>
+<a name="355"><span class="lineNum">     355 </span><span class="lineCov">     123530 : }</span></a>
 <a name="356"><span class="lineNum">     356 </span>            : </a>
 <a name="357"><span class="lineNum">     357 </span><span class="lineCov">        756 : std::string DesignExtractor::ensureStructBreakout(Module&amp; mod, const std::string&amp; base, const std::string&amp; field, SourceInfo source) {</span></a>
 <a name="358"><span class="lineNum">     358 </span><span class="lineCov">        756 :     auto signal_it = mod.structSignals.find(base);</span></a>
@@ -512,10 +512,10 @@
 <a name="450"><span class="lineNum">     450 </span><span class="lineCov">          1 :     return output_signal;</span></a>
 <a name="451"><span class="lineNum">     451 </span><span class="lineCov">          1 : }</span></a>
 <a name="452"><span class="lineNum">     452 </span>            : </a>
-<a name="453"><span class="lineNum">     453 </span><span class="lineCov">      27005 : void DesignExtractor::propagateStruct(Module&amp; mod, const std::string&amp; from, const std::string&amp; to) {</span></a>
-<a name="454"><span class="lineNum">     454 </span><span class="lineCov">      27005 :     if (from == to || to.empty()) return;</span></a>
-<a name="455"><span class="lineNum">     455 </span><span class="lineCov">      10329 :     auto it = mod.structSignals.find(from);</span></a>
-<a name="456"><span class="lineNum">     456 </span><span class="lineCov">      10329 :     if (it != mod.structSignals.end()) {</span></a>
+<a name="453"><span class="lineNum">     453 </span><span class="lineCov">      27043 : void DesignExtractor::propagateStruct(Module&amp; mod, const std::string&amp; from, const std::string&amp; to) {</span></a>
+<a name="454"><span class="lineNum">     454 </span><span class="lineCov">      27043 :     if (from == to || to.empty()) return;</span></a>
+<a name="455"><span class="lineNum">     455 </span><span class="lineCov">      10343 :     auto it = mod.structSignals.find(from);</span></a>
+<a name="456"><span class="lineNum">     456 </span><span class="lineCov">      10343 :     if (it != mod.structSignals.end()) {</span></a>
 <a name="457"><span class="lineNum">     457 </span><span class="lineNoCov">          0 :         if (mod.structSignals.find(to) == mod.structSignals.end()) {</span></a>
 <a name="458"><span class="lineNum">     458 </span><span class="lineNoCov">          0 :             mod.structSignals[to] = it-&gt;second;</span></a>
 <a name="459"><span class="lineNum">     459 </span><span class="lineNoCov">          0 :             mod.structSignals[to].name = to;</span></a>
@@ -523,41 +523,41 @@
 <a name="461"><span class="lineNum">     461 </span>            :     }</a>
 <a name="462"><span class="lineNum">     462 </span>            : }</a>
 <a name="463"><span class="lineNum">     463 </span>            : </a>
-<a name="464"><span class="lineNum">     464 </span><span class="lineCov">        332 : void DesignExtractor::ensureStructFieldCompositionInput(Module&amp; mod, const std::string&amp; base, const std::string&amp; field, const std::string&amp; input_signal, SourceInfo source) {</span></a>
-<a name="465"><span class="lineNum">     465 </span><span class="lineCov">        546 :     if (base.empty() || field.empty() || input_signal.empty()) return;</span></a>
+<a name="464"><span class="lineNum">     464 </span><span class="lineCov">        338 : void DesignExtractor::ensureStructFieldCompositionInput(Module&amp; mod, const std::string&amp; base, const std::string&amp; field, const std::string&amp; input_signal, SourceInfo source) {</span></a>
+<a name="465"><span class="lineNum">     465 </span><span class="lineCov">        558 :     if (base.empty() || field.empty() || input_signal.empty()) return;</span></a>
 <a name="466"><span class="lineNum">     466 </span>            : </a>
-<a name="467"><span class="lineNum">     467 </span><span class="lineCov">        332 :     auto signal_it = mod.structSignals.find(base);</span></a>
-<a name="468"><span class="lineNum">     468 </span><span class="lineCov">        332 :     if (signal_it == mod.structSignals.end()) return;</span></a>
-<a name="469"><span class="lineNum">     469 </span><span class="lineCov">        332 :     const StructSignal&amp; signal = signal_it-&gt;second;</span></a>
+<a name="467"><span class="lineNum">     467 </span><span class="lineCov">        338 :     auto signal_it = mod.structSignals.find(base);</span></a>
+<a name="468"><span class="lineNum">     468 </span><span class="lineCov">        338 :     if (signal_it == mod.structSignals.end()) return;</span></a>
+<a name="469"><span class="lineNum">     469 </span><span class="lineCov">        338 :     const StructSignal&amp; signal = signal_it-&gt;second;</span></a>
 <a name="470"><span class="lineNum">     470 </span>            : </a>
-<a name="471"><span class="lineNum">     471 </span><span class="lineCov">        664 :     std::string node_id = &quot;struct_comp:&quot; + mod.name + &quot;:&quot; + base;</span></a>
-<a name="472"><span class="lineNum">     472 </span><span class="lineCov">        332 :     Node* node = nullptr;</span></a>
-<a name="473"><span class="lineNum">     473 </span><span class="lineCov">       1244 :     for (auto&amp; candidate : mod.nodes) {</span></a>
-<a name="474"><span class="lineNum">     474 </span><span class="lineCov">       1125 :         if (candidate.id == node_id) {</span></a>
-<a name="475"><span class="lineNum">     475 </span><span class="lineCov">        213 :             node = &amp;candidate;</span></a>
-<a name="476"><span class="lineNum">     476 </span><span class="lineCov">        213 :             break;</span></a>
+<a name="471"><span class="lineNum">     471 </span><span class="lineCov">        676 :     std::string node_id = &quot;struct_comp:&quot; + mod.name + &quot;:&quot; + base;</span></a>
+<a name="472"><span class="lineNum">     472 </span><span class="lineCov">        338 :     Node* node = nullptr;</span></a>
+<a name="473"><span class="lineNum">     473 </span><span class="lineCov">       1250 :     for (auto&amp; candidate : mod.nodes) {</span></a>
+<a name="474"><span class="lineNum">     474 </span><span class="lineCov">       1128 :         if (candidate.id == node_id) {</span></a>
+<a name="475"><span class="lineNum">     475 </span><span class="lineCov">        216 :             node = &amp;candidate;</span></a>
+<a name="476"><span class="lineNum">     476 </span><span class="lineCov">        216 :             break;</span></a>
 <a name="477"><span class="lineNum">     477 </span>            :         }</a>
 <a name="478"><span class="lineNum">     478 </span>            :     }</a>
 <a name="479"><span class="lineNum">     479 </span>            : </a>
-<a name="480"><span class="lineNum">     480 </span><span class="lineCov">        332 :     if (!node) {</span></a>
-<a name="481"><span class="lineNum">     481 </span><span class="lineCov">        119 :         Node n;</span></a>
-<a name="482"><span class="lineNum">     482 </span><span class="lineCov">        119 :         n.id = node_id;</span></a>
-<a name="483"><span class="lineNum">     483 </span><span class="lineCov">        119 :         n.kind = &quot;struct&quot;;</span></a>
-<a name="484"><span class="lineNum">     484 </span><span class="lineCov">        119 :         n.label = base;</span></a>
-<a name="485"><span class="lineNum">     485 </span><span class="lineCov">        119 :         n.source = signal.source;</span></a>
-<a name="486"><span class="lineNum">     486 </span><span class="lineCov">        119 :         n.metadata.role = &quot;composition&quot;;</span></a>
-<a name="487"><span class="lineNum">     487 </span><span class="lineCov">        119 :         n.metadata.typeName = signal.type.name;</span></a>
-<a name="488"><span class="lineNum">     488 </span><span class="lineCov">        119 :         n.metadata.packed = signal.type.packed;</span></a>
-<a name="489"><span class="lineNum">     489 </span><span class="lineCov">        119 :         n.metadata.fields = signal.type.fields;</span></a>
-<a name="490"><span class="lineNum">     490 </span><span class="lineCov">        119 :         n.metadata.expression = base;</span></a>
-<a name="491"><span class="lineNum">     491 </span><span class="lineCov">        119 :         n.ports.push_back({base, &quot;output&quot;, base, signal.type.width, &quot;&quot;, signal.source});</span></a>
-<a name="492"><span class="lineNum">     492 </span><span class="lineCov">        119 :         mod.nodes.push_back(n);</span></a>
-<a name="493"><span class="lineNum">     493 </span><span class="lineCov">        119 :         node = &amp;mod.nodes.back();</span></a>
-<a name="494"><span class="lineNum">     494 </span><span class="lineCov">        119 :     }</span></a>
+<a name="480"><span class="lineNum">     480 </span><span class="lineCov">        338 :     if (!node) {</span></a>
+<a name="481"><span class="lineNum">     481 </span><span class="lineCov">        122 :         Node n;</span></a>
+<a name="482"><span class="lineNum">     482 </span><span class="lineCov">        122 :         n.id = node_id;</span></a>
+<a name="483"><span class="lineNum">     483 </span><span class="lineCov">        122 :         n.kind = &quot;struct&quot;;</span></a>
+<a name="484"><span class="lineNum">     484 </span><span class="lineCov">        122 :         n.label = base;</span></a>
+<a name="485"><span class="lineNum">     485 </span><span class="lineCov">        122 :         n.source = signal.source;</span></a>
+<a name="486"><span class="lineNum">     486 </span><span class="lineCov">        122 :         n.metadata.role = &quot;composition&quot;;</span></a>
+<a name="487"><span class="lineNum">     487 </span><span class="lineCov">        122 :         n.metadata.typeName = signal.type.name;</span></a>
+<a name="488"><span class="lineNum">     488 </span><span class="lineCov">        122 :         n.metadata.packed = signal.type.packed;</span></a>
+<a name="489"><span class="lineNum">     489 </span><span class="lineCov">        122 :         n.metadata.fields = signal.type.fields;</span></a>
+<a name="490"><span class="lineNum">     490 </span><span class="lineCov">        122 :         n.metadata.expression = base;</span></a>
+<a name="491"><span class="lineNum">     491 </span><span class="lineCov">        122 :         n.ports.push_back({base, &quot;output&quot;, base, signal.type.width, &quot;&quot;, signal.source});</span></a>
+<a name="492"><span class="lineNum">     492 </span><span class="lineCov">        122 :         mod.nodes.push_back(n);</span></a>
+<a name="493"><span class="lineNum">     493 </span><span class="lineCov">        122 :         node = &amp;mod.nodes.back();</span></a>
+<a name="494"><span class="lineNum">     494 </span><span class="lineCov">        122 :     }</span></a>
 <a name="495"><span class="lineNum">     495 </span>            : </a>
-<a name="496"><span class="lineNum">     496 </span><span class="lineCov">        332 :     std::string field_port = base + &quot;.&quot; + field;</span></a>
-<a name="497"><span class="lineNum">     497 </span><span class="lineCov">        972 :     for (auto&amp; port : node-&gt;ports) {</span></a>
-<a name="498"><span class="lineNum">     498 </span><span class="lineCov">        640 :         if (port.name == field_port) {</span></a>
+<a name="496"><span class="lineNum">     496 </span><span class="lineCov">        338 :     std::string field_port = base + &quot;.&quot; + field;</span></a>
+<a name="497"><span class="lineNum">     497 </span><span class="lineCov">        987 :     for (auto&amp; port : node-&gt;ports) {</span></a>
+<a name="498"><span class="lineNum">     498 </span><span class="lineCov">        649 :         if (port.name == field_port) {</span></a>
 <a name="499"><span class="lineNum">     499 </span><span class="lineNoCov">          0 :             port.signal = input_signal;</span></a>
 <a name="500"><span class="lineNum">     500 </span><span class="lineNoCov">          0 :             if (port.width.empty()) port.width = fieldWidth(signal.type, field);</span></a>
 <a name="501"><span class="lineNum">     501 </span><span class="lineNoCov">          0 :             if (port.label.empty()) port.label = field;</span></a>
@@ -565,16 +565,16 @@
 <a name="503"><span class="lineNum">     503 </span>            :         }</a>
 <a name="504"><span class="lineNum">     504 </span>            :     }</a>
 <a name="505"><span class="lineNum">     505 </span>            : </a>
-<a name="506"><span class="lineNum">     506 </span><span class="lineCov">        332 :     node-&gt;ports.push_back({field_port, &quot;input&quot;, input_signal, fieldWidth(signal.type, field), field, source});</span></a>
+<a name="506"><span class="lineNum">     506 </span><span class="lineCov">        338 :     node-&gt;ports.push_back({field_port, &quot;input&quot;, input_signal, fieldWidth(signal.type, field), field, source});</span></a>
 <a name="507"><span class="lineNum">     507 </span>            : </a>
-<a name="508"><span class="lineNum">     508 </span><span class="lineCov">        332 :     bool target_is_module_output = false;</span></a>
-<a name="509"><span class="lineNum">     509 </span><span class="lineCov">       3073 :     for (const auto&amp; port : mod.ports) {</span></a>
-<a name="510"><span class="lineNum">     510 </span><span class="lineCov">       3071 :         if (port.name == base &amp;&amp; port.direction == &quot;output&quot;) {</span></a>
+<a name="508"><span class="lineNum">     508 </span><span class="lineCov">        338 :     bool target_is_module_output = false;</span></a>
+<a name="509"><span class="lineNum">     509 </span><span class="lineCov">       3097 :     for (const auto&amp; port : mod.ports) {</span></a>
+<a name="510"><span class="lineNum">     510 </span><span class="lineCov">       3089 :         if (port.name == base &amp;&amp; port.direction == &quot;output&quot;) {</span></a>
 <a name="511"><span class="lineNum">     511 </span><span class="lineCov">        330 :             target_is_module_output = true;</span></a>
 <a name="512"><span class="lineNum">     512 </span><span class="lineCov">        330 :             break;</span></a>
 <a name="513"><span class="lineNum">     513 </span>            :         }</a>
 <a name="514"><span class="lineNum">     514 </span>            :     }</a>
-<a name="515"><span class="lineNum">     515 </span><span class="lineCov">        332 :     if (!target_is_module_output) return;</span></a>
+<a name="515"><span class="lineNum">     515 </span><span class="lineCov">        338 :     if (!target_is_module_output) return;</span></a>
 <a name="516"><span class="lineNum">     516 </span>            : </a>
 <a name="517"><span class="lineNum">     517 </span><span class="lineCov">        472 :     for (const auto&amp; edge : mod.edges) {</span></a>
 <a name="518"><span class="lineNum">     518 </span><span class="lineCov">        354 :         if (edge.source == node_id &amp;&amp; edge.target == &quot;self&quot; &amp;&amp; edge.targetPort == base) return;</span></a>
@@ -590,7 +590,7 @@
 <a name="528"><span class="lineNum">     528 </span><span class="lineCov">        118 :     e.sourceInfo = source;</span></a>
 <a name="529"><span class="lineNum">     529 </span><span class="lineCov">        118 :     e.aggregateStruct = true;</span></a>
 <a name="530"><span class="lineNum">     530 </span><span class="lineCov">        118 :     mod.edges.push_back(e);</span></a>
-<a name="531"><span class="lineNum">     531 </span><span class="lineCov">        546 : }</span></a>
+<a name="531"><span class="lineNum">     531 </span><span class="lineCov">        558 : }</span></a>
 <a name="532"><span class="lineNum">     532 </span>            : </a>
 <a name="533"><span class="lineNum">     533 </span><span class="lineCov">        481 : void DesignExtractor::ensureBusSliceCompositionInput(Module&amp; mod, const std::string&amp; base, const std::string&amp; slice, const std::string&amp; input_signal, SourceInfo source) {</span></a>
 <a name="534"><span class="lineNum">     534 </span><span class="lineCov">        481 :     if (base.empty() || slice.empty() || input_signal.empty()) return;</span></a>
@@ -714,21 +714,21 @@
 <a name="652"><span class="lineNum">     652 </span><span class="lineCov">       2106 :     sortAggregateTapsMsbFirst(node-&gt;ports, &quot;input&quot;);</span></a>
 <a name="653"><span class="lineNum">     653 </span><span class="lineCov">       2106 : }</span></a>
 <a name="654"><span class="lineNum">     654 </span>            : </a>
-<a name="655"><span class="lineNum">     655 </span><span class="lineCov">        222 : std::string DesignExtractor::ensureStructComposition(Module&amp; mod, const std::string&amp; base) {</span></a>
-<a name="656"><span class="lineNum">     656 </span><span class="lineCov">        222 :     auto signal_it = mod.structSignals.find(base);</span></a>
-<a name="657"><span class="lineNum">     657 </span><span class="lineCov">        222 :     if (signal_it == mod.structSignals.end()) return &quot;&quot;;</span></a>
-<a name="658"><span class="lineNum">     658 </span><span class="lineCov">        222 :     const StructSignal&amp; signal = signal_it-&gt;second;</span></a>
+<a name="655"><span class="lineNum">     655 </span><span class="lineCov">        225 : std::string DesignExtractor::ensureStructComposition(Module&amp; mod, const std::string&amp; base) {</span></a>
+<a name="656"><span class="lineNum">     656 </span><span class="lineCov">        225 :     auto signal_it = mod.structSignals.find(base);</span></a>
+<a name="657"><span class="lineNum">     657 </span><span class="lineCov">        225 :     if (signal_it == mod.structSignals.end()) return &quot;&quot;;</span></a>
+<a name="658"><span class="lineNum">     658 </span><span class="lineCov">        225 :     const StructSignal&amp; signal = signal_it-&gt;second;</span></a>
 <a name="659"><span class="lineNum">     659 </span>            : </a>
-<a name="660"><span class="lineNum">     660 </span><span class="lineCov">        444 :     std::string node_id = &quot;struct_comp:&quot; + mod.name + &quot;:&quot; + base;</span></a>
-<a name="661"><span class="lineNum">     661 </span><span class="lineCov">        222 :     Node* node = nullptr;</span></a>
-<a name="662"><span class="lineNum">     662 </span><span class="lineCov">        447 :     for (auto&amp; candidate : mod.nodes) {</span></a>
-<a name="663"><span class="lineNum">     663 </span><span class="lineCov">        226 :         if (candidate.id == node_id) {</span></a>
-<a name="664"><span class="lineNum">     664 </span><span class="lineCov">          1 :             node = &amp;candidate;</span></a>
-<a name="665"><span class="lineNum">     665 </span><span class="lineCov">          1 :             break;</span></a>
+<a name="660"><span class="lineNum">     660 </span><span class="lineCov">        450 :     std::string node_id = &quot;struct_comp:&quot; + mod.name + &quot;:&quot; + base;</span></a>
+<a name="661"><span class="lineNum">     661 </span><span class="lineCov">        225 :     Node* node = nullptr;</span></a>
+<a name="662"><span class="lineNum">     662 </span><span class="lineCov">        450 :     for (auto&amp; candidate : mod.nodes) {</span></a>
+<a name="663"><span class="lineNum">     663 </span><span class="lineCov">        229 :         if (candidate.id == node_id) {</span></a>
+<a name="664"><span class="lineNum">     664 </span><span class="lineCov">          4 :             node = &amp;candidate;</span></a>
+<a name="665"><span class="lineNum">     665 </span><span class="lineCov">          4 :             break;</span></a>
 <a name="666"><span class="lineNum">     666 </span>            :         }</a>
 <a name="667"><span class="lineNum">     667 </span>            :     }</a>
 <a name="668"><span class="lineNum">     668 </span>            : </a>
-<a name="669"><span class="lineNum">     669 </span><span class="lineCov">        222 :     if (!node) {</span></a>
+<a name="669"><span class="lineNum">     669 </span><span class="lineCov">        225 :     if (!node) {</span></a>
 <a name="670"><span class="lineNum">     670 </span><span class="lineCov">        221 :         Node n;</span></a>
 <a name="671"><span class="lineNum">     671 </span><span class="lineCov">        221 :         n.id = node_id;</span></a>
 <a name="672"><span class="lineNum">     672 </span><span class="lineCov">        221 :         n.kind = &quot;struct&quot;;</span></a>
@@ -744,9 +744,9 @@
 <a name="682"><span class="lineNum">     682 </span><span class="lineCov">        221 :         node = &amp;mod.nodes.back();</span></a>
 <a name="683"><span class="lineNum">     683 </span><span class="lineCov">        221 :     }</span></a>
 <a name="684"><span class="lineNum">     684 </span>            : </a>
-<a name="685"><span class="lineNum">     685 </span><span class="lineCov">        666 :     for (const auto&amp; field : signal.type.fields) {</span></a>
-<a name="686"><span class="lineNum">     686 </span><span class="lineCov">        444 :         std::string field_signal = base + &quot;.&quot; + field.name;</span></a>
-<a name="687"><span class="lineNum">     687 </span><span class="lineCov">        444 :         if (!hasStructFieldDriver(mod, field_signal)) continue;</span></a>
+<a name="685"><span class="lineNum">     685 </span><span class="lineCov">        675 :     for (const auto&amp; field : signal.type.fields) {</span></a>
+<a name="686"><span class="lineNum">     686 </span><span class="lineCov">        450 :         std::string field_signal = base + &quot;.&quot; + field.name;</span></a>
+<a name="687"><span class="lineNum">     687 </span><span class="lineCov">        450 :         if (!hasStructFieldDriver(mod, field_signal)) continue;</span></a>
 <a name="688"><span class="lineNum">     688 </span>            : </a>
 <a name="689"><span class="lineNum">     689 </span><span class="lineCov">        224 :         bool has_port = false;</span></a>
 <a name="690"><span class="lineNum">     690 </span><span class="lineCov">        560 :         for (const auto&amp; port : node-&gt;ports) {</span></a>
@@ -774,32 +774,32 @@
 <a name="712"><span class="lineNum">     712 </span><span class="lineCov">        224 :                 }</span></a>
 <a name="713"><span class="lineNum">     713 </span>            :             }</a>
 <a name="714"><span class="lineNum">     714 </span>            :         }</a>
-<a name="715"><span class="lineNum">     715 </span><span class="lineCov">        444 :     }</span></a>
+<a name="715"><span class="lineNum">     715 </span><span class="lineCov">        450 :     }</span></a>
 <a name="716"><span class="lineNum">     716 </span>            : </a>
-<a name="717"><span class="lineNum">     717 </span><span class="lineCov">        222 :     return base;</span></a>
-<a name="718"><span class="lineNum">     718 </span><span class="lineCov">        222 : }</span></a>
+<a name="717"><span class="lineNum">     717 </span><span class="lineCov">        225 :     return base;</span></a>
+<a name="718"><span class="lineNum">     718 </span><span class="lineCov">        225 : }</span></a>
 <a name="719"><span class="lineNum">     719 </span>            : </a>
-<a name="720"><span class="lineNum">     720 </span><span class="lineCov">      22677 : void DesignExtractor::synthesizePendingStructCompositions(Module&amp; mod) {</span></a>
-<a name="721"><span class="lineNum">     721 </span><span class="lineCov">      22899 :     for (const auto&amp; pending : mod.pendingStructAssigns) {</span></a>
-<a name="722"><span class="lineNum">     722 </span><span class="lineCov">        222 :         std::string out_port = ensureStructComposition(mod, pending.baseSignal);</span></a>
-<a name="723"><span class="lineNum">     723 </span><span class="lineCov">        222 :         if (out_port.empty()) continue;</span></a>
+<a name="720"><span class="lineNum">     720 </span><span class="lineCov">      22731 : void DesignExtractor::synthesizePendingStructCompositions(Module&amp; mod) {</span></a>
+<a name="721"><span class="lineNum">     721 </span><span class="lineCov">      22956 :     for (const auto&amp; pending : mod.pendingStructAssigns) {</span></a>
+<a name="722"><span class="lineNum">     722 </span><span class="lineCov">        225 :         std::string out_port = ensureStructComposition(mod, pending.baseSignal);</span></a>
+<a name="723"><span class="lineNum">     723 </span><span class="lineCov">        225 :         if (out_port.empty()) continue;</span></a>
 <a name="724"><span class="lineNum">     724 </span>            : </a>
-<a name="725"><span class="lineNum">     725 </span><span class="lineCov">        222 :         Edge e;</span></a>
-<a name="726"><span class="lineNum">     726 </span><span class="lineCov">        222 :         e.source = &quot;struct_comp:&quot; + mod.name + &quot;:&quot; + pending.baseSignal;</span></a>
-<a name="727"><span class="lineNum">     727 </span><span class="lineCov">        222 :         e.sourcePort = out_port;</span></a>
-<a name="728"><span class="lineNum">     728 </span><span class="lineCov">        222 :         e.target = &quot;self&quot;;</span></a>
-<a name="729"><span class="lineNum">     729 </span><span class="lineCov">        222 :         e.targetPort = pending.targetSignal;</span></a>
-<a name="730"><span class="lineNum">     730 </span><span class="lineCov">        222 :         e.signal = pending.baseSignal;</span></a>
-<a name="731"><span class="lineNum">     731 </span><span class="lineCov">        222 :         e.width = mod.structSignals[pending.baseSignal].type.width;</span></a>
-<a name="732"><span class="lineNum">     732 </span><span class="lineCov">        222 :         e.sourceInfo = pending.source;</span></a>
-<a name="733"><span class="lineNum">     733 </span><span class="lineCov">        222 :         e.aggregateStruct = true;</span></a>
-<a name="734"><span class="lineNum">     734 </span><span class="lineCov">        222 :         mod.edges.push_back(e);</span></a>
-<a name="735"><span class="lineNum">     735 </span><span class="lineCov">        222 :     }</span></a>
-<a name="736"><span class="lineNum">     736 </span><span class="lineCov">      22677 : }</span></a>
+<a name="725"><span class="lineNum">     725 </span><span class="lineCov">        225 :         Edge e;</span></a>
+<a name="726"><span class="lineNum">     726 </span><span class="lineCov">        225 :         e.source = &quot;struct_comp:&quot; + mod.name + &quot;:&quot; + pending.baseSignal;</span></a>
+<a name="727"><span class="lineNum">     727 </span><span class="lineCov">        225 :         e.sourcePort = out_port;</span></a>
+<a name="728"><span class="lineNum">     728 </span><span class="lineCov">        225 :         e.target = &quot;self&quot;;</span></a>
+<a name="729"><span class="lineNum">     729 </span><span class="lineCov">        225 :         e.targetPort = pending.targetSignal;</span></a>
+<a name="730"><span class="lineNum">     730 </span><span class="lineCov">        225 :         e.signal = pending.baseSignal;</span></a>
+<a name="731"><span class="lineNum">     731 </span><span class="lineCov">        225 :         e.width = mod.structSignals[pending.baseSignal].type.width;</span></a>
+<a name="732"><span class="lineNum">     732 </span><span class="lineCov">        225 :         e.sourceInfo = pending.source;</span></a>
+<a name="733"><span class="lineNum">     733 </span><span class="lineCov">        225 :         e.aggregateStruct = true;</span></a>
+<a name="734"><span class="lineNum">     734 </span><span class="lineCov">        225 :         mod.edges.push_back(e);</span></a>
+<a name="735"><span class="lineNum">     735 </span><span class="lineCov">        225 :     }</span></a>
+<a name="736"><span class="lineNum">     736 </span><span class="lineCov">      22731 : }</span></a>
 <a name="737"><span class="lineNum">     737 </span>            : </a>
-<a name="738"><span class="lineNum">     738 </span><span class="lineCov">       1738 : std::string DesignExtractor::fieldWidth(const StructType&amp; type, const std::string&amp; field) const {</span></a>
-<a name="739"><span class="lineNum">     739 </span><span class="lineCov">       3031 :     for (const auto&amp; candidate : type.fields) {</span></a>
-<a name="740"><span class="lineNum">     740 </span><span class="lineCov">       3031 :         if (candidate.name == field) return candidate.width;</span></a>
+<a name="738"><span class="lineNum">     738 </span><span class="lineCov">       1744 : std::string DesignExtractor::fieldWidth(const StructType&amp; type, const std::string&amp; field) const {</span></a>
+<a name="739"><span class="lineNum">     739 </span><span class="lineCov">       3040 :     for (const auto&amp; candidate : type.fields) {</span></a>
+<a name="740"><span class="lineNum">     740 </span><span class="lineCov">       3040 :         if (candidate.name == field) return candidate.width;</span></a>
 <a name="741"><span class="lineNum">     741 </span>            :     }</a>
 <a name="742"><span class="lineNum">     742 </span><span class="lineNoCov">          0 :     return &quot;&quot;;</span></a>
 <a name="743"><span class="lineNum">     743 </span>            : }</a>
@@ -811,13 +811,13 @@
 <a name="749"><span class="lineNum">     749 </span><span class="lineNoCov">          0 :     return &quot;&quot;;</span></a>
 <a name="750"><span class="lineNum">     750 </span>            : }</a>
 <a name="751"><span class="lineNum">     751 </span>            : </a>
-<a name="752"><span class="lineNum">     752 </span><span class="lineCov">        444 : bool DesignExtractor::hasStructFieldDriver(const Module&amp; mod, const std::string&amp; signal) const {</span></a>
-<a name="753"><span class="lineNum">     753 </span><span class="lineCov">        778 :     for (const auto&amp; node : mod.nodes) {</span></a>
-<a name="754"><span class="lineNum">     754 </span><span class="lineCov">       1348 :         for (const auto&amp; port : node.ports) {</span></a>
-<a name="755"><span class="lineNum">     755 </span><span class="lineCov">       1014 :             if (port.direction == &quot;output&quot; &amp;&amp; port.signal == signal) return true;</span></a>
+<a name="752"><span class="lineNum">     752 </span><span class="lineCov">        450 : bool DesignExtractor::hasStructFieldDriver(const Module&amp; mod, const std::string&amp; signal) const {</span></a>
+<a name="753"><span class="lineNum">     753 </span><span class="lineCov">        790 :     for (const auto&amp; node : mod.nodes) {</span></a>
+<a name="754"><span class="lineNum">     754 </span><span class="lineCov">       1372 :         for (const auto&amp; port : node.ports) {</span></a>
+<a name="755"><span class="lineNum">     755 </span><span class="lineCov">       1032 :             if (port.direction == &quot;output&quot; &amp;&amp; port.signal == signal) return true;</span></a>
 <a name="756"><span class="lineNum">     756 </span>            :         }</a>
 <a name="757"><span class="lineNum">     757 </span>            :     }</a>
-<a name="758"><span class="lineNum">     758 </span><span class="lineCov">        220 :     return false;</span></a>
+<a name="758"><span class="lineNum">     758 </span><span class="lineCov">        226 :     return false;</span></a>
 <a name="759"><span class="lineNum">     759 </span>            : }</a>
 </pre>
       </td>
