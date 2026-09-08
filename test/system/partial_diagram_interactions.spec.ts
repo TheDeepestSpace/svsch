@@ -24,17 +24,18 @@ import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 // via `test.fixme`, most with a body that documents the interaction still
 // left to port rather than a working implementation.
 //
-// Only "The Auto Layout control only appears once multiple blocks are
-// selected" is fully implemented, as a single worked example: it needs no
-// drag-gesture math beyond a plain marquee select (click, lasso-select,
-// assert, lasso-select, assert), so it reuses the exact click/select helpers
-// this suite's sibling node-kind test already exercises, adapted to a
-// partial-diagram context. It runs for real (not `test.fixme`) and, like
-// partial_diagram_nodes.spec.ts, takes a `toHaveScreenshot` at each important
-// regression-testing checkpoint — once with a single block selected (no
-// control), once with both selected (control appears) — so a visual
-// regression at either step fails the diff, not just the DOM assertions
-// around it.
+// Two cases are fully implemented rather than `test.fixme` stubs — neither
+// needs the drag-gesture math the rest of this file avoids porting (see
+// below): "The Auto Layout control only appears once multiple blocks are
+// selected" needs no more than a plain marquee select (click, lasso-select,
+// assert, lasso-select, assert), reusing the exact click/select helpers this
+// suite's sibling node-kind test already exercises; "Auto Layout All
+// re-places every block..." needs only "Add to Partial" (leaving a block's
+// ports out of the pane already produces a cut end structurally, no manual
+// cut gesture required) and a toolbar click. Both run for real and, like
+// partial_diagram_nodes.spec.ts, take a `toHaveScreenshot` at each important
+// regression-testing checkpoint, so a visual regression fails the diff, not
+// just the DOM assertions around it.
 //
 // "Expanding an instance in place..." was the original pick for this slot
 // (issue #408 review thread) but turned out to be a bad one once actually run
@@ -148,6 +149,32 @@ async function findSystemNodeId(
     },
     { wantedLabel: label, wantedKind: kind },
   );
+}
+
+// Mirrors cutLabelNodeIdAttachedTo in test/steps/diagram.steps.ts (BddWorld
+// version), adapted to this suite's lower-level webview API: walks the given
+// block's cut-stub edges to find the netLabel node rendered at their other
+// end. Partial panes never expand instances (see the EXPAND_COLLAPSE_TITLE
+// comment below), so unlike the BddWorld helper this doesn't need the
+// `expand:<id>::...` boundary-port namespacing.
+async function findCutLabelIdAttachedTo(
+  webview: FrameLocator,
+  blockId: string,
+): Promise<string | null> {
+  return webview.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
+    const stub = rf
+      .getEdges()
+      .find(
+        (e: any) =>
+          (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined,
+      );
+    if (!stub) return null;
+    const otherEndId = stub.source === id ? stub.target : stub.source;
+    const otherNode = nodesById.get(otherEndId) as any;
+    return otherNode?.data?.node?.kind === 'netLabel' ? otherEndId : null;
+  }, blockId);
 }
 
 // Mirrors waitForViewportToSettle in partial_diagram_nodes.spec.ts: waits for
@@ -450,6 +477,115 @@ test.describe('Partial diagram interaction parity', () => {
     );
   });
 
+  // -- A second worked example: Auto Layout All vs. a surviving cut end -----
+  // "Rebuilding a whole FSM..." in partial_diagram.feature already runs Auto
+  // Layout All inside a partial pane, but only after "I extend every cut net
+  // in the partial diagram" — by the time it clicks the button, zero cut ends
+  // remain, so it never actually exercises one surviving the relayout. This
+  // case adds two blocks without their driving/driven ports (so both ends of
+  // their nets render as cut ends — no drag gesture needed to set that up,
+  // unlike most of the still-unported cases below), runs Auto Layout All on
+  // the whole pane, and confirms a cut label doesn't land on top of the other
+  // block afterward — the exact shape of the bug this case was written for
+  // (issue #408 follow-up).
+  const AUTO_LAYOUT_ALL_TITLE =
+    'Auto Layout All re-places every block using current positions as hints';
+  test(AUTO_LAYOUT_ALL_TITLE, async ({ workbox, evaluateInVSCode }) => {
+    await workbox.waitForSelector('.monaco-workbench', { timeout: 30_000 });
+    await dismissSystemNotifications(workbox);
+
+    const { mainWebview } = await openMainDiagram(workbox, evaluateInVSCode, {
+      'top.sv': `
+          module leaf(input logic a, output logic y);
+            assign y = a;
+          endmodule
+
+          module top(input logic a, input logic b, output logic x, output logic y);
+            leaf u1(.a(a), .y(x));
+            leaf u2(.a(b), .y(y));
+          endmodule
+        `,
+    });
+
+    const u1MainId = await findSystemNodeId(mainWebview, 'u1', 'instance');
+    const u2MainId = await findSystemNodeId(mainWebview, 'u2', 'instance');
+    if (!u1MainId || !u2MainId) {
+      throw new Error('Instances "u1"/"u2" did not render in the main diagram');
+    }
+
+    // Neither leaf's driving/driven port node comes along — every wire
+    // touching u1/u2 renders as a cut end on this pane, same as the "declared
+    // nets are automatically cut" mechanic on the main diagram, but structural
+    // here rather than heuristic.
+    const partialWebview = await addNodesToPartial(workbox, evaluateInVSCode, mainWebview, [
+      u1MainId,
+      u2MainId,
+    ]);
+
+    const u1Id = await findSystemNodeId(partialWebview, 'u1', 'instance');
+    const u2Id = await findSystemNodeId(partialWebview, 'u2', 'instance');
+    if (!u1Id || !u2Id) {
+      throw new Error('Instances "u1"/"u2" did not render in the partial pane');
+    }
+
+    await screenshotPartialStep(
+      workbox,
+      partialWebview,
+      'partial-diagram-interaction-auto-layout-all-cut-ends-01-before.png',
+    );
+
+    await partialWebview.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
+    const autoLayoutAllButton = partialWebview.locator('.toolbar button', {
+      hasText: 'Auto Layout All',
+    });
+    await expect(autoLayoutAllButton).toBeVisible();
+    await autoLayoutAllButton.click();
+    await partialWebview.locator('.react-flow__node').first().waitFor({ timeout: 10_000 });
+
+    await screenshotPartialStep(
+      workbox,
+      partialWebview,
+      'partial-diagram-interaction-auto-layout-all-cut-ends-02-after.png',
+    );
+
+    // The regression this case guards: buildPartialViewModel used to
+    // synthesize cut-end labels only after the tied-wire routing pass had
+    // already finished, so a released block landing wherever ELK repacked it
+    // could park right on top of a cut label with no obstacle-avoidance
+    // aware of it. Check both blocks' cut ends against the other block.
+    const u1LabelId = await findCutLabelIdAttachedTo(partialWebview, u1Id);
+    const u2LabelId = await findCutLabelIdAttachedTo(partialWebview, u2Id);
+    if (!u1LabelId || !u2LabelId) {
+      throw new Error('Expected a cut net label attached to both "u1" and "u2"');
+    }
+
+    const u1LabelBox = await partialWebview
+      .locator(`.react-flow__node[data-id="${u1LabelId}"]`)
+      .boundingBox();
+    const u2LabelBox = await partialWebview
+      .locator(`.react-flow__node[data-id="${u2LabelId}"]`)
+      .boundingBox();
+    const u1Box = await partialWebview.locator(`.react-flow__node[data-id="${u1Id}"]`).boundingBox();
+    const u2Box = await partialWebview.locator(`.react-flow__node[data-id="${u2Id}"]`).boundingBox();
+    if (!u1LabelBox || !u2LabelBox || !u1Box || !u2Box) {
+      throw new Error('Missing a bounding box for "u1", "u2", or one of their cut labels');
+    }
+
+    const overlaps = (
+      a: { x: number; y: number; width: number; height: number },
+      b: { x: number; y: number; width: number; height: number },
+    ) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+    expect(
+      overlaps(u1LabelBox, u2Box),
+      'the cut label attached to "u1" should not overlap "u2"',
+    ).toBe(false);
+    expect(
+      overlaps(u2LabelBox, u1Box),
+      'the cut label attached to "u2" should not overlap "u1"',
+    ).toBe(false);
+  });
+
   // -- Everything else: registered, still to be ported -----------------------
   const EXPAND_COLLAPSE_TITLE =
     'Expanding an instance in place inlines its child module, and Collapse restores it';
@@ -465,7 +601,12 @@ test.describe('Partial diagram interaction parity', () => {
     );
   });
   for (const { title } of PARTIAL_INTERACTION_CASES) {
-    if (title === AUTO_LAYOUT_VISIBILITY_TITLE || title === EXPAND_COLLAPSE_TITLE) continue;
+    if (
+      title === AUTO_LAYOUT_VISIBILITY_TITLE ||
+      title === AUTO_LAYOUT_ALL_TITLE ||
+      title === EXPAND_COLLAPSE_TITLE
+    )
+      continue;
     notImplementedCase(title);
   }
 });

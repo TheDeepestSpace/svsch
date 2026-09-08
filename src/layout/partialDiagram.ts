@@ -190,14 +190,35 @@ export async function buildPartialViewModel(
     generatedAt: '',
   };
 
-  const view = await buildViewModel(graph, partialModule.name, layout, {
+  const moduleLayout = layout.modules[partialModule.name] ?? { nodes: {} };
+
+  return buildViewModel(graph, partialModule.name, layout, {
     extraPortMargins: partialCutLabelMargins(plan, included),
     enforceFixedPeerPortSeparation: true,
+    // Synthesized inside buildViewModel's own pre-routing pass (rather than
+    // appended after it returns) so the cut-end labels become libavoid
+    // obstacles for the tied wires — see buildNetCutProjection for the
+    // regular-diagram equivalent this mirrors.
+    extraCutObstacles: (positionedNodes) =>
+      buildPartialCutObstacles(plan, included, partialModule.name, moduleLayout, positionedNodes),
   });
+}
 
-  const moduleLayout = layout.modules[partialModule.name] ?? { nodes: {} };
-  const nodesById = new Map<string, DiagramNode>(view.nodes.map((node) => [node.id, node]));
-  const positions = new Map(view.nodes.map((node) => [node.id, node.position]));
+/**
+ * Synthesizes the partial's cut-end labels and stub edges from the module's
+ * post-ELK, pre-routing node positions, so buildViewModel can fold them into
+ * the routing pass as obstacles — mirroring buildNetCutProjection, but keyed
+ * off buildPartialCutPlan's cut nets instead of the module's saved netCuts.
+ */
+function buildPartialCutObstacles(
+  plan: PartialCutPlan,
+  included: ReadonlySet<string>,
+  moduleName: string,
+  moduleLayout: SavedModuleLayout,
+  positionedNodes: PositionedNode[],
+): { nodes: PositionedNode[]; edges: DiagramEdge[] } {
+  const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
+  const positions = new Map(positionedNodes.map((node) => [node.id, node.position]));
   const labels: PositionedNode[] = [];
   const stubs: DiagramEdge[] = [];
   const endpointByLabelId = new Map<string, string>();
@@ -222,7 +243,7 @@ export async function buildPartialViewModel(
           makeCutLabelNode(
             labelId,
             net.label,
-            partialModule.name,
+            moduleName,
             {
               netKey: net.netKey,
               role: 'source',
@@ -281,7 +302,7 @@ export async function buildPartialViewModel(
         makeCutLabelNode(
           labelId,
           net.label,
-          partialModule.name,
+          moduleName,
           {
             netKey: net.netKey,
             role: 'sink',
@@ -314,13 +335,9 @@ export async function buildPartialViewModel(
     }
   }
 
-  const resolvedLabels = resolveCutLabelCollisions(labels, view.nodes, endpointByLabelId);
+  const resolvedLabels = resolveCutLabelCollisions(labels, positionedNodes, endpointByLabelId);
 
-  return {
-    ...view,
-    nodes: [...view.nodes, ...resolvedLabels],
-    edges: [...view.edges, ...stubs],
-  };
+  return { nodes: resolvedLabels, edges: stubs };
 }
 
 /**

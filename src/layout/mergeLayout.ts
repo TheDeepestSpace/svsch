@@ -112,6 +112,17 @@ export interface BuildViewModelOptions {
    * intentionally tighter) spacing, which this would otherwise widen.
    */
   enforceFixedPeerPortSeparation?: boolean;
+  /**
+   * Hook for the partial diagram's own cut-end synthesis (layout/partialDiagram.ts).
+   * Invoked at the same point this pass builds its own net-cut projection —
+   * with the post-ELK, pre-routing node set — so the partial's cut-end labels
+   * become libavoid obstacles for the tied wires too, instead of being
+   * appended after routing has already finished blind to them.
+   */
+  extraCutObstacles?: (positionedNodes: PositionedNode[]) => {
+    nodes: PositionedNode[];
+    edges: DiagramEdge[];
+  };
 }
 
 export async function buildViewModel(
@@ -238,7 +249,15 @@ export async function buildViewModel(
     activeCuts,
     withGeometryOverrides(positioned),
   );
-  const routingNodes = [...withGeometryOverrides(positionedWithWarnings), ...cutProjection.nodes];
+  const extraCut = options?.extraCutObstacles?.(withGeometryOverrides(positioned)) ?? {
+    nodes: [],
+    edges: [],
+  };
+  const routingNodes = [
+    ...withGeometryOverrides(positionedWithWarnings),
+    ...cutProjection.nodes,
+    ...extraCut.nodes,
+  ];
   const routingNodesById = new Map<string, DiagramNode>(
     routingNodes.map((node) => [node.id, node]),
   );
@@ -267,7 +286,7 @@ export async function buildViewModel(
   return {
     moduleName: designModule.name,
     parameters: designModule.parameters,
-    nodes: [...positionedWithWarnings, ...cutProjection.nodes],
+    nodes: [...positionedWithWarnings, ...cutProjection.nodes, ...extraCut.nodes],
     edges: [
       ...routedDesignEdges.map((edge) => ({
         ...edge,
@@ -287,7 +306,7 @@ export async function buildViewModel(
             : elkLayout.routes.get(edge.id)) ??
           moduleLayout.edges?.[edge.id]?.routeSnapshot,
       })),
-      ...cutProjection.edges.map((edge) => ({
+      ...[...cutProjection.edges, ...extraCut.edges].map((edge) => ({
         ...edge,
         routePoints:
           cutStubRouteAroundSizeOverrides(

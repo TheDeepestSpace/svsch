@@ -58,8 +58,12 @@ export const PARTIAL_INTERACTION_CASES: PartialInteractionCase[] = [
   {
     title: 'Auto Layout All re-places every block using current positions as hints',
     notes:
-      'Covered end-to-end already by "Rebuilding a whole FSM..." in partial_diagram.feature; ' +
-      'this case only needs a minimal two-block variant to track the tag.',
+      'Implemented in the spec file (issue #408 follow-up): "Rebuilding a whole FSM..." in ' +
+      'partial_diagram.feature only exercises Auto Layout All after every cut net has already ' +
+      'been extended, so it never actually covers a cut end surviving the relayout — this case ' +
+      'adds two blocks with their ports left out of the partial (so their nets render as cut ' +
+      "ends), runs Auto Layout All, and confirms a cut label doesn't land on top of the other " +
+      'block, with before/after screenshots.',
   },
   {
     title: 'Resetting the layout reapplies both automatic cut heuristics',

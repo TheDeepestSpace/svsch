@@ -163,6 +163,8 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I press C to cut out the selected blocks
     And I move the block "u1" by (2, 0) grid cells
     And I move the block "u2" by (3, 5) grid cells
     And I note the position of the block "u1"
@@ -172,6 +174,7 @@ Feature: Diagram Interaction
     And the block "u1" should stay near its pre-auto-layout position
     And the block "u2" should be re-placed and fixed in the saved layout
     And the block "u2" should stay near its pre-auto-layout position
+    And the cut net label attached to "u1" should not overlap the block "u2"
 
   Scenario: Declared nets are automatically cut on first open
     Given I have a file "top.sv" in my workspace:
