@@ -389,8 +389,7 @@ export function resolveExtendTarget(
   // extend either.
   const netEdges = sourceModule.edges
     .filter(
-      (edge) =>
-        edgeNetKey(edge) === netKey && nodeIds.has(edge.source) && nodeIds.has(edge.target),
+      (edge) => edgeNetKey(edge) === netKey && nodeIds.has(edge.source) && nodeIds.has(edge.target),
     )
     .sort((a, b) => a.id.localeCompare(b.id));
   if (netEdges.length === 0) {

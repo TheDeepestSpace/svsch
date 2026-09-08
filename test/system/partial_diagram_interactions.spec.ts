@@ -565,8 +565,12 @@ test.describe('Partial diagram interaction parity', () => {
     const u2LabelBox = await partialWebview
       .locator(`.react-flow__node[data-id="${u2LabelId}"]`)
       .boundingBox();
-    const u1Box = await partialWebview.locator(`.react-flow__node[data-id="${u1Id}"]`).boundingBox();
-    const u2Box = await partialWebview.locator(`.react-flow__node[data-id="${u2Id}"]`).boundingBox();
+    const u1Box = await partialWebview
+      .locator(`.react-flow__node[data-id="${u1Id}"]`)
+      .boundingBox();
+    const u2Box = await partialWebview
+      .locator(`.react-flow__node[data-id="${u2Id}"]`)
+      .boundingBox();
     if (!u1LabelBox || !u2LabelBox || !u1Box || !u2Box) {
       throw new Error('Missing a bounding box for "u1", "u2", or one of their cut labels');
     }
