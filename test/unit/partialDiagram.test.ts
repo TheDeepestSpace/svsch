@@ -210,6 +210,103 @@ describe('removeNodesFromState', () => {
   });
 });
 
+// u1 drives struct net "s" into u2 and a breakout node; the extractor also
+// left a phantom boundary hub edge (`port:top:s` doesn't exist as a node —
+// see the struct breakout's unconditional self-edge in the C++ backend). The
+// main diagram silently drops that edge, so the partial must too.
+const phantomEdgeModule: DesignModule = {
+  name: 'top',
+  file: 'top.sv',
+  ports: [],
+  nodes: [
+    {
+      id: 'u1',
+      kind: 'instance',
+      label: 'u1',
+      ports: [{ id: 'out', name: 's_out', direction: 'output' }],
+    },
+    {
+      id: 'u2',
+      kind: 'instance',
+      label: 'u2',
+      ports: [{ id: 'in', name: 's_in', direction: 'input' }],
+    },
+    {
+      id: 'breakout',
+      kind: 'struct',
+      label: 's',
+      ports: [
+        { id: 'in:s', name: 's', direction: 'input' },
+        { id: 'out:s.a', name: 's.a', direction: 'output' },
+      ],
+    },
+    {
+      id: 'u3',
+      kind: 'instance',
+      label: 'u3',
+      ports: [{ id: 'in', name: 'f_in', direction: 'input' }],
+    },
+  ],
+  edges: [
+    { id: 'e-u1-u2', source: 'u1', target: 'u2', sourcePort: 'out', targetPort: 'in', signal: 's' },
+    {
+      id: 'e-u1-breakout',
+      source: 'u1',
+      target: 'breakout',
+      sourcePort: 'out',
+      targetPort: 'in:s',
+      signal: 's',
+    },
+    {
+      id: 'e-phantom-breakout',
+      source: 'port:top:s',
+      target: 'breakout',
+      sourcePort: 'handle',
+      targetPort: 'in:s',
+      signal: 's',
+      metadata: { declaredNetName: 's' },
+    },
+    {
+      id: 'e-breakout-u3',
+      source: 'breakout',
+      target: 'u3',
+      sourcePort: 'out:s.a',
+      targetPort: 'in',
+      signal: 's.a',
+    },
+  ],
+};
+
+describe('phantom edges (endpoint node missing from the module)', () => {
+  it('never surface as cut ends — same validity rule as the main layout', async () => {
+    // The state right after extending u1's struct net: u2 and the breakout
+    // joined, the net is tied. The phantom boundary edge still points at the
+    // included breakout, but its source node doesn't exist.
+    const state: PartialDiagramState = {
+      sourceModuleName: 'top',
+      includedNodeIds: ['u1', 'u2', 'breakout'],
+      tiedNetKeys: ['u1:out'],
+    };
+    const view = await buildPartialViewModel(phantomEdgeModule, state, emptyLayout);
+    const labels = view.nodes.filter((node) => node.kind === 'netLabel');
+    // Only the breakout's own field tap stays cut — no dangling "s" end from
+    // the phantom edge on the breakout's input.
+    expect(labels.map((node) => node.label)).toEqual(['s.a']);
+  });
+
+  it('are ignored by resolveExtendTarget', () => {
+    const state: PartialDiagramState = {
+      sourceModuleName: 'top',
+      includedNodeIds: ['u1'],
+      tiedNetKeys: [],
+    };
+    // The phantom edge's net has no valid edges at all — nothing to extend.
+    expect(resolveExtendTarget(phantomEdgeModule, state, 'port:top:s:handle')).toBeUndefined();
+    const target = resolveExtendTarget(phantomEdgeModule, state, 'u1:out', 'e-u1-u2');
+    expect(new Set(target?.newNodeIds)).toEqual(new Set(['u2', 'breakout']));
+  });
+});
+
 // port:d fans out to comb_a and comb_b on the same net — resolveExtendTarget
 // should pull in every branch at once (there's no partially-cut-net mechanic).
 const fanoutModule: DesignModule = {

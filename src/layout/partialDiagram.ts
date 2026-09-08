@@ -71,8 +71,18 @@ function buildPartialCutPlan(
   const tied = new Set(state.tiedNetKeys);
   const keptEdges: DiagramEdge[] = [];
   const cutEdgesByNet = new Map<string, DiagramEdge[]>();
+  const nodeIds = new Set(sourceModule.nodes.map((node) => node.id));
 
   for (const edge of sourceModule.edges) {
+    // The extractor can leave edges whose endpoint node doesn't exist — e.g.
+    // a struct breakout's boundary hub edge (`self.<base> -> struct:...`)
+    // when the struct is really an internal net driven by an instance. The
+    // main layout silently drops those (buildRoutingElkEdges filters on node
+    // existence); apply the same validity rule here so a phantom endpoint
+    // can't surface as a dangling cut end on the breakout's input.
+    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
+      continue;
+    }
     const sourceIncluded = included.has(edge.source);
     const targetIncluded = included.has(edge.target);
     if (!sourceIncluded && !targetIncluded) {
@@ -356,8 +366,15 @@ export function resolveExtendTarget(
   originalEdgeId?: string,
 ): { edge: DiagramEdge; newNodeIds: string[] } | undefined {
   const included = new Set(state.includedNodeIds);
+  const nodeIds = new Set(sourceModule.nodes.map((node) => node.id));
+  // Same edge-validity rule as buildPartialCutPlan: an edge referencing a
+  // node that doesn't exist never rendered anywhere, so it can't inform the
+  // extend either.
   const netEdges = sourceModule.edges
-    .filter((edge) => edgeNetKey(edge) === netKey)
+    .filter(
+      (edge) =>
+        edgeNetKey(edge) === netKey && nodeIds.has(edge.source) && nodeIds.has(edge.target),
+    )
     .sort((a, b) => a.id.localeCompare(b.id));
   if (netEdges.length === 0) {
     return undefined;
@@ -367,9 +384,8 @@ export function resolveExtendTarget(
     : undefined;
   const boundary = netEdges.find((edge) => included.has(edge.source) !== included.has(edge.target));
   const edge = preferred ?? boundary ?? netEdges[0];
-  const nodeIds = new Set(sourceModule.nodes.map((node) => node.id));
   const newNodeIds = [...new Set(netEdges.flatMap((e) => [e.source, e.target]))].filter(
-    (id) => !included.has(id) && nodeIds.has(id),
+    (id) => !included.has(id),
   );
   return { edge, newNodeIds };
 }
