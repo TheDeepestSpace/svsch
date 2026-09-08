@@ -3673,11 +3673,7 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   );
 }
 
-async function persistSvgSnapshot(
-  world: BddWorld,
-  svgContent: string,
-  label: string = 'cli-svg',
-) {
+async function persistSvgSnapshot(world: BddWorld, svgContent: string, label: string = 'cli-svg') {
   if (!world.scenarioName) return;
   const snapshotStepCounter = consumeCliSnapshotStepCounter(world);
   const safe = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
