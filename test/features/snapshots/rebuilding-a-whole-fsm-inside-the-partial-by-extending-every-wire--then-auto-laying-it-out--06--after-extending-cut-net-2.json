@@ -532,7 +532,7 @@
       "target": "reg:top:r",
       "sourceHandle": "q",
       "targetHandle": "d",
-      "path": "M 336 264 L 360 264 L 360 192 L 96 192 L 96 72 L 120 72 L 144 72"
+      "path": "M 336 264 L 360 264 L 360 336 L -24 336 L -24 72 L 120 72 L 144 72"
     },
     {
       "id": "edge:literal:top:IDLE:IDLE:mux:top:next_r:r:next_r_if_true_n0:next_r_if_true_n0_default",

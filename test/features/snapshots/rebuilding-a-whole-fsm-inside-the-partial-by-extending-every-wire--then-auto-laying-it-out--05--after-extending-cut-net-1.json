@@ -332,7 +332,7 @@
       "target": "mux:top:next_r:next_state_en:next_r_latch_d",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 336 264 L 360 264 L 360 408 L 624 408 L 648 408"
+      "path": "M 336 264 L 360 264 L 384 264 L 384 408 L 624 408 L 648 408"
     },
     {
       "id": "edge:latch:top:next_r:reg:top:r:next_r",
@@ -340,7 +340,7 @@
       "target": "reg:top:r",
       "sourceHandle": "q",
       "targetHandle": "d",
-      "path": "M 336 264 L 360 264 L 360 192 L 120 192 L 120 72 L 144 72"
+      "path": "M 336 264 L 360 264 L 240 264 L 240 201 Q 249 192 240 183 L 240 105 Q 249 96 240 87 L 240 72 L 120 72 L 144 72"
     }
   ]
 }
