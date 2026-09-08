@@ -237,6 +237,37 @@ Feature: Partial diagram
     And there should be a connection between "r" and the mux node "case r"
     And there should be a connection between the mux node "if next_state_en" and the latch node "next_r"
 
+  Scenario: Exporting the partial diagram as SVG
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        logic mid;
+        leaf u1(.a(a), .y(mid));
+        leaf u2(.a(mid), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I add the selected block to the partial diagram
+    Then the SVSCH partial diagram panel opens
+    When I switch to the partial diagram panel
+    Then I should see an instance node "u1" of module "leaf"
+
+    When I click the Export SVG button
+    Then I see the file save dialog with "<workspace folder>/top_partial.svg" as the filename
+
+    When I click "OK"
+    Then a file named "top_partial.svg" should exist in the workspace
+    # The included instance and its cut ends (unlike the main diagram, a
+    # partial's every unresolved edge is a cut, not just some) both need to
+    # make it into the exported markup.
+    And the workspace file "top_partial.svg" should contain "leaf"
+    And the workspace file "top_partial.svg" should contain "hdl-net-label"
+
   Scenario Outline: Removing a block drops its own cut ends and cuts nets it was tied to
     Given I have a file "top.sv" in my workspace:
       """

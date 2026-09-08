@@ -1701,8 +1701,8 @@ function DiagramApp(): React.ReactElement {
 
 // The shared top toolbar. Both panel types render it; the `partial` flag
 // (an ephemeral "SVSCH Partial Diagram" pane, issue #403) drops the module
-// dropdown — a partial views exactly one source module, never navigates —
-// and the Export SVG action, which the partial's host doesn't serve.
+// dropdown — a partial views exactly one source module, never navigates.
+// Export SVG is available in both panels (issue #408).
 function DiagramToolbar({
   view,
   modules,
@@ -1737,14 +1737,12 @@ function DiagramToolbar({
         </select>
       )}
       {partial && <span className="toolbar-partial-title">{view.moduleName} — partial</span>}
-      {!partial && (
-        <button
-          className="vscode-control vscode-button vscode-button-secondary"
-          onClick={() => vscode.postMessage({ type: 'exportSvg' })}
-        >
-          Export SVG
-        </button>
-      )}
+      <button
+        className="vscode-control vscode-button vscode-button-secondary"
+        onClick={() => vscode.postMessage({ type: 'exportSvg' })}
+      >
+        Export SVG
+      </button>
       <button
         className="vscode-control vscode-button vscode-button-secondary"
         onClick={onRerouteLayout}

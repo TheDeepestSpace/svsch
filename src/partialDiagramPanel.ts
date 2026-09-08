@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type { DesignModule, PositionedNode } from './ir/types';
 import type { SavedLayout } from './storage/layoutStore';
+import { logger } from './logger';
 import {
   mergeEdgeRoutePoints,
   mergeNodePositions,
@@ -16,14 +19,18 @@ import {
   resolveExtendTarget,
   type PartialDiagramState,
 } from './layout/partialDiagram';
+import { renderSvg } from './cli/svgRenderer';
+import { minifySvg } from './cli/svgMinify';
 import { diagramWebviewHtml } from './webviewPanelHtml';
 
 /**
  * Messages the partial pane's webview posts that this panel acts on. The
  * webview is the same bundle the main diagram panel serves, so it can post
  * the full main-panel vocabulary — anything not listed here (persistence,
- * net cuts, expand, navigation, SVG export) is deliberately ignored: the
- * partial is ephemeral and derived, with no store behind it.
+ * net cuts, expand, navigation) is deliberately ignored: the partial is
+ * ephemeral and derived, with no store behind it. SVG export is served
+ * (issue #408): it just re-renders whatever `buildPartialViewModel` already
+ * produces, so it needs no store either.
  */
 type PartialWebviewMessage =
   | { type: 'ready' }
@@ -42,6 +49,7 @@ type PartialWebviewMessage =
       changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>;
       nodes?: PositionedNode[];
     }
+  | { type: 'exportSvg' }
   | { type: string };
 
 /**
@@ -231,8 +239,121 @@ export class PartialDiagramPanel {
       await this.postView();
       return;
     }
+    if (message.type === 'exportSvg') {
+      await this.exportSvg();
+      return;
+    }
     // Everything else the shared webview bundle can post has no meaning for
     // an ephemeral pane — ignore it.
+  }
+
+  /**
+   * Export SVG for the partial pane (issue #408): re-renders whatever
+   * `buildPartialViewModel` currently shows via the same `renderSvg`/
+   * `minifySvg` pipeline the main diagram uses. Unlike the main panel's
+   * export, there's no expand splicing or LayoutStore to warm first — the
+   * partial never supports expand and its layout already lives in memory.
+   */
+  private async exportSvg(): Promise<void> {
+    try {
+      if (!this.sourceModule || !this.state) {
+        return;
+      }
+      let reactFlowCss = '';
+      try {
+        const paths = [
+          path.join(
+            this.context.extensionUri.fsPath,
+            'node_modules',
+            '@xyflow',
+            'react',
+            'dist',
+            'style.css',
+          ),
+          path.join(
+            this.context.extensionUri.fsPath,
+            '..',
+            'node_modules',
+            '@xyflow',
+            'react',
+            'dist',
+            'style.css',
+          ),
+          path.join(
+            this.context.extensionUri.fsPath,
+            '..',
+            '..',
+            'node_modules',
+            '@xyflow',
+            'react',
+            'dist',
+            'style.css',
+          ),
+        ];
+        for (const p of paths) {
+          if (fs.existsSync(p)) {
+            reactFlowCss = fs.readFileSync(p, 'utf8');
+            break;
+          }
+        }
+      } catch (err) {
+        logger.log(`Warning: Could not load React Flow CSS for export: ${err}`);
+      }
+
+      let extensionCss = '';
+      try {
+        const p = path.join(this.context.extensionUri.fsPath, 'media', 'diagram.css');
+        if (fs.existsSync(p)) {
+          extensionCss = fs.readFileSync(p, 'utf8');
+        } else {
+          logger.log(
+            `Warning: ${p} not found; the exported SVG will have no diagram styling. ` +
+              `Run "npm run build:webview".`,
+          );
+        }
+      } catch (err) {
+        logger.log(`Warning: Could not load extension CSS for export: ${err}`);
+      }
+
+      const viewModel = await buildPartialViewModel(this.sourceModule, this.state, this.layout);
+      let svg = renderSvg(viewModel, {
+        theme:
+          vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark',
+        reactFlowCss,
+        extensionCss,
+      });
+      if (vscode.workspace.getConfiguration('svsch').get<boolean>('minifySvg', true)) {
+        svg = await minifySvg(svg);
+      }
+
+      const defaultUri = vscode.Uri.file(
+        path.join(
+          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '.',
+          `${this.sourceModule.name.replace(/[^a-z0-9]/gi, '_')}_partial.svg`,
+        ),
+      );
+
+      // In tests, we bypass the dialog to avoid hanging
+      if (process.env.SVSCH_TEST) {
+        fs.writeFileSync(defaultUri.fsPath, svg);
+        return;
+      }
+
+      const uri = await vscode.window.showSaveDialog({
+        defaultUri,
+        filters: { SVG: ['svg'] },
+        title: 'Export Diagram as SVG',
+      });
+
+      if (uri) {
+        fs.writeFileSync(uri.fsPath, svg);
+        vscode.window.showInformationMessage(`Diagram exported to ${path.basename(uri.fsPath)}`);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.log(`Error exporting SVG: ${msg}`);
+      vscode.window.showErrorMessage(`Failed to export SVG: ${msg}`);
+    }
   }
 
   private async extendNet(netKey: string, originalEdgeId?: string): Promise<void> {
