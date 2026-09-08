@@ -236,3 +236,43 @@ Feature: Partial diagram
     And I should see a latch node "next_r"
     And there should be a connection between "r" and the mux node "case r"
     And there should be a connection between the mux node "if next_state_en" and the latch node "next_r"
+
+  Scenario Outline: Removing a block drops its own cut ends and cuts nets it was tied to
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        logic mid;
+        leaf u1(.a(a), .y(mid));
+        leaf u2(.a(mid), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I add the selected block to the partial diagram
+    Then the SVSCH partial diagram panel opens
+    When I switch to the partial diagram panel
+    And I click the extend arrow on the cut net "mid"
+    Then I should see an instance node "u2" of module "leaf"
+    And there should be a connection between "u1" and "u2"
+    And I should see 1 cut net labels named "u2.y"
+    When I click to select the block "u2"
+    Then the "Remove" button should be visible
+    When I <remove trigger>
+    Then I should not see an instance node "u2"
+    And I should see an instance node "u1" of module "leaf"
+    # The "mid" net was a real, tied wire between u1 and u2 — removing u2
+    # naturally cuts it again on u1's remaining side.
+    And I should see 1 cut net labels named "mid"
+    And I should see 1 cut net labels named "a"
+    # u2's own "u2.y" cut end (never expanded) is gone along with u2 itself.
+    And I should not see cut net labels named "u2.y"
+
+    Examples:
+      | remove trigger                               |
+      | click the Remove button                      |
+      | press Backspace to remove the selected block |
+      | press Delete to remove the selected block    |

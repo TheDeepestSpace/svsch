@@ -12,6 +12,7 @@ import {
 } from './layout/mergeLayout';
 import {
   buildPartialViewModel,
+  removeNodesFromState,
   resolveExtendTarget,
   type PartialDiagramState,
 } from './layout/partialDiagram';
@@ -27,6 +28,7 @@ import { diagramWebviewHtml } from './webviewPanelHtml';
 type PartialWebviewMessage =
   | { type: 'ready' }
   | { type: 'requestExtendNet'; moduleName: string; netKey: string; originalEdgeId?: string }
+  | { type: 'removeFromPartial'; moduleName: string; nodeIds: string[] }
   | { type: 'layoutChanged'; moduleName: string; nodes: PositionedNode[] }
   | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
   | { type: 'rerouteEdge'; moduleName: string; edgeId: string; nodes: PositionedNode[] }
@@ -161,6 +163,11 @@ export class PartialDiagramPanel {
       await this.extendNet(extend.netKey, extend.originalEdgeId);
       return;
     }
+    if (message.type === 'removeFromPartial') {
+      const remove = message as Extract<PartialWebviewMessage, { type: 'removeFromPartial' }>;
+      await this.removeNodes(remove.nodeIds);
+      return;
+    }
     if (message.type === 'layoutChanged') {
       const changed = message as Extract<PartialWebviewMessage, { type: 'layoutChanged' }>;
       // The webview already moved the nodes — record the new anchors so the
@@ -239,6 +246,25 @@ export class PartialDiagramPanel {
     this.state.includedNodeIds.push(...target.newNodeIds);
     if (!this.state.tiedNetKeys.includes(netKey)) {
       this.state.tiedNetKeys.push(netKey);
+    }
+    await this.postView();
+  }
+
+  /**
+   * "Remove" (issue #408): drops the given blocks from the pane, whether
+   * triggered by the selection toolbar's button or its Backspace/Delete
+   * hotkey. Removing the pane's last block closes it outright — same
+   * end state as closing the tab by hand — rather than leaving an empty,
+   * unusable pane open.
+   */
+  private async removeNodes(nodeIds: string[]): Promise<void> {
+    if (!this.state) {
+      return;
+    }
+    this.state = removeNodesFromState(this.state, nodeIds);
+    if (this.state.includedNodeIds.length === 0) {
+      this.close();
+      return;
     }
     await this.postView();
   }

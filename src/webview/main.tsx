@@ -901,7 +901,15 @@ function DiagramApp(): React.ReactElement {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.repeat) return;
       const key = event.key.toLowerCase();
-      if (key !== 'r' && key !== 't' && key !== 'c' && key !== 'p') return;
+      if (
+        key !== 'r' &&
+        key !== 't' &&
+        key !== 'c' &&
+        key !== 'p' &&
+        key !== 'backspace' &&
+        key !== 'delete'
+      )
+        return;
 
       const target = event.target;
       if (
@@ -946,6 +954,27 @@ function DiagramApp(): React.ReactElement {
         event.preventDefault();
         vscode.postMessage({
           type: 'addToPartial',
+          moduleName: view.moduleName,
+          nodeIds: selectedBlocks.map((node) => node.id),
+        });
+        return;
+      }
+
+      // Backspace/Delete mirror the block-selection toolbar's "Remove"
+      // button — the partial pane's own counterpart to `p`, so it only fires
+      // from inside a partial pane, never on the main diagram (which has no
+      // "remove a block" concept — its nodes mirror the source, not a
+      // freestanding selection).
+      if (key === 'backspace' || key === 'delete') {
+        if (!isPartial) return;
+        const allSelected = nodes.filter((node) => node.selected === true);
+        const selectedBlocks = allSelected.filter(
+          (node) => node.data.node.kind !== 'netLabel' && !isExpandNamespacedId(node.id),
+        );
+        if (selectedBlocks.length === 0 || selectedBlocks.length !== allSelected.length) return;
+        event.preventDefault();
+        vscode.postMessage({
+          type: 'removeFromPartial',
           moduleName: view.moduleName,
           nodeIds: selectedBlocks.map((node) => node.id),
         });
@@ -2269,6 +2298,17 @@ function NodeSelectionToolbar({
     !partialDiagram && selectedBlocks.length === selected.length && selected.length >= 1
       ? selected
       : undefined;
+  // "Remove" (issue #408): the partial pane's own counterpart to "Add to
+  // Partial" — one or more real blocks selected inside the pane, removed
+  // (along with any of their own not-yet-expanded cut ends) from it. Any net
+  // still tied to a remaining node reverts to a cut end there automatically
+  // once its other end is gone (see removeNodesFromState in
+  // src/layout/partialDiagram.ts) — this control never needs to know about
+  // nets itself.
+  const removeNodes =
+    partialDiagram && selectedBlocks.length === selected.length && selected.length >= 1
+      ? selected
+      : undefined;
 
   // Nothing to offer: a lone block with every net already cut and no resize
   // override gets no control, so skip rendering the (now empty) toolbar entirely.
@@ -2280,7 +2320,8 @@ function NodeSelectionToolbar({
       !showRevertSize &&
       !expandableInstance &&
       !collapseSplice &&
-      !addToPartialNodes) ||
+      !addToPartialNodes &&
+      !removeNodes) ||
     (selected.length < 1 && !expandableInstance && !collapseSplice)
   ) {
     return null;
@@ -2532,6 +2573,33 @@ function NodeSelectionToolbar({
               Add to Partial
               <kbd className="svsch-shortcut-glyph" aria-hidden="true">
                 <span className="svsch-shortcut-glyph-letter">P</span>
+              </kbd>
+            </button>
+          )}
+          {removeNodes && (
+            <button
+              type="button"
+              className="svsch-selection-remove-control"
+              title={
+                removeNodes.length === 1
+                  ? 'Remove this block from the partial diagram'
+                  : `Remove these ${removeNodes.length} blocks from the partial diagram`
+              }
+              onClick={(event) => {
+                event.stopPropagation();
+                vscode.postMessage({
+                  type: 'removeFromPartial',
+                  moduleName,
+                  nodeIds: removeNodes.map((node) => node.id),
+                });
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Remove
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">⌫</span>
               </kbd>
             </button>
           )}

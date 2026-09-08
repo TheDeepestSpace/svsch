@@ -5,6 +5,7 @@ import { setLibavoidRuntimeForTests } from '../../src/layout/libavoidRouter';
 import { mergeNodePositions } from '../../src/layout/mergeLayout';
 import {
   buildPartialViewModel,
+  removeNodesFromState,
   resolveExtendTarget,
   type PartialDiagramState,
 } from '../../src/layout/partialDiagram';
@@ -155,6 +156,57 @@ describe('buildPartialViewModel', () => {
     expect(reg1After.position).toEqual(reg1Before);
     expect(reg1After.fixed).toBe(true);
     expect(secondView.nodes.find((node) => node.id === 'comb1')).toBeDefined();
+  });
+});
+
+describe('removeNodesFromState', () => {
+  it('drops the given node ids from includedNodeIds', () => {
+    const state: PartialDiagramState = {
+      sourceModuleName: 'top',
+      includedNodeIds: ['reg1', 'comb1', 'port:a'],
+      tiedNetKeys: ['reg1:q'],
+    };
+    const next = removeNodesFromState(state, ['comb1']);
+    expect(next.includedNodeIds).toEqual(['reg1', 'port:a']);
+    // Tied net bookkeeping is untouched — a removed node's already-tied nets
+    // retie automatically if it's ever added back.
+    expect(next.tiedNetKeys).toEqual(['reg1:q']);
+  });
+
+  it("leaves a still-included peer's net cut once the other end is removed", async () => {
+    const tied: PartialDiagramState = {
+      sourceModuleName: 'top',
+      includedNodeIds: ['reg1', 'comb1'],
+      tiedNetKeys: ['reg1:q'],
+    };
+    const beforeView = await buildPartialViewModel(sourceModule, tied, emptyLayout);
+    expect(beforeView.edges.some((edge) => edge.metadata?.cutStub === undefined)).toBe(true);
+
+    const afterRemoval = removeNodesFromState(tied, ['comb1']);
+    const afterView = await buildPartialViewModel(sourceModule, afterRemoval, emptyLayout);
+    const realNodes = afterView.nodes.filter((node) => node.kind !== 'netLabel');
+    expect(realNodes.map((node) => node.id)).toEqual(['reg1']);
+    // The reg1<->comb1 net (previously tied) is cut again on reg1's side now
+    // that comb1 is gone, and every edge renders as a cut stub.
+    expect(afterView.edges.every((edge) => edge.metadata?.cutStub !== undefined)).toBe(true);
+    const midLabel = afterView.nodes.find(
+      (node) => node.kind === 'netLabel' && node.label === 'mid',
+    );
+    expect(midLabel).toBeDefined();
+  });
+
+  it("drops a removed node's own cut ends entirely", async () => {
+    const state: PartialDiagramState = {
+      sourceModuleName: 'top',
+      includedNodeIds: ['reg1', 'comb1'],
+      tiedNetKeys: [],
+    };
+    const removed = removeNodesFromState(state, ['comb1']);
+    const view = await buildPartialViewModel(sourceModule, removed, emptyLayout);
+    const labels = view.nodes.filter((node) => node.kind === 'netLabel').map((node) => node.label);
+    // comb1's own "u1.y"-style cut end (the comb1->sum net) is gone along with
+    // comb1 itself — only reg1's own cut ends (a, mid) remain.
+    expect(labels.sort()).toEqual(['a', 'mid']);
   });
 });
 

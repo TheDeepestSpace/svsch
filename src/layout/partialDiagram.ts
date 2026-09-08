@@ -314,6 +314,29 @@ export async function buildPartialViewModel(
 }
 
 /**
+ * Drops one or more nodes from the partial (issue #408's "Remove" action).
+ * Filtering includedNodeIds is the only state change needed: buildPartialCutPlan
+ * re-derives cut vs. tied per edge from the current included set on every
+ * rebuild, so a net that was tied through a removed node naturally reverts to
+ * a cut end on its still-included peer, and a cut end that only pointed at
+ * the removed node (an unexpanded net end of its own) simply stops rendering
+ * — nothing else in the plan references it. tiedNetKeys is left untouched: if
+ * the removed node is added back later, a net that was already tied through
+ * it reties automatically, the same way any other already-tied net does the
+ * moment both its ends are included again.
+ */
+export function removeNodesFromState(
+  state: PartialDiagramState,
+  nodeIds: readonly string[],
+): PartialDiagramState {
+  const remove = new Set(nodeIds);
+  return {
+    ...state,
+    includedNodeIds: state.includedNodeIds.filter((id) => !remove.has(id)),
+  };
+}
+
+/**
  * Resolves what an "extend" click on a cut end means against the *source*
  * module's full edge list: which node the clicked label was derived from
  * (used to pick the label's rendered edge style), and which nodes join the

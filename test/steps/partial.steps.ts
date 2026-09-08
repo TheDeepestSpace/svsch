@@ -235,6 +235,59 @@ Then('I should not see any cut net labels in the partial diagram', async functio
 // can't poll the saved-layout file for a diff: the partial pane's layout
 // lives only in the extension host's memory and is never written to disk
 // (see PartialDiagramPanel) — the round trip is given time to settle instead.
+// Waits for the "Remove" action (button click or hotkey) to actually drop a
+// block from the active pane. Same rationale as "I add the selected block to
+// the partial diagram": the partial never persists to a layout file, so there
+// is nothing on disk to poll — only the rendered block count.
+async function waitForPartialBlockCountBelow(world: BddWorld, before: number): Promise<void> {
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    const blocks = await activePaneBlockCount(world);
+    if (blocks < before) return;
+    if (Date.now() > deadline) {
+      throw new Error(`Partial pane block count did not drop below ${before} after Remove`);
+    }
+    await world.workbox.waitForTimeout(200);
+  }
+}
+
+// Clicks the selection toolbar's "Remove" button (issue #408). Deliberately
+// not the generic "I click the {string} button" step: that one polls the
+// extension's saved layout file for a diff, which never fires for a partial
+// pane edit (nothing here is ever persisted) — poll the rendered block count
+// instead, same as "I add the selected block to the partial diagram".
+When('I click the Remove button', async function (this: BddWorld) {
+  const before = await activePaneBlockCount(this);
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: 'Remove' });
+  await expect(button).toBeVisible();
+  await button.click();
+  await waitForPartialBlockCountBelow(this, before);
+  await this.takeScreenshot('After clicking Remove');
+});
+
+// Keyboard equivalent of "Remove" — Backspace on Windows, Delete on macOS
+// (see the Backspace/Delete handling in main.tsx's global keydown handler).
+// Both key values are wired to the same action, so either fires it
+// regardless of which physical key the current platform labels "delete".
+async function pressRemoveHotkey(world: BddWorld, key: 'Backspace' | 'Delete'): Promise<void> {
+  const before = await activePaneBlockCount(world);
+  await world.webviewPage.locator('body').evaluate((_body, shortcutKey) => {
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: shortcutKey, bubbles: true, cancelable: true }),
+    );
+  }, key);
+  await waitForPartialBlockCountBelow(world, before);
+  await world.takeScreenshot(`After pressing ${key} to remove the selected block`);
+}
+
+When('I press Backspace to remove the selected block', async function (this: BddWorld) {
+  await pressRemoveHotkey(this, 'Backspace');
+});
+
+When('I press Delete to remove the selected block', async function (this: BddWorld) {
+  await pressRemoveHotkey(this, 'Delete');
+});
+
 When('I click "Auto Layout All" in the partial diagram toolbar', async function (this: BddWorld) {
   await this.webviewPage.locator('body').hover({ position: { x: 10, y: 10 }, force: true });
   const button = this.webviewPage.locator('.toolbar button', { hasText: 'Auto Layout All' });
