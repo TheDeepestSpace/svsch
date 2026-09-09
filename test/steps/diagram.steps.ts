@@ -2708,7 +2708,7 @@ Then(
   async function (this: BddWorld, filename: string) {
     if (!this.workspaceDir) throw new Error('No open workspace');
     const content = await fs.promises.readFile(path.join(this.workspaceDir, filename), 'utf8');
-    await persistSvgSnapshot(this, content, 'exported-svg');
+    await persistSvgSnapshot(this, content, 'exported-svg', { required: true });
   },
 );
 
@@ -3673,7 +3673,12 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   );
 }
 
-async function persistSvgSnapshot(world: BddWorld, svgContent: string, label: string = 'cli-svg') {
+async function persistSvgSnapshot(
+  world: BddWorld,
+  svgContent: string,
+  label: string = 'cli-svg',
+  options: { required?: boolean } = {},
+) {
   if (!world.scenarioName) return;
   const snapshotStepCounter = consumeCliSnapshotStepCounter(world);
   const safe = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
@@ -3684,6 +3689,13 @@ async function persistSvgSnapshot(world: BddWorld, svgContent: string, label: st
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
   const updateSnapshots = shouldUpdateSnapshots(world);
   if (!fs.existsSync(snapshotPath)) {
+    if (options.required && !updateSnapshots) {
+      throw new Error(
+        `SVG snapshot baseline missing for "${snapshotName}": expected a committed baseline ` +
+          `at "${snapshotPath}". Run with UPDATE_SNAPSHOTS=1 (or npm run test:bdd:update) to ` +
+          `record one and commit it — this scenario must not pass by silently creating a baseline.`,
+      );
+    }
     fs.writeFileSync(snapshotPath, svgContent, 'utf8');
     return;
   }
