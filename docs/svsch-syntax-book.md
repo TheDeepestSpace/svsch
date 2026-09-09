@@ -205,7 +205,7 @@ Calling an automatic function renders the call site as a FUNCTION block; double-
     foo = lhs + rhs;
   endfunction
 <br />
-  assign y = foo(a, b);
+  assign y = <mark>foo(a, b)</mark>;
 endmodule
 </code></pre>
 
@@ -231,7 +231,7 @@ Calling an automatic task from a procedural block renders the call site as a TAS
   endtask
 <br />
   always_comb begin
-    add_values(a, b, y);
+    <mark>add_values(a, b, y)</mark>;
   end
 endmodule
 </code></pre>

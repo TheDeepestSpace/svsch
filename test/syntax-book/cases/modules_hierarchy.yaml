@@ -131,6 +131,7 @@ cases:
       nodeLabel: foo
     expect:
       nodeKinds: [port, funcCall]
+      selectedText: "foo(a, b)"
 
   - id: task-call-block
     title: Task Call Block
@@ -164,3 +165,4 @@ cases:
       nodeLabel: add_values
     expect:
       nodeKinds: [port, taskCall]
+      selectedText: "add_values(a, b, y)"

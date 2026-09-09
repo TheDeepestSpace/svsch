@@ -313,14 +313,30 @@ test.describe('Syntax Book Generation & Verification', () => {
           }
 
           // A "display" entry (like a function/task call block) has no
-          // click-to-navigate interaction either: double-clicking it unfolds
-          // its body in place (see diagram_interaction.feature's "Navigating
-          // into a function call") rather than jumping to source, so there is
-          // no single declaration line to mark. Shows the plain source as-is,
-          // same as the net-label case below.
+          // click-to-navigate interaction in the app: double-clicking it
+          // unfolds its body in place (see diagram_interaction.feature's
+          // "Navigating into a function call") rather than jumping to
+          // source. The call-site node still carries its own `source` range
+          // from the backend, though, so unlike the net-label case below,
+          // the syntax book highlights it directly off the view model
+          // instead of driving a (no-op) webview double-click.
           if (caseData.target.kind === 'display') {
-            const firstFileContent = Object.values(caseData.files)[0] as string;
-            const highlightedHtml = escapeCode(firstFileContent);
+            const targetNode = viewModel.nodes.find(
+              (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel,
+            );
+            const range = targetNode?.source;
+            expect(range).toBeDefined();
+            expect(range!.file).toBeDefined();
+
+            const fileContent = caseData.files[range!.file];
+            expect(fileContent).toBeDefined();
+
+            const rawSelectedText = getRawSelectedText(fileContent, range!);
+            expect(rawSelectedText.replace(/\r\n/g, '\n').trim()).toBe(
+              caseData.expect.selectedText.replace(/\r\n/g, '\n').trim(),
+            );
+
+            const highlightedHtml = escapeAndHighlight(fileContent, range!);
 
             const nodeModulesPaths = [
               path.resolve(__dirname, '../../node_modules/@xyflow/react/dist/style.css'),
