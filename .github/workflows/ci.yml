@@ -71,8 +71,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - &restore_npm_step
-        name: Restore node modules
+      - name: Restore node modules
         id: cache-npm
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -92,7 +91,20 @@ jobs:
     container: *container_config
     steps:
       - *checkout_step
-      - *restore_npm_step
+      # Read-only: setup (above) is the sole writer of this cache key, via a
+      # real actions/cache step gated by `npm ci`. Every other job only
+      # restores — actions/cache/restore has no save phase, so a job that
+      # never installs (e.g. check_snapshot_orphans) can never re-save a
+      # stale restore-keys fallback under the current exact key and poison
+      # it for every job that runs after (#255).
+      - &restore_npm_step
+        name: Restore node modules (read-only)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'patches/*.patch') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Compile Backend
         run: npm run compile:backend
