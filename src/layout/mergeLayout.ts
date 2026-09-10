@@ -147,53 +147,24 @@ export async function buildViewModel(
   const isPristineLayout = !Object.values(moduleLayout.nodes).some(
     (node) => node.fixed !== undefined,
   );
-  const fullyCutPortIds = isPristineLayout
-    ? fullyCutBoundaryPortIds(designModule, activeCuts)
-    : new Set<string>();
-  // columnizeFullyCutBoundaryPorts reserves one corridor per net for *both*
-  // of its labels together (pairGapFor), keyed off whichever end is the
-  // detached port — so if either end of a net is a fully-cut port, every
-  // label on that net (not just the one hanging off the detached end) must
-  // stay in that same corridor, unmanaged by ELK.
-  const fullyCutNetKeys = new Set(
-    cutLabelRoles
-      .filter(
-        (role) =>
-          fullyCutPortIds.has(role.cut.source.nodeId) || fullyCutPortIds.has(role.ownerNodeId),
-      )
-      .map((role) => role.netKey),
-  );
-  // Only a label ELK is actually free to move is fed into its placement graph
-  // — see buildCutLabelPlacementNodes. The rest (a manual cut awaiting its
-  // first Auto Layout pass, or one the user has dragged and pinned) keep
-  // reserving their lead-side margin exactly as before. A compound
-  // generate-region layout never receives these placement nodes either (see
-  // autoLayoutMissingNodes' cutLabelNodes handling below), so treating any
-  // label as ELK-managed here would strip its margin reservation with
-  // nothing picking up the slack — arms would lose the spacing that used to
-  // keep neighboring generate regions apart.
-  const useCompoundGenerateLayout = canUseCompoundGenerateLayout(armRegions, moduleLayout);
-  const elkManagedCutLabelRoles = useCompoundGenerateLayout
-    ? []
-    : cutLabelRoles.filter(
-        (role) => isCutLabelElkManaged(role, moduleLayout) && !fullyCutNetKeys.has(role.netKey),
-      );
-  const elkManagedOwnerPorts = new Set(
-    elkManagedCutLabelRoles.map((role) => ownerPortKey(role.ownerNodeId, role.ownerPortId)),
-  );
-  const cutLabelPlacement = buildCutLabelPlacementNodes(elkManagedCutLabelRoles, designModule.name);
-  const placementNetCutMargins = filterNetCutMargins(
-    netCutPortMargins(designModule, activeCuts),
-    elkManagedOwnerPorts,
-  );
+  // Every active cut's dangling end reserves its label's footprint on the
+  // owning port's side of its node's own ELK box (see netCutPortMargins) —
+  // the node's perceived boundary temporarily grows to make room for
+  // placement, then the routing/render passes below use its canonical size.
+  // This makes ELK's layered algorithm treat the reservation as part of the
+  // node it belongs to (affecting layer spacing the same way the node's own
+  // size does) rather than allocating a whole separate node and layer for
+  // it, which is what fed the "empty space" the fuller placement-graph
+  // approach used to leave behind. resolveCutLabelCollisions and the
+  // obstacle-aware stub routing below remain the safety net for whatever a
+  // same-side margin alone can't resolve (e.g. two labels on facing ports).
   const elkLayout = await autoLayoutMissingNodes(
     designModule.nodes,
     routedDesignEdges,
     moduleLayout,
     armRegions,
-    placementNetCutMargins,
+    netCutPortMargins(designModule, activeCuts),
     options?.elkSizeOverrides,
-    cutLabelPlacement,
   );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
@@ -223,7 +194,7 @@ export async function buildViewModel(
   // write a `moduleLayout.nodes` entry) is the only state this "free preset"
   // columnizing applies to; touching the diagram at all opts a module out
   // until a full Reset clears moduleLayout.nodes and restores it. Computed
-  // above, alongside fullyCutPortIds.
+  // above.
   const positioned = isPristineLayout
     ? columnizeFullyCutBoundaryPorts(designModule, activeCuts, packedGenerateLayout.nodes)
     : packedGenerateLayout.nodes;
@@ -265,7 +236,6 @@ export async function buildViewModel(
     moduleLayout,
     cutLabelRoles,
     withGeometryOverrides(positioned),
-    elkLayout.positions,
   );
   const routingNodes = [...withGeometryOverrides(positionedWithWarnings), ...cutProjection.nodes];
   const routingNodesById = new Map<string, DiagramNode>(
@@ -1087,34 +1057,6 @@ function activeNetCuts(
   return active;
 }
 
-// Mirrors columnizeFullyCutBoundaryPorts' own isFullyCut predicate — kept as
-// a separate, side-effect-free query (rather than threading its result
-// through) since buildViewModel needs it *before* the ELK placement pass
-// runs, well ahead of where columnizeFullyCutBoundaryPorts itself is called.
-function fullyCutBoundaryPortIds(
-  designModule: DesignModule,
-  activeCuts: Map<string, ActiveNetCut>,
-): Set<string> {
-  const activeCutKeys = new Set(activeCuts.keys());
-  const edgesByNodeId = new Map<string, DiagramEdge[]>();
-  for (const edge of designModule.edges) {
-    for (const nodeId of [edge.source, edge.target]) {
-      const touching = edgesByNodeId.get(nodeId) ?? [];
-      touching.push(edge);
-      edgesByNodeId.set(nodeId, touching);
-    }
-  }
-  const result = new Set<string>();
-  for (const node of designModule.nodes) {
-    if (node.kind !== 'port') continue;
-    const touching = edgesByNodeId.get(node.id);
-    if (touching?.length && touching.every((edge) => activeCutKeys.has(edgeNetKey(edge)))) {
-      result.add(node.id);
-    }
-  }
-  return result;
-}
-
 interface CutLabelRole {
   netKey: string;
   cut: SavedNetCut;
@@ -1130,10 +1072,6 @@ interface CutLabelRole {
   stub: { source: string; sourcePort?: string; target: string; targetPort?: string };
   isSourceStacked: boolean;
   isRenamed: boolean;
-}
-
-function ownerPortKey(nodeId: string, portId: string | undefined): string {
-  return `${nodeId}::${portId ?? ''}`;
 }
 
 // A cut label's handle side (which edge of its own box the stub lead attaches
@@ -1155,10 +1093,8 @@ function ownerPortSide(
 }
 
 // Single source of truth for which cut-net-end labels exist, their stable
-// ids and stub wiring — shared by the pre-layout ELK placement input (see
-// buildCutLabelPlacementNodes) and the post-layout projection that actually
-// renders them (buildNetCutProjection), so the two can never disagree about
-// which labels exist or which port each one hangs off of.
+// ids and stub wiring, consumed by the post-layout projection that actually
+// renders them (buildNetCutProjection).
 function collectCutLabelRoles(
   designModule: DesignModule,
   activeCuts: Map<string, ActiveNetCut>,
@@ -1278,176 +1214,11 @@ function collectCutLabelRoles(
   return roles;
 }
 
-// A manually cut net awaiting its first Auto Layout pass must render exactly
-// at the split point (deferLabelPlacement — see mergeNetCut), and a label the
-// user has dragged and pinned keeps that pinned position: neither is a slot
-// ELK gets to pick, so neither is fed into its placement graph.
-function isCutLabelElkManaged(role: CutLabelRole, moduleLayout: SavedModuleLayout): boolean {
-  return !role.cut.deferLabelPlacement && moduleLayout.nodes[role.labelId]?.fixed !== true;
-}
-
-// Cut-net-end labels used to be positioned only after the fact: ELK laid out
-// every real node, then a lead point was read off the owning port and the
-// label dropped next to it, with a bespoke collision search mopping up
-// whatever it landed on top of. That search only ever sees the neighborhood a
-// label lands in *after* everything else is already fixed, so it regularly
-// loses. Feeding each ELK-managed label into the placement graph as a real
-// node — wired to its owning port by an edge exactly like any other — lets
-// the layered algorithm account for it the same way it accounts for every
-// other node: its own layer, its own spacing, crossing minimization aware it
-// exists at all. The slot ELK picks is a *reservation*, not the rendered
-// position — the projection pulls each label back toward its owning port's
-// lead point afterward (see pulledInCutLabelPosition), so labels hug their
-// port whenever the space next to it is clear. resolveCutLabelCollisions
-// (still run afterward, see buildNetCutProjection) remains a safety net for
-// whatever this doesn't fully resolve, rather than the primary placement
-// mechanism.
-function buildCutLabelPlacementNodes(
-  elkManagedRoles: CutLabelRole[],
-  moduleName: string,
-): { nodes: DiagramNode[]; edges: DiagramEdge[] } {
-  const nodes: DiagramNode[] = [];
-  const edges: DiagramEdge[] = [];
-
-  for (const role of elkManagedRoles) {
-    nodes.push({
-      id: role.labelId,
-      kind: 'netLabel',
-      label: role.cut.label,
-      parentModule: moduleName,
-      ports: [
-        {
-          id: 'cut',
-          name: 'cut',
-          direction: role.role === 'source' ? 'input' : 'output',
-        },
-      ],
-      metadata: {
-        cutNet: {
-          netKey: role.netKey,
-          role: role.role,
-          align: role.role === 'source' ? 'end' : 'start',
-          handleSide: role.handleSide,
-        },
-      },
-    });
-    edges.push({
-      id: `cut-label-placement:${role.labelId}`,
-      source: role.stub.source,
-      sourcePort: role.stub.sourcePort,
-      target: role.stub.target,
-      targetPort: role.stub.targetPort,
-    });
-  }
-
-  return { nodes, edges };
-}
-
-function filterNetCutMargins(
-  margins: Map<string, Map<string, { width: number; height: number }>>,
-  excludeOwnerPorts: Set<string>,
-): Map<string, Map<string, { width: number; height: number }>> {
-  if (excludeOwnerPorts.size === 0) {
-    return margins;
-  }
-  const filtered = new Map<string, Map<string, { width: number; height: number }>>();
-  for (const [nodeId, byPort] of margins) {
-    const keptPorts = new Map(
-      [...byPort].filter(([portId]) => !excludeOwnerPorts.has(ownerPortKey(nodeId, portId))),
-    );
-    if (keptPorts.size > 0) {
-      filtered.set(nodeId, keptPorts);
-    }
-  }
-  return filtered;
-}
-
-// Translates ELK's placement-pass choice for an ELK-managed label onto the
-// *final* rendered lead point (after every later adjustment — sibling
-// packing, boundary-port columnizing, minimum-gap enforcement — has had its
-// say) by preserving the same offset from the owning port ELK itself laid
-// the label out against, rather than reusing its absolute placement-pass
-// coordinates outright. Falls back to undefined (letting the caller use the
-// canonical adjacent-to-lead-point fallback) whenever the label wasn't part
-// of the placement graph — deferred/pinned labels, compound generate-region
-// layouts, or a failed ELK run all leave no entry here.
-function elkPlacedCutLabelPosition(
-  role: CutLabelRole,
-  finalLeadPoint: { x: number; y: number },
-  nodesById: Map<string, DiagramNode>,
-  elkPositions: Map<string, { x: number; y: number }>,
-): { x: number; y: number } | undefined {
-  const placedLabel = elkPositions.get(role.labelId);
-  if (!placedLabel) {
-    return undefined;
-  }
-  const placedLead = renderedLeadPoint(
-    role.ownerNodeId,
-    role.ownerPortId,
-    nodesById,
-    elkPositions,
-    true,
-    role.ownerRole,
-  );
-  if (!placedLead) {
-    return undefined;
-  }
-  return {
-    x: finalLeadPoint.x + (placedLabel.x - placedLead.point.x),
-    y: finalLeadPoint.y + (placedLabel.y - placedLead.point.y),
-  };
-}
-
-// ELK's placement pass can only give a managed label a slot inside a real
-// layer, and layers sit at least a full node-separation gap apart — so even a
-// perfectly ELK-placed label ends up far from the port it names, where the
-// pre-ELK behavior tucked it right against the lead point. The label's value
-// as a placement-graph participant is the *reserved* slot (nodes were laid
-// out knowing it exists), not the slot's coordinates: walk from the canonical
-// adjacent-to-lead position toward ELK's slot in grid steps along the stub
-// axis and take the first spot clear of every design node — the canonical
-// spot whenever it's free (the common case), ELK's own reservation when the
-// whole corridor is blocked. Label-label overlaps are deliberately ignored
-// here: resolveCutLabelCollisions already resolves those (shared-endpoint
-// stagger, adjacent-port-row escape) for canonical placements, and it runs on
-// pulled-in labels all the same.
-function pulledInCutLabelPosition(
-  role: CutLabelRole,
-  canonical: { x: number; y: number },
-  elkPlaced: { x: number; y: number },
-  obstacles: NodeBounds[],
-): { x: number; y: number } {
-  const dimensions = diagramNodeDimensions({
-    id: role.labelId,
-    kind: 'netLabel',
-    label: role.cut.label,
-    ports: [],
-  });
-  const clear = (position: { x: number; y: number }) =>
-    !obstacles.some((bounds) => boundsOverlap({ ...position, ...dimensions }, bounds));
-  const axis = role.handleSide === 'left' || role.handleSide === 'right' ? 'x' : 'y';
-  const grid = diagramSizing.gridSize;
-  const span = elkPlaced[axis] - canonical[axis];
-  const direction = Math.sign(span);
-  const steps = Math.floor(Math.abs(span) / grid);
-  for (let step = 0; step <= steps; step += 1) {
-    const candidate =
-      axis === 'x'
-        ? { x: canonical.x + direction * step * grid, y: canonical.y }
-        : { x: canonical.x, y: canonical.y + direction * step * grid };
-    if (clear(candidate)) {
-      return candidate;
-    }
-  }
-  return elkPlaced;
-}
-
 function buildNetCutProjection(
   designModule: DesignModule,
   moduleLayout: SavedModuleLayout,
   cutLabelRoles: CutLabelRole[],
   positionedNodes: PositionedNode[],
-  elkPositions: Map<string, { x: number; y: number }>,
 ): { nodes: PositionedNode[]; edges: DiagramEdge[] } {
   const nodes: PositionedNode[] = [];
   const edges: DiagramEdge[] = [];
@@ -1455,7 +1226,6 @@ function buildNetCutProjection(
   const endpointByLabelId = new Map<string, string>();
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
-  const designNodeBounds = positionedNodes.map((node) => nodeBounds(node));
 
   for (const role of cutLabelRoles) {
     const lead = renderedLeadPoint(
@@ -1474,15 +1244,11 @@ function buildNetCutProjection(
       deferredNodeIds.add(role.labelId);
     }
 
-    const canonicalPosition = labelPositionForHandlePoint(
+    const fallbackPosition = labelPositionForHandlePoint(
       lead.point,
       role.handleSide,
       role.cut.label,
     );
-    const elkPosition = elkPlacedCutLabelPosition(role, lead.point, nodesById, elkPositions);
-    const fallbackPosition = elkPosition
-      ? pulledInCutLabelPosition(role, canonicalPosition, elkPosition, designNodeBounds)
-      : canonicalPosition;
 
     const labelNode = makeCutLabelNode(
       role.labelId,
@@ -1868,14 +1634,6 @@ async function autoLayoutMissingNodes(
   generateRegions: GenerateRegion[] = [],
   netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map(),
   sizeOverrides?: Record<string, { width: number; height: number }>,
-  // ELK-managed cut-net-end labels (see buildCutLabelPlacementNodes) — real
-  // graph participants only for the node-*placement* pass below, so ELK's own
-  // layered algorithm picks their slot alongside everything else. They never
-  // join the routing pass, alignSimpleLeafNodes or enforceMinimumBlockGaps:
-  // their final position is derived afterward in buildNetCutProjection by
-  // re-anchoring this pass's choice onto the owning port's post-adjustment
-  // lead point (see elkPlacedCutLabelPosition).
-  cutLabelPlacement?: { nodes: DiagramNode[]; edges: DiagramEdge[] },
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
@@ -1905,21 +1663,6 @@ async function autoLayoutMissingNodes(
     return { positions, routes, regionBounds };
   }
 
-  // Only the non-compound placement pass below folds these in — a compound
-  // generate-region layout keeps the older margin-reservation behavior for
-  // its cut labels (see isCutLabelElkManaged's callers) rather than teaching
-  // buildGenerateCompoundElkChildren which region, if any, a label belongs in.
-  const cutLabelNodes = cutLabelPlacement?.nodes ?? [];
-  const cutLabelEdges = cutLabelPlacement?.edges ?? [];
-  const placementNodes = cutLabelNodes.length > 0 ? [...nodes, ...cutLabelNodes] : nodes;
-  const placementNodeIds =
-    cutLabelNodes.length > 0 ? new Set([...nodeIds, ...cutLabelNodes.map((n) => n.id)]) : nodeIds;
-  const placementNodesById =
-    cutLabelNodes.length > 0
-      ? new Map([...elkEdgeNodesById, ...cutLabelNodes.map((n) => [n.id, n] as const)])
-      : elkEdgeNodesById;
-  const placementEdges = cutLabelEdges.length > 0 ? [...edges, ...cutLabelEdges] : edges;
-
   try {
     const elkModule = await import('elkjs/lib/elk.bundled.js');
     const Elk = elkModule.default;
@@ -1933,14 +1676,14 @@ async function autoLayoutMissingNodes(
             includeLeadMargins: true,
             netCutMargins,
           })
-        : placementNodes.map((node) =>
+        : nodes.map((node) =>
             elkNodeForLayout(node, moduleLayout, {
               includeLeadMargins: true,
               useSavedPosition: true,
               extraPortMargins: netCutMargins.get(node.id),
             }),
           ),
-      edges: buildNodePlacementElkEdges(placementEdges, placementNodeIds, placementNodesById),
+      edges: buildNodePlacementElkEdges(edges, nodeIds, elkEdgeNodesById),
     });
 
     if (useCompoundGenerateLayout) {
@@ -1948,7 +1691,7 @@ async function autoLayoutMissingNodes(
     } else {
       for (const child of graph.children ?? []) {
         if (child.id && child.x !== undefined && child.y !== undefined) {
-          const node = placementNodesById.get(child.id);
+          const node = elkEdgeNodesById.get(child.id);
           // Must mirror the extraPortMargins passed when this same node's ELK
           // box was built above — otherwise a node with a net-cut-inflated
           // left/top margin would have its ELK-relative x/y de-offset by the

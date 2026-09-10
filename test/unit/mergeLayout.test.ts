@@ -2589,10 +2589,10 @@ describe('layout merge', () => {
     );
     // D and clk are only one grid row apart, closer than a label is tall, so
     // the two can never both sit level with their own port at the same
-    // horizontal offset. Pulling ELK-placed labels back to their lead points
-    // (see pulledInCutLabelPosition) restores the geometric stagger: both
-    // stay pixel-level with their own port and the collision resolver offsets
-    // the clock label along the handle axis instead.
+    // horizontal offset. Each label's canonical position sits right against
+    // its own port's lead point, so both stay pixel-level with their own
+    // port and the collision resolver offsets the clock label along the
+    // handle axis instead.
     expect(clockBounds.y + clockBounds.height / 2).toBe(
       register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 1.5,
     );
