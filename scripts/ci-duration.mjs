@@ -7,7 +7,7 @@ import {
   renderHistoryTrendChart,
   mergeBenchmarkHistory,
 } from './render-benchmark-charts.mjs';
-import { renderDashboardPage } from './dashboard-page-shell.mjs';
+import { renderDashboardPage, renderDashboardSection } from './dashboard-page-shell.mjs';
 
 // gh-pages paths for the CI workflow wall-clock-duration history (#282) —
 // kept alongside dev/bench (the diagram-generation benchmarks) but in its
@@ -17,6 +17,11 @@ import { renderDashboardPage } from './dashboard-page-shell.mjs';
 export const HISTORY_PATH = 'dev/ci-duration/history.json';
 export const TREND_SVG_PATH = 'dev/ci-duration/trend.svg';
 export const INDEX_HTML_PATH = 'dev/ci-duration/index.html';
+// The combined dev/index.html master dashboard's per-metric section
+// fragment (#413) — joined in by generate-master-dashboard.mjs alongside the
+// other metrics' own. Paths inside it are relative to dev/ (where it ends up
+// embedded), not to dev/ci-duration/ (where this file itself lives).
+export const SECTION_HTML_PATH = 'dev/ci-duration/section.html';
 
 const NETWORK_TIMEOUT_MS = 60_000;
 
@@ -86,6 +91,17 @@ export const INDEX_HTML = renderDashboardPage({
     'Wall-clock duration of the CI workflow\'s push-to-master runs. Raw data: <a href="history.json">history.json</a>.',
   bodyHtml: '<img src="trend.svg" alt="CI workflow duration trend" />',
 });
+
+// This metric's section on the combined dev/index.html master dashboard
+// (#413) — same trend chart, but linking/embedding via paths relative to
+// dev/ (see SECTION_HTML_PATH above) rather than dev/ci-duration/.
+export function renderCiDurationSection() {
+  return renderDashboardSection({
+    heading: 'CI workflow duration',
+    bodyHtml: '<img src="ci-duration/trend.svg" alt="CI workflow duration trend" />',
+    href: 'ci-duration/index.html',
+  });
+}
 
 function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
@@ -213,8 +229,11 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
         'utf8',
       );
       fs.writeFileSync(path.join(worktreeDir, INDEX_HTML_PATH), INDEX_HTML, 'utf8');
+      fs.writeFileSync(path.join(worktreeDir, SECTION_HTML_PATH), renderCiDurationSection(), 'utf8');
 
-      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH], { cwd: worktreeDir });
+      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH, SECTION_HTML_PATH], {
+        cwd: worktreeDir,
+      });
       const message = describeCommit(addedCount);
       git(
         [
