@@ -147,6 +147,7 @@
     "test:system": "node scripts/run-system-tests.js",
     "test:system:update": "node scripts/run-system-tests.js --update-snapshots=changed",
     "test:snapshots:check-updates": "tsx scripts/check-snapshot-updates.ts",
+    "test:snapshots:check-orphans": "tsx scripts/find-orphaned-snapshots.ts",
     "docs:generate": "tsx test/scripts/generate-docs.mts",
     "docs:syntax": "GENERATE_SYNTAX_BOOK=1 playwright test --config test/syntax-book/playwright.config.ts",
     "test:syntax": "playwright test --config test/syntax-book/playwright.config.ts",

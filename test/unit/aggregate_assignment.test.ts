@@ -8,7 +8,7 @@ function fixture(name: string): string {
 }
 
 describe('aggregate assignment issues', () => {
-  it('lowers conditional aggregate register assignments only once', async () => {
+  it('lowers a repeated concat-LHS chain as one aggregate mux path', async () => {
     const graph = await runParser(
       'uhdm',
       'aggregate_assignment_branches.sv',
@@ -18,28 +18,100 @@ describe('aggregate assignment issues', () => {
 
     expect(mod).toBeDefined();
 
-    for (const signal of ['data_reg', 'data_valid']) {
-      const registerId = `reg:${mod.name}:${signal}`;
+    const registerIds = ['data_reg', 'data_valid'].map((signal) => `reg:${mod.name}:${signal}`);
+    for (const registerId of registerIds) {
       expect(mod.nodes.filter((node) => node.id === registerId)).toHaveLength(1);
 
       const dDrivers = mod.edges.filter(
         (edge) => edge.target === registerId && edge.targetPort === 'd',
       );
       expect(dDrivers).toHaveLength(1);
-      expect(mod.nodes.find((node) => node.id === dDrivers[0].source)?.kind).toBe('mux');
+      expect(mod.nodes.find((node) => node.id === dDrivers[0].source)?.metadata?.expression).toBe(
+        '[aggregate-breakout]',
+      );
 
       const register = mod.nodes.find((node) => node.id === registerId);
       expect(register?.ports.some((port) => port.name === 'RV')).toBe(false);
     }
 
-    const branchBreakouts = mod.nodes.filter(
+    const breakouts = mod.nodes.filter(
       (node) => node.kind === 'bus' && node.metadata?.expression === '[aggregate-breakout]',
     );
-    expect(branchBreakouts).toHaveLength(3);
-    for (const breakout of branchBreakouts) {
+    expect(breakouts).toHaveLength(1);
+
+    const muxes = mod.nodes.filter((node) => node.kind === 'mux');
+    expect(muxes).toHaveLength(3);
+    expect(
+      mod.edges.filter(
+        (edge) => muxes.some((mux) => mux.id === edge.source) && edge.target === breakouts[0].id,
+      ),
+    ).toHaveLength(1);
+    expect(
+      mod.edges.filter(
+        (edge) =>
+          muxes.some((mux) => mux.id === edge.source) &&
+          muxes.some((mux) => mux.id === edge.target),
+      ),
+    ).toHaveLength(2);
+
+    const holdCompose = mod.nodes.find(
+      (node) =>
+        node.metadata?.expression === '[aggregate-compose]' &&
+        node.metadata?.reason === 'implicit aggregate hold',
+    );
+    expect(holdCompose).toBeDefined();
+    for (const registerId of registerIds) {
       expect(
-        mod.edges.some((edge) => edge.source === breakout.id && edge.target.includes('mux:')),
+        mod.edges.some((edge) => edge.source === registerId && edge.target === holdCompose?.id),
       ).toBe(true);
+    }
+    expect(
+      mod.edges.filter(
+        (edge) => edge.source === holdCompose?.id && muxes.some((mux) => mux.id === edge.target),
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('keeps per-target lowering for mixed aggregate and scalar arms', async () => {
+    const graph = await runParser(
+      'uhdm',
+      'mixed_aggregate_scalar_branches.sv',
+      `
+module mixed_aggregate_scalar_branches (
+  input logic clk,
+  input logic sel,
+  input logic [3:0] din,
+  output logic [3:0] data,
+  output logic valid
+);
+  always_ff @(posedge clk) begin
+    if (sel)
+      {data, valid} <= {din, 1'b1};
+    else begin
+      data <= 4'b0;
+      valid <= 1'b0;
+    end
+  end
+endmodule
+`,
+    );
+    const mod = graph.modules.mixed_aggregate_scalar_branches;
+
+    expect(mod.nodes.filter((node) => node.kind === 'mux')).toHaveLength(2);
+    expect(
+      mod.nodes.some(
+        (node) =>
+          node.metadata?.expression === '[aggregate-compose]' &&
+          node.metadata?.reason === 'implicit aggregate hold',
+      ),
+    ).toBe(false);
+
+    for (const signal of ['data', 'valid']) {
+      const registerId = `reg:${mod.name}:${signal}`;
+      const dDriver = mod.edges.find(
+        (edge) => edge.target === registerId && edge.targetPort === 'd',
+      );
+      expect(mod.nodes.find((node) => node.id === dDriver?.source)?.kind).toBe('mux');
     }
   });
 

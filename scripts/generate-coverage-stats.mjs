@@ -83,52 +83,52 @@ function publishReport() {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-coverage-'));
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
-      gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
-      if (attempt > 1) {
-        git(['worktree', 'remove', '--force', worktreeDir]);
-      }
-      git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
-
-      const targetDir = path.join(worktreeDir, 'dev', 'coverage', `pr-${PR_NUMBER}`);
-      fs.rmSync(targetDir, { recursive: true, force: true });
-      fs.mkdirSync(targetDir, { recursive: true });
-      fs.cpSync(coverageDir, targetDir, {
-        recursive: true,
-        filter: (source) => {
-          const rel = path.relative(coverageDir, source);
-          return rel === '' || !EXCLUDE_FROM_PUBLISH.has(rel.split(path.sep)[0]);
-        },
-      });
-
-      // GitHub Pages runs its source branch through Jekyll by default, which
-      // can mangle files/dirs starting with `_` — opt out repo-wide since
-      // nothing on gh-pages needs Jekyll processing.
-      fs.writeFileSync(path.join(worktreeDir, '.nojekyll'), '');
-
-      git(['add', '-A'], { cwd: worktreeDir });
-      const status = git(['status', '--porcelain'], { cwd: worktreeDir }).trim();
-      if (!status) {
-        return;
-      }
-
-      git(
-        [
-          '-c',
-          'user.name=github-actions[bot]',
-          '-c',
-          'user.email=github-actions[bot]@users.noreply.github.com',
-          'commit',
-          '-m',
-          `Update coverage report for PR #${PR_NUMBER}`,
-        ],
-        { cwd: worktreeDir },
-      );
       try {
+        gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
+        if (attempt > 1) {
+          git(['worktree', 'remove', '--force', worktreeDir]);
+        }
+        git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
+
+        const targetDir = path.join(worktreeDir, 'dev', 'coverage', `pr-${PR_NUMBER}`);
+        fs.rmSync(targetDir, { recursive: true, force: true });
+        fs.mkdirSync(targetDir, { recursive: true });
+        fs.cpSync(coverageDir, targetDir, {
+          recursive: true,
+          filter: (source) => {
+            const rel = path.relative(coverageDir, source);
+            return rel === '' || !EXCLUDE_FROM_PUBLISH.has(rel.split(path.sep)[0]);
+          },
+        });
+
+        // GitHub Pages runs its source branch through Jekyll by default, which
+        // can mangle files/dirs starting with `_` — opt out repo-wide since
+        // nothing on gh-pages needs Jekyll processing.
+        fs.writeFileSync(path.join(worktreeDir, '.nojekyll'), '');
+
+        git(['add', '-A'], { cwd: worktreeDir });
+        const status = git(['status', '--porcelain'], { cwd: worktreeDir }).trim();
+        if (!status) {
+          return;
+        }
+
+        git(
+          [
+            '-c',
+            'user.name=github-actions[bot]',
+            '-c',
+            'user.email=github-actions[bot]@users.noreply.github.com',
+            'commit',
+            '-m',
+            `Update coverage report for PR #${PR_NUMBER}`,
+          ],
+          { cwd: worktreeDir },
+        );
         gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
         return;
       } catch (err) {
         if (attempt === 3) throw err;
-        // Someone else pushed to gh-pages first — refetch and retry.
+        // Retry transient fetch failures and concurrent push races.
       }
     }
     throw new Error('Failed to publish coverage report after 3 attempts');
