@@ -460,7 +460,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_if_true_n0_default",
       "targetHandle": "in:default",
-      "path": "M 336 648 L 360 648 L 504 648 L 504 672 L 624 672 L 648 672"
+      "path": "M 336 648 L 360 648 L 384 648 L 384 672 L 624 672 L 648 672"
     },
     {
       "id": "edge:literal:top:IDLE:IDLE:mux:top:next_r:r:next_r_if_true_n0:next_r_if_true_n0_DONE",
@@ -476,7 +476,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 336 648 L 360 648 L 744 648 L 744 216 L 96 216 L 96 120 L 120 120 L 144 120"
+      "path": "M 336 648 L 360 648 L 384 648 L 384 672 L 0 672 L 0 345 Q 9 336 0 327 L 0 120 L 120 120 L 144 120"
     },
     {
       "id": "edge:literal:top:next_r_if_true_n0_BUSY:DONE:mux:top:next_r:r:next_r_if_true_n0:next_r_if_true_n0_BUSY",
@@ -508,7 +508,7 @@
       "target": "latch:top:next_r",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 792 384 L 816 384 L 816 240 L 753 240 Q 744 231 735 240 L 504 240 L 504 336 L 369 336 Q 360 327 351 336 L 120 336 L 120 264 L 144 264"
+      "path": "M 792 384 L 816 384 L 816 240 L 504 240 L 504 336 L 369 336 Q 360 327 351 336 L 120 336 L 120 264 L 144 264"
     }
   ]
 }

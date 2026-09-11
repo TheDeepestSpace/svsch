@@ -90,14 +90,37 @@ async function routeDiagramWithLibavoidExclusive(
   try {
     const Avoid = await loadAvoidRuntime();
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
-    const libavoidNodes = nodes.map((node) => libavoidNodeForDiagramNode(node, resolveLead));
+    const libavoidNodes = buildLibavoidNodes(nodes, resolveLead);
     const libavoidEdges = edges.flatMap((edge): LibavoidEdge[] => {
       const sourcePort = resolvedPortId(edge.source, edge.sourcePort, nodesById, 'source');
       const targetPort = resolvedPortId(edge.target, edge.targetPort, nodesById, 'target');
       return sourcePort && targetPort ? [{ edge, sourcePort, targetPort }] : [];
     });
     const rawRoutes = routeRaw(Avoid, libavoidNodes, libavoidEdges);
-    return validateRoutes(nodes, libavoidNodes, libavoidEdges, rawRoutes, resolveLead);
+    let result = validateRoutes(nodes, libavoidNodes, libavoidEdges, rawRoutes, resolveLead);
+
+    // libavoid's orthogonal pass can fail chaotically: iteration order in its
+    // visibility graph depends on heap addresses, so the same scene can
+    // either route a connector cleanly or silently degrade its endpoint to
+    // the shape centre (observed as a rejected straight-line route). A fresh
+    // Router over just the rejected nets allocates differently and routes
+    // the same geometry fine far more often than not, so retry those nets
+    // instead of letting them fall back to a non-avoiding route.
+    // The second and third attempts also nudge the shape buffer by a pixel:
+    // a slightly different clearance rebuilds the visibility graph with
+    // different coordinates, which reliably breaks out of the failing case
+    // when heap-order luck alone doesn't.
+    const base = SHAPE_BUFFER_DISTANCE;
+    for (const buffer of [base, base - 1, base + 1]) {
+      if (result.rejectedNets.size === 0) break;
+      const retryEdges = libavoidEdges.filter((item) =>
+        result.rejectedNets.has(edgeNetKey(item.edge)),
+      );
+      const retryRoutes = routeRaw(Avoid, libavoidNodes, retryEdges, buffer);
+      for (const [edgeId, route] of retryRoutes) rawRoutes.set(edgeId, route);
+      result = validateRoutes(nodes, libavoidNodes, libavoidEdges, rawRoutes, resolveLead);
+    }
+    return result;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     return {
@@ -129,10 +152,40 @@ function isBoundaryInoutNode(node: PositionedNode): boolean {
   return node.kind === 'port' && node.ports[0]?.direction === 'inout';
 }
 
-function libavoidNodeForDiagramNode(
+interface LibavoidNodeDraft {
+  id: string;
+  /** Node rect grown to its own lead points — the part margins never touch. */
+  core: { left: number; top: number; right: number; bottom: number };
+  /** core plus routingObstacleMargins — the obstacle rect handed to libavoid. */
+  bounds: { left: number; top: number; right: number; bottom: number };
+  pins: Array<{ id: string; point: { x: number; y: number }; side: RoutingPortSide }>;
+}
+
+function buildLibavoidNodes(
+  nodes: PositionedNode[],
+  resolveLead: RoutingLeadResolver,
+): LibavoidNode[] {
+  const drafts = nodes.map((node) => libavoidNodeDraft(node, resolveLead));
+  clipMarginsAroundForeignPins(drafts);
+  return drafts.map((draft) => ({
+    id: draft.id,
+    x: draft.bounds.left,
+    y: draft.bounds.top,
+    width: draft.bounds.right - draft.bounds.left,
+    height: draft.bounds.bottom - draft.bounds.top,
+    ports: draft.pins.map((pin) => ({
+      id: pin.id,
+      x: pin.point.x - draft.bounds.left,
+      y: pin.point.y - draft.bounds.top,
+      side: pin.side,
+    })),
+  }));
+}
+
+function libavoidNodeDraft(
   node: PositionedNode,
   resolveLead: RoutingLeadResolver,
-): LibavoidNode {
+): LibavoidNodeDraft {
   const size = resolvedNodeDimensions(node);
   const dualSided = isBoundaryInoutNode(node);
   type PinSpec = { port: (typeof node.ports)[number]; role: 'source' | 'target' | undefined };
@@ -150,39 +203,83 @@ function libavoidNodeForDiagramNode(
     node,
     leads.map((lead) => lead?.side),
   );
-  const left = Math.min(node.position.x, ...leadPoints.map((point) => point.x)) - margins.left;
-  const right =
-    Math.max(node.position.x + size.width, ...leadPoints.map((point) => point.x)) + margins.right;
-  const top = Math.min(node.position.y, ...leadPoints.map((point) => point.y)) - margins.top;
-  const bottom =
-    Math.max(node.position.y + size.height, ...leadPoints.map((point) => point.y)) + margins.bottom;
+  const core = {
+    left: Math.min(node.position.x, ...leadPoints.map((point) => point.x)),
+    right: Math.max(node.position.x + size.width, ...leadPoints.map((point) => point.x)),
+    top: Math.min(node.position.y, ...leadPoints.map((point) => point.y)),
+    bottom: Math.max(node.position.y + size.height, ...leadPoints.map((point) => point.y)),
+  };
 
   return {
     id: node.id,
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-    ports: pinSpecs.map(({ port, role }, index) => {
+    core,
+    bounds: {
+      left: core.left - margins.left,
+      right: core.right + margins.right,
+      top: core.top - margins.top,
+      bottom: core.bottom + margins.bottom,
+    },
+    pins: pinSpecs.map(({ port, role }, index) => {
       const lead = leads[index];
-      const point = lead?.point ?? {
-        x: node.position.x + size.width / 2,
-        y: node.position.y + size.height / 2,
-      };
       return {
         id: libavoidPortId(node.id, port.id, role),
-        x: point.x - left,
-        y: point.y - top,
+        point: lead?.point ?? {
+          x: node.position.x + size.width / 2,
+          y: node.position.y + size.height / 2,
+        },
         side: lead?.side ?? 'EAST',
       };
     }),
   };
 }
 
+/**
+ * An obstacle margin that swallows another node's connection pin makes that
+ * pin unreachable in libavoid's (buffered) orthogonal visibility graph: the
+ * router then silently degrades the connector to a straight line into the
+ * shape centre, the raw route fails validation, and the whole net falls back
+ * to a much worse non-avoiding route (see mergeLayout's routePoints
+ * fallback chain). Cut labels park one grid row away from their port, so
+ * their margins routinely reach the neighboring port row — pull the margin
+ * back just far enough (buffer + 1) that the foreign pin stays routable.
+ * Only the margin band is ever clipped; a pin inside the core rect itself
+ * (genuinely overlapping geometry) is left alone.
+ */
+function clipMarginsAroundForeignPins(drafts: LibavoidNodeDraft[]): void {
+  const clearance = SHAPE_BUFFER_DISTANCE + 1;
+  for (const draft of drafts) {
+    for (const other of drafts) {
+      if (other === draft) continue;
+      for (const { point } of other.pins) {
+        const { core, bounds } = draft;
+        const swallowed =
+          point.x > bounds.left - SHAPE_BUFFER_DISTANCE &&
+          point.x < bounds.right + SHAPE_BUFFER_DISTANCE &&
+          point.y > bounds.top - SHAPE_BUFFER_DISTANCE &&
+          point.y < bounds.bottom + SHAPE_BUFFER_DISTANCE;
+        if (!swallowed) continue;
+        if (point.y < core.top) {
+          bounds.top = Math.max(bounds.top, Math.min(point.y + clearance, core.top));
+        }
+        if (point.y > core.bottom) {
+          bounds.bottom = Math.min(bounds.bottom, Math.max(point.y - clearance, core.bottom));
+        }
+        if (point.x < core.left) {
+          bounds.left = Math.max(bounds.left, Math.min(point.x + clearance, core.left));
+        }
+        if (point.x > core.right) {
+          bounds.right = Math.min(bounds.right, Math.max(point.x - clearance, core.right));
+        }
+      }
+    }
+  }
+}
+
 function routeRaw(
   Avoid: any,
   nodes: LibavoidNode[],
   edges: LibavoidEdge[],
+  bufferDistance = SHAPE_BUFFER_DISTANCE,
 ): Map<string, Array<{ x: number; y: number }>> {
   const router = new Avoid.Router(Avoid.OrthogonalRouting);
   const shapes = new Map<string, any>();
@@ -191,7 +288,7 @@ function routeRaw(
   const fanoutPlans: FanoutPlan[] = [];
 
   try {
-    router.setRoutingParameter(Avoid.shapeBufferDistance, SHAPE_BUFFER_DISTANCE);
+    router.setRoutingParameter(Avoid.shapeBufferDistance, bufferDistance);
     router.setRoutingParameter(Avoid.idealNudgingDistance, ROUTING_OBSTACLE_MARGIN);
     router.setRoutingParameter(Avoid.segmentPenalty, 10);
     router.setRoutingParameter(Avoid.crossingPenalty, 200);
@@ -211,9 +308,22 @@ function routeRaw(
       const shape = new Avoid.ShapeRef(router, rectangle);
       shapes.set(node.id, shape);
 
+      // A node whose ports share one lead point (e.g. a deduplicated FSM
+      // literal with one port per usage) must register that point as ONE
+      // pin: several ShapeConnectionPins at the same position corrupt
+      // libavoid's visibility graph heap-order-dependently, and the affected
+      // connector silently degrades to a straight line into the shape centre.
       let classId = 2;
+      const classByPinKey = new Map<string, number>();
       for (const port of node.ports) {
+        const pinKey = `${port.x}:${port.y}:${port.side}`;
+        const existingClass = classByPinKey.get(pinKey);
+        if (existingClass !== undefined) {
+          pinClasses.set(port.id, existingClass);
+          continue;
+        }
         pinClasses.set(port.id, classId);
+        classByPinKey.set(pinKey, classId);
         const pin = new Avoid.ShapeConnectionPin(
           shape,
           classId,
