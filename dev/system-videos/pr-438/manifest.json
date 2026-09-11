@@ -4,9 +4,9 @@
     "scenario": "expands ten nested levels down to an AND gate and captures the final view",
     "status": "passed",
     "retry": 0,
-    "duration": 38252,
+    "duration": 33877,
     "changeStatus": "unchanged",
-    "bytes": 515983,
+    "bytes": 469252,
     "filename": "06-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm",
     "url": "videos/06-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"
   },
@@ -15,185 +15,185 @@
     "scenario": "flags a module port dragged into a generate block",
     "status": "passed",
     "retry": 0,
-    "duration": 25583,
+    "duration": 21008,
     "changeStatus": "unchanged",
-    "bytes": 358701,
-    "filename": "13-flags-a-module-port-dragged-into-a-generate-block.webm",
-    "url": "videos/13-flags-a-module-port-dragged-into-a-generate-block.webm"
+    "bytes": 315961,
+    "filename": "10-flags-a-module-port-dragged-into-a-generate-block.webm",
+    "url": "videos/10-flags-a-module-port-dragged-into-a-generate-block.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "hides the block-selection toolbar when only a cut net label is selected",
     "status": "passed",
     "retry": 0,
-    "duration": 25058,
+    "duration": 20655,
     "changeStatus": "unchanged",
-    "bytes": 306340,
-    "filename": "14-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm",
-    "url": "videos/14-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"
+    "bytes": 314407,
+    "filename": "15-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm",
+    "url": "videos/15-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "opens svsch diagram and captures screenshot + output logs",
     "status": "passed",
     "retry": 0,
-    "duration": 31472,
+    "duration": 27706,
     "changeStatus": "unchanged",
-    "bytes": 416542,
-    "filename": "07-opens-svsch-diagram-and-captures-screenshot-output-logs.webm",
-    "url": "videos/07-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"
+    "bytes": 374968,
+    "filename": "11-opens-svsch-diagram-and-captures-screenshot-output-logs.webm",
+    "url": "videos/11-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "preserves moved node positions after editing a connection route",
     "status": "passed",
     "retry": 0,
-    "duration": 26187,
+    "duration": 21798,
     "changeStatus": "unchanged",
-    "bytes": 362685,
-    "filename": "12-preserves-moved-node-positions-after-editing-a-connection-route.webm",
-    "url": "videos/12-preserves-moved-node-positions-after-editing-a-connection-route.webm"
+    "bytes": 331810,
+    "filename": "07-preserves-moved-node-positions-after-editing-a-connection-route.webm",
+    "url": "videos/07-preserves-moved-node-positions-after-editing-a-connection-route.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "renders a resized node at its grown size when exporting the diagram as SVG",
     "status": "passed",
     "retry": 0,
-    "duration": 26050,
+    "duration": 21549,
     "changeStatus": "unchanged",
-    "bytes": 354770,
-    "filename": "03-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm",
-    "url": "videos/03-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"
+    "bytes": 315165,
+    "filename": "05-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm",
+    "url": "videos/05-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "reselects only the cut-out block's own net-end stubs, and moves them along with it",
     "status": "passed",
     "retry": 0,
-    "duration": 26327,
+    "duration": 21858,
     "changeStatus": "unchanged",
-    "bytes": 356039,
-    "filename": "01-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm",
-    "url": "videos/01-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm"
+    "bytes": 316213,
+    "filename": "08-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm",
+    "url": "videos/08-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the bottom side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 27009,
+    "duration": 22983,
     "changeStatus": "unchanged",
-    "bytes": 370494,
-    "filename": "10-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm",
-    "url": "videos/10-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"
+    "bytes": 326410,
+    "filename": "13-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm",
+    "url": "videos/13-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the bottom-left corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 26963,
+    "duration": 22813,
     "changeStatus": "unchanged",
-    "bytes": 369552,
-    "filename": "04-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/04-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"
+    "bytes": 316523,
+    "filename": "02-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/02-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the bottom-right corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 27466,
+    "duration": 22960,
     "changeStatus": "unchanged",
-    "bytes": 365924,
-    "filename": "08-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/08-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"
+    "bytes": 314947,
+    "filename": "12-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/12-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the left side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 27563,
+    "duration": 22895,
     "changeStatus": "unchanged",
-    "bytes": 368665,
-    "filename": "05-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm",
-    "url": "videos/05-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"
+    "bytes": 319698,
+    "filename": "04-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm",
+    "url": "videos/04-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the right side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 27508,
+    "duration": 22943,
     "changeStatus": "unchanged",
-    "bytes": 368975,
-    "filename": "02-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm",
-    "url": "videos/02-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"
+    "bytes": 322497,
+    "filename": "14-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm",
+    "url": "videos/14-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the top side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 27394,
+    "duration": 22939,
     "changeStatus": "unchanged",
-    "bytes": 363278,
-    "filename": "11-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm",
-    "url": "videos/11-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"
+    "bytes": 326043,
+    "filename": "01-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm",
+    "url": "videos/01-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the top-left corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 27867,
+    "duration": 22878,
     "changeStatus": "unchanged",
-    "bytes": 364754,
-    "filename": "09-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/09-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"
+    "bytes": 317319,
+    "filename": "03-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/03-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.122.1",
     "scenario": "resizes a register from the top-right corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 27663,
+    "duration": 22737,
     "changeStatus": "unchanged",
-    "bytes": 360312,
-    "filename": "15-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/15-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"
+    "bytes": 316348,
+    "filename": "09-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/09-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "expands ten nested levels down to an AND gate and captures the final view",
     "status": "passed",
     "retry": 0,
-    "duration": 36599,
+    "duration": 28413,
     "changeStatus": "unchanged",
-    "bytes": 522484,
-    "filename": "20-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm",
-    "url": "videos/20-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"
+    "bytes": 437284,
+    "filename": "25-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm",
+    "url": "videos/25-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "flags a module port dragged into a generate block",
     "status": "passed",
     "retry": 0,
-    "duration": 24079,
+    "duration": 16149,
     "changeStatus": "unchanged",
-    "bytes": 316051,
-    "filename": "17-flags-a-module-port-dragged-into-a-generate-block.webm",
-    "url": "videos/17-flags-a-module-port-dragged-into-a-generate-block.webm"
+    "bytes": 280726,
+    "filename": "29-flags-a-module-port-dragged-into-a-generate-block.webm",
+    "url": "videos/29-flags-a-module-port-dragged-into-a-generate-block.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "hides the block-selection toolbar when only a cut net label is selected",
     "status": "passed",
     "retry": 0,
-    "duration": 23739,
+    "duration": 15577,
     "changeStatus": "unchanged",
-    "bytes": 303491,
+    "bytes": 280808,
     "filename": "27-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm",
     "url": "videos/27-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"
   },
@@ -202,108 +202,108 @@
     "scenario": "opens svsch diagram and captures screenshot + output logs",
     "status": "passed",
     "retry": 0,
-    "duration": 28870,
+    "duration": 21844,
     "changeStatus": "unchanged",
-    "bytes": 354428,
-    "filename": "18-opens-svsch-diagram-and-captures-screenshot-output-logs.webm",
-    "url": "videos/18-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"
+    "bytes": 341141,
+    "filename": "30-opens-svsch-diagram-and-captures-screenshot-output-logs.webm",
+    "url": "videos/30-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "preserves moved node positions after editing a connection route",
     "status": "passed",
     "retry": 0,
-    "duration": 24585,
+    "duration": 16398,
     "changeStatus": "unchanged",
-    "bytes": 323772,
-    "filename": "29-preserves-moved-node-positions-after-editing-a-connection-route.webm",
-    "url": "videos/29-preserves-moved-node-positions-after-editing-a-connection-route.webm"
+    "bytes": 290696,
+    "filename": "23-preserves-moved-node-positions-after-editing-a-connection-route.webm",
+    "url": "videos/23-preserves-moved-node-positions-after-editing-a-connection-route.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "renders a resized node at its grown size when exporting the diagram as SVG",
     "status": "passed",
     "retry": 0,
-    "duration": 24372,
+    "duration": 16255,
     "changeStatus": "unchanged",
-    "bytes": 310478,
-    "filename": "23-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm",
-    "url": "videos/23-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"
+    "bytes": 270605,
+    "filename": "17-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm",
+    "url": "videos/17-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "reselects only the cut-out block's own net-end stubs, and moves them along with it",
     "status": "passed",
     "retry": 0,
-    "duration": 24152,
+    "duration": 16583,
     "changeStatus": "unchanged",
-    "bytes": 312285,
-    "filename": "28-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm",
-    "url": "videos/28-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm"
+    "bytes": 282799,
+    "filename": "24-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm",
+    "url": "videos/24-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "resizes a register from the bottom side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25541,
+    "duration": 17499,
     "changeStatus": "unchanged",
-    "bytes": 372754,
-    "filename": "19-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm",
-    "url": "videos/19-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"
+    "bytes": 278266,
+    "filename": "16-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm",
+    "url": "videos/16-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "resizes a register from the bottom-left corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25572,
+    "duration": 17497,
     "changeStatus": "unchanged",
-    "bytes": 365810,
-    "filename": "24-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/24-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"
+    "bytes": 281604,
+    "filename": "28-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/28-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "resizes a register from the bottom-right corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25222,
+    "duration": 17575,
     "changeStatus": "unchanged",
-    "bytes": 316112,
-    "filename": "21-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/21-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"
+    "bytes": 268607,
+    "filename": "18-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/18-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "resizes a register from the left side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25714,
+    "duration": 17591,
     "changeStatus": "unchanged",
-    "bytes": 363526,
-    "filename": "22-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm",
-    "url": "videos/22-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"
+    "bytes": 277089,
+    "filename": "19-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm",
+    "url": "videos/19-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "resizes a register from the right side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25826,
+    "duration": 17389,
     "changeStatus": "unchanged",
-    "bytes": 358801,
-    "filename": "30-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm",
-    "url": "videos/30-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"
+    "bytes": 284672,
+    "filename": "20-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm",
+    "url": "videos/20-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "resizes a register from the top side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25509,
+    "duration": 17778,
     "changeStatus": "unchanged",
-    "bytes": 366723,
+    "bytes": 277828,
     "filename": "26-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm",
     "url": "videos/26-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"
   },
@@ -312,186 +312,186 @@
     "scenario": "resizes a register from the top-left corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25461,
+    "duration": 17357,
     "changeStatus": "unchanged",
-    "bytes": 345629,
-    "filename": "25-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/25-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"
+    "bytes": 287263,
+    "filename": "21-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/21-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.90.0",
     "scenario": "resizes a register from the top-right corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 25395,
+    "duration": 17835,
     "changeStatus": "unchanged",
-    "bytes": 362043,
-    "filename": "16-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/16-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"
+    "bytes": 280594,
+    "filename": "22-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/22-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "expands ten nested levels down to an AND gate and captures the final view",
     "status": "passed",
     "retry": 0,
-    "duration": 24463,
+    "duration": 35610,
     "changeStatus": "unchanged",
-    "bytes": 390184,
-    "filename": "44-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm",
-    "url": "videos/44-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"
+    "bytes": 559103,
+    "filename": "39-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm",
+    "url": "videos/39-expands-ten-nested-levels-down-to-an-and-gate-and-captures-the-final-view.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "flags a module port dragged into a generate block",
     "status": "passed",
     "retry": 0,
-    "duration": 13277,
+    "duration": 23394,
     "changeStatus": "unchanged",
-    "bytes": 226408,
-    "filename": "33-flags-a-module-port-dragged-into-a-generate-block.webm",
-    "url": "videos/33-flags-a-module-port-dragged-into-a-generate-block.webm"
+    "bytes": 322277,
+    "filename": "43-flags-a-module-port-dragged-into-a-generate-block.webm",
+    "url": "videos/43-flags-a-module-port-dragged-into-a-generate-block.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "hides the block-selection toolbar when only a cut net label is selected",
     "status": "passed",
     "retry": 0,
-    "duration": 12912,
+    "duration": 22576,
     "changeStatus": "unchanged",
-    "bytes": 204899,
-    "filename": "32-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm",
-    "url": "videos/32-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"
+    "bytes": 321029,
+    "filename": "37-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm",
+    "url": "videos/37-hides-the-block-selection-toolbar-when-only-a-cut-net-label-is-selected.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "opens svsch diagram and captures screenshot + output logs",
     "status": "passed",
     "retry": 0,
-    "duration": 18100,
+    "duration": 28317,
     "changeStatus": "unchanged",
-    "bytes": 263549,
-    "filename": "42-opens-svsch-diagram-and-captures-screenshot-output-logs.webm",
-    "url": "videos/42-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"
+    "bytes": 380673,
+    "filename": "40-opens-svsch-diagram-and-captures-screenshot-output-logs.webm",
+    "url": "videos/40-opens-svsch-diagram-and-captures-screenshot-output-logs.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "preserves moved node positions after editing a connection route",
     "status": "passed",
     "retry": 0,
-    "duration": 13807,
+    "duration": 23766,
     "changeStatus": "unchanged",
-    "bytes": 238764,
-    "filename": "34-preserves-moved-node-positions-after-editing-a-connection-route.webm",
-    "url": "videos/34-preserves-moved-node-positions-after-editing-a-connection-route.webm"
+    "bytes": 331200,
+    "filename": "35-preserves-moved-node-positions-after-editing-a-connection-route.webm",
+    "url": "videos/35-preserves-moved-node-positions-after-editing-a-connection-route.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "renders a resized node at its grown size when exporting the diagram as SVG",
     "status": "passed",
     "retry": 0,
-    "duration": 13220,
+    "duration": 23688,
     "changeStatus": "unchanged",
-    "bytes": 210010,
-    "filename": "38-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm",
-    "url": "videos/38-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"
+    "bytes": 332141,
+    "filename": "32-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm",
+    "url": "videos/32-renders-a-resized-node-at-its-grown-size-when-exporting-the-diagram-as-svg.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "reselects only the cut-out block's own net-end stubs, and moves them along with it",
     "status": "passed",
     "retry": 0,
-    "duration": 13606,
+    "duration": 23677,
     "changeStatus": "unchanged",
-    "bytes": 224530,
-    "filename": "40-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm",
-    "url": "videos/40-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm"
+    "bytes": 312436,
+    "filename": "34-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm",
+    "url": "videos/34-reselects-only-the-cut-out-block-s-own-net-end-stubs-and-moves-them-along-with-i.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the bottom side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14523,
+    "duration": 25208,
     "changeStatus": "unchanged",
-    "bytes": 275581,
-    "filename": "43-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm",
-    "url": "videos/43-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"
+    "bytes": 350143,
+    "filename": "31-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm",
+    "url": "videos/31-resizes-a-register-from-the-bottom-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the bottom-left corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14548,
+    "duration": 24810,
     "changeStatus": "unchanged",
-    "bytes": 248260,
-    "filename": "39-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/39-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"
+    "bytes": 347460,
+    "filename": "42-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/42-resizes-a-register-from-the-bottom-left-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the bottom-right corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14503,
+    "duration": 24746,
     "changeStatus": "unchanged",
-    "bytes": 226074,
-    "filename": "31-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/31-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"
+    "bytes": 390809,
+    "filename": "44-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/44-resizes-a-register-from-the-bottom-right-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the left side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14624,
+    "duration": 24514,
     "changeStatus": "unchanged",
-    "bytes": 220448,
-    "filename": "35-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm",
-    "url": "videos/35-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"
+    "bytes": 337121,
+    "filename": "45-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm",
+    "url": "videos/45-resizes-a-register-from-the-left-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the right side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14689,
+    "duration": 25553,
     "changeStatus": "unchanged",
-    "bytes": 228723,
-    "filename": "41-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm",
-    "url": "videos/41-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"
+    "bytes": 376885,
+    "filename": "36-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm",
+    "url": "videos/36-resizes-a-register-from-the-right-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the top side and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14645,
+    "duration": 24823,
     "changeStatus": "unchanged",
-    "bytes": 231089,
-    "filename": "36-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm",
-    "url": "videos/36-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"
+    "bytes": 349872,
+    "filename": "33-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm",
+    "url": "videos/33-resizes-a-register-from-the-top-side-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the top-left corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14352,
+    "duration": 24537,
     "changeStatus": "unchanged",
-    "bytes": 237391,
-    "filename": "45-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/45-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"
+    "bytes": 380530,
+    "filename": "38-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/38-resizes-a-register-from-the-top-left-corner-and-preserves-it-after-reload.webm"
   },
   {
     "feature": "VS Code 1.91.0",
     "scenario": "resizes a register from the top-right corner and preserves it after reload",
     "status": "passed",
     "retry": 0,
-    "duration": 14655,
+    "duration": 24579,
     "changeStatus": "unchanged",
-    "bytes": 259488,
-    "filename": "37-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm",
-    "url": "videos/37-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"
+    "bytes": 351292,
+    "filename": "41-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm",
+    "url": "videos/41-resizes-a-register-from-the-top-right-corner-and-preserves-it-after-reload.webm"
   }
 ]
