@@ -280,6 +280,7 @@ json DesignExtractor::extract(const std::string& targetModule) {
                 }
                 if (!np.label.empty()) j_port["label"] = np.label;
                 if (!np.preferredSide.empty()) j_port["preferredSide"] = np.preferredSide;
+                if (!np.eventEdge.empty()) j_port["eventEdge"] = np.eventEdge;
                 if (np.isArrayNode) {
                     j_port["isArrayNode"] = true;
                     if (!np.arrayDimension.empty()) j_port["arrayDimension"] = np.arrayDimension;
@@ -315,6 +316,7 @@ json DesignExtractor::extract(const std::string& targetModule) {
             if (!n.metadata.resetKind.empty()) j_meta["resetKind"] = n.metadata.resetKind;
             if (!n.metadata.resetKind.empty()) j_meta["resetActiveLow"] = n.metadata.resetActiveLow;
             if (!n.metadata.clockSignal.empty()) j_meta["clockSignal"] = n.metadata.clockSignal;
+            if (!n.metadata.clockSignal.empty()) j_meta["clockActiveLow"] = n.metadata.clockActiveLow;
             if (!n.metadata.resetSignal.empty()) j_meta["resetSignal"] = n.metadata.resetSignal;
             if (n.metadata.isProcedural) j_meta["isProcedural"] = true;
             if (n.metadata.inferred) j_meta["inferred"] = true;

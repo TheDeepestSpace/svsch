@@ -5,6 +5,7 @@ import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
 import { registerPortTop, registerExtraInputPortTop } from '../../../diagram/registerGeometry';
 import {
   registerClockSignal,
+  registerClockActiveLow,
   registerResetSignal,
   registerResetActiveLow,
   nodeArrayDimension,
@@ -27,6 +28,37 @@ import {
   arrayConnectionThick as sharedArrayConnectionThick,
 } from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
+
+/** Dynamic-input chevron for a clock/event-control port, left side. A `negedge`
+ * signal adds the standard polarity bobble on the lead, just outside the node. */
+function EventPortGlyph({
+  x,
+  y,
+  activeLow,
+}: {
+  x: number;
+  y: number;
+  activeLow: boolean;
+}): React.ReactElement {
+  // The bobble sits outside the chevron's own 0-12 box, on the wire side of the
+  // pin. The viewBox/width are widened (rather than relying on SVG overflow) so
+  // it isn't clipped; the right edge stays pinned to x+12, keeping the chevron
+  // itself at the exact same drawn position as before this glyph grew a bobble.
+  return (
+    <svg
+      x={x - 4}
+      y={y}
+      width={16}
+      height={12}
+      viewBox="-4 0 16 12"
+      className="register-clock-glyph"
+      aria-hidden={true}
+    >
+      <path d="M 1 1.5 L 9 6 L 1 10.5" />
+      {activeLow && <circle className="register-event-bobble" cx={-1.5} cy={6} r={2.25} />}
+    </svg>
+  );
+}
 
 export function RegisterNodeSvg({
   node,
@@ -54,14 +86,15 @@ export function RegisterNodeSvg({
   );
 
   const clockSignal = registerClockSignal(node);
+  const clockActiveLow = registerClockActiveLow(node);
   const resetSignal = registerResetSignal(node);
   const resetActiveLow = registerResetActiveLow(node);
   const hasReset = Boolean(resetSignal);
   const dPort = inputs.find((p: DiagramPort) => p.name === 'D') ?? inputs[0];
   const qPort = outputs.find((p: DiagramPort) => p.name === 'Q') ?? outputs[0];
-  const clockPort =
-    inputs.find((p: DiagramPort) => p.name === clockSignal) ??
-    inputs.find((p: DiagramPort) => p.name !== 'D' && p.name !== resetSignal);
+  const clockPort = clockSignal
+    ? inputs.find((p: DiagramPort) => p.name === clockSignal)
+    : undefined;
   const resetPort = resetSignal
     ? inputs.find((p: DiagramPort) => p.name === resetSignal)
     : undefined;
@@ -245,17 +278,11 @@ export function RegisterNodeSvg({
       {/* Clock glyph: triangle chevron, left side */}
       {clockPort && (
         <g className="svsch-register-clock-port">
-          <svg
+          <EventPortGlyph
             x={contentShiftX}
             y={clkTop + g / 2 - 6 + contentShiftY}
-            width={12}
-            height={12}
-            viewBox="0 0 12 12"
-            className="register-clock-glyph"
-            aria-hidden={true}
-          >
-            <path d="M 1 1.5 L 9 6 L 1 10.5" />
-          </svg>
+            activeLow={clockActiveLow}
+          />
         </g>
       )}
 
@@ -286,19 +313,28 @@ export function RegisterNodeSvg({
         </text>
       )}
 
-      {/* Extra input ports */}
+      {/* Extra input ports: other signals in a compound always_ff event
+          expression each get their own labeled dynamic-input chevron, since
+          there's no single implicit "the clock" role to identify them by
+          position alone. */}
       {extraInputPorts.map((port: DiagramPort, index: number) => {
         const top = registerExtraInputPortTop(index, canonical.height, hasRv);
         return (
-          <text
-            key={port.id}
-            className="svsch-port-label"
-            x={g * 0.75 + contentShiftX}
-            y={top + g / 2 + contentShiftY}
-            dominantBaseline="middle"
-          >
-            <SvgPortLabel port={port} />
-          </text>
+          <g key={port.id} className="svsch-register-event-port">
+            <EventPortGlyph
+              x={contentShiftX}
+              y={top + g / 2 - 6 + contentShiftY}
+              activeLow={port.eventEdge === 'negedge'}
+            />
+            <text
+              className="svsch-port-label"
+              x={14 + contentShiftX}
+              y={top + g / 2 + contentShiftY}
+              dominantBaseline="middle"
+            >
+              <SvgPortLabel port={port} />
+            </text>
+          </g>
         );
       })}
 

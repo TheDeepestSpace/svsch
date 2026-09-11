@@ -326,10 +326,140 @@ TEST(ExtractorTest, AsyncCompoundEventUnmatchedNamesAreNotControlSignals) {
     EXPECT_FALSE((*reg)["metadata"].contains("resetKind"));
 
     std::set<std::string> portNames;
-    for (const auto& port : (*reg)["ports"]) portNames.insert(port["name"].get<std::string>());
+    std::map<std::string, std::string> portEventEdges;
+    for (const auto& port : (*reg)["ports"]) {
+        std::string name = port["name"].get<std::string>();
+        portNames.insert(name);
+        if (port.contains("eventEdge")) portEventEdges[name] = port["eventEdge"].get<std::string>();
+    }
     EXPECT_TRUE(portNames.count("a")) << reg->dump(2);
     EXPECT_TRUE(portNames.count("b")) << reg->dump(2);
     EXPECT_TRUE(portNames.count("c")) << reg->dump(2);
+
+    // With no clock/reset role assigned, every signal from the compound
+    // sensitivity list still carries its own edge polarity for the dynamic-
+    // input chevron (+bobble for negedge) rendering.
+    EXPECT_EQ(portEventEdges["a"], "posedge") << reg->dump(2);
+    EXPECT_EQ(portEventEdges["b"], "posedge") << reg->dump(2);
+    EXPECT_EQ(portEventEdges["c"], "negedge") << reg->dump(2);
+}
+
+// A single-signal async sensitivity list (`always_ff @(posedge trigger)`) has
+// no reset to disambiguate from, so it's unambiguously the clock even when
+// its name doesn't match any configured/default clock name.
+TEST(ExtractorTest, LoneUnmatchedSensitivitySignalIsClassifiedAsClock) {
+    namespace fs = std::filesystem;
+
+    const fs::path uhdm_path = fs::path("test_single_signal_clock_dir/slpp_all/surelog.uhdm");
+    if (!fs::exists(uhdm_path)) {
+        const fs::path fixture_path = fs::path(__FILE__)
+            .parent_path().parent_path().parent_path().parent_path().parent_path()
+            / "test/fixtures/single_signal_unmatched_clock.sv";
+
+        if (std::system("surelog --version > /dev/null 2>&1") != 0) {
+            GTEST_SKIP() << "Surelog not available";
+        }
+
+        const std::string command = "surelog -parse -sverilog " + fixture_path.string() + " -o test_single_signal_clock_dir";
+        int ret = std::system(command.c_str());
+        ASSERT_EQ(ret, 0) << "Surelog failed to parse fixture";
+        ASSERT_TRUE(fs::exists(uhdm_path)) << "Surelog did not produce the expected UHDM output";
+    }
+
+    UHDM::Serializer serializer;
+    std::vector<vpiHandle> restoredDesigns = serializer.Restore(uhdm_path.string());
+    ASSERT_FALSE(restoredDesigns.empty());
+
+    vpiHandle design = restoredDesigns[0];
+    svsch::DesignExtractor extractor(design);
+    nlohmann::json result = extractor.extract();
+
+    ASSERT_TRUE(result.contains("modules"));
+
+    const nlohmann::json* mod = nullptr;
+    for (const auto& m : result["modules"]) {
+        if (m["name"] == "single_signal_unmatched_clock") {
+            mod = &m;
+            break;
+        }
+    }
+    ASSERT_NE(mod, nullptr) << result.dump(2);
+
+    const nlohmann::json* reg = nullptr;
+    for (const auto& node : (*mod)["nodes"]) {
+        if (node["kind"] == "register") {
+            reg = &node;
+            break;
+        }
+    }
+    ASSERT_NE(reg, nullptr) << mod->dump(2);
+
+    EXPECT_EQ((*reg)["metadata"]["clockSignal"], "trigger") << reg->dump(2);
+    EXPECT_EQ((*reg)["metadata"]["clockActiveLow"], false) << reg->dump(2);
+}
+
+// A `negedge`-triggered clock (`always_ff @(negedge clk)`) needs its polarity
+// recorded so the clock port renders the chevron+bobble, not just the plain
+// chevron used for the (far more common) posedge case.
+TEST(ExtractorTest, NegedgeClockIsRecordedAsActiveLow) {
+    namespace fs = std::filesystem;
+
+    const fs::path uhdm_path = fs::path("test_negedge_clock_dir/slpp_all/surelog.uhdm");
+    if (!fs::exists(uhdm_path)) {
+        const fs::path fixture_path = fs::path(__FILE__)
+            .parent_path().parent_path().parent_path().parent_path().parent_path()
+            / "test/fixtures/negedge_clock.sv";
+
+        if (std::system("surelog --version > /dev/null 2>&1") != 0) {
+            GTEST_SKIP() << "Surelog not available";
+        }
+
+        const std::string command = "surelog -parse -sverilog " + fixture_path.string() + " -o test_negedge_clock_dir";
+        int ret = std::system(command.c_str());
+        ASSERT_EQ(ret, 0) << "Surelog failed to parse fixture";
+        ASSERT_TRUE(fs::exists(uhdm_path)) << "Surelog did not produce the expected UHDM output";
+    }
+
+    UHDM::Serializer serializer;
+    std::vector<vpiHandle> restoredDesigns = serializer.Restore(uhdm_path.string());
+    ASSERT_FALSE(restoredDesigns.empty());
+
+    vpiHandle design = restoredDesigns[0];
+    svsch::DesignExtractor extractor(design);
+    nlohmann::json result = extractor.extract();
+
+    ASSERT_TRUE(result.contains("modules"));
+
+    const nlohmann::json* mod = nullptr;
+    for (const auto& m : result["modules"]) {
+        if (m["name"] == "negedge_clock") {
+            mod = &m;
+            break;
+        }
+    }
+    ASSERT_NE(mod, nullptr) << result.dump(2);
+
+    const nlohmann::json* reg = nullptr;
+    for (const auto& node : (*mod)["nodes"]) {
+        if (node["kind"] == "register") {
+            reg = &node;
+            break;
+        }
+    }
+    ASSERT_NE(reg, nullptr) << mod->dump(2);
+
+    EXPECT_EQ((*reg)["metadata"]["clockSignal"], "clk") << reg->dump(2);
+    EXPECT_EQ((*reg)["metadata"]["clockActiveLow"], true) << reg->dump(2);
+
+    const nlohmann::json* clk_port = nullptr;
+    for (const auto& port : (*reg)["ports"]) {
+        if (port["name"] == "clk") {
+            clk_port = &port;
+            break;
+        }
+    }
+    ASSERT_NE(clk_port, nullptr) << reg->dump(2);
+    EXPECT_EQ((*clk_port)["eventEdge"], "negedge") << clk_port->dump(2);
 }
 
 // A boundary `inout` port that is itself an unpacked array (e.g. `inout wire

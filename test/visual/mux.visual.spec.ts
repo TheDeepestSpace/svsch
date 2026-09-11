@@ -810,7 +810,19 @@ test.describe('register visual rendering', () => {
     });
   });
 
-  test('renders every signal in a compound always_ff event expression as a plain port', async ({
+  test('renders a negedge clock with the polarity bobble on the chevron lead', async ({ page }) => {
+    await openFixture(page, 'negedge_clock.sv', 'register');
+
+    await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
+    await expect(page.locator('.svsch-register-clock-port')).toBeVisible();
+    await expect(page.locator('.svsch-register-clock-port .register-event-bobble')).toBeVisible();
+
+    await expectGraphAndScreenshot(page, 'register-negedge-clock-node.png', {
+      clip: await paddedLocatorClip(page, '[data-node-kind="register"]'),
+    });
+  });
+
+  test('renders every signal in a compound event with its own event-port chevron', async ({
     page,
   }) => {
     // None of "a", "b", "c" match the default clock/reset signal name lists, and a

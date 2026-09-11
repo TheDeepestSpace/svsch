@@ -57,13 +57,14 @@ interface PromotedTextExpression {
 
 interface RegisterTimingInfo {
   clockSignal?: string;
+  clockActiveLow?: boolean;
   resetSignal?: string;
   resetKind: 'none' | 'async' | 'sync';
   resetActiveLow?: boolean;
   /** Event-control identifiers that are neither the clock nor the reset (e.g. a
    *  compound `always_ff @(posedge a or posedge b or negedge c)` sensitivity list
    *  where at most one signal each can be classified as clock/reset by name). */
-  otherEventSignals?: string[];
+  otherEventSignals?: Array<{ signal: string; activeLow: boolean }>;
 }
 
 export interface TextExtractorOptions {
@@ -576,7 +577,12 @@ function extractRegisters(
         { id: stableId('q'), name: 'Q', direction: 'output', width: signalWidths.get(target) },
       ];
       if (timing.clockSignal) {
-        registerPorts.push({ id: stableId('clk'), name: timing.clockSignal, direction: 'input' });
+        registerPorts.push({
+          id: stableId('clk'),
+          name: timing.clockSignal,
+          direction: 'input',
+          eventEdge: timing.clockActiveLow ? 'negedge' : 'posedge',
+        });
       }
       if (timing.resetSignal) {
         registerPorts.push({ id: stableId('reset'), name: timing.resetSignal, direction: 'input' });
@@ -591,9 +597,10 @@ function extractRegisters(
       }
       for (const eventSignal of timing.otherEventSignals ?? []) {
         registerPorts.push({
-          id: stableId('event', eventSignal),
-          name: eventSignal,
+          id: stableId('event', eventSignal.signal),
+          name: eventSignal.signal,
           direction: 'input',
+          eventEdge: eventSignal.activeLow ? 'negedge' : 'posedge',
         });
       }
 
@@ -606,6 +613,7 @@ function extractRegisters(
         metadata: {
           width: signalWidths.get(target),
           clockSignal: timing.clockSignal,
+          clockActiveLow: timing.clockActiveLow,
           resetSignal: timing.resetSignal,
           resetKind: timing.resetKind,
           resetActiveLow: timing.resetActiveLow,
@@ -622,7 +630,7 @@ function extractRegisters(
             : undefined,
         clk: timing.clockSignal,
         reset: timing.resetSignal,
-        otherEventSignals: timing.otherEventSignals,
+        otherEventSignals: timing.otherEventSignals?.map((eventSignal) => eventSignal.signal),
         sourceRange,
       });
     }
@@ -871,25 +879,30 @@ function parseAlwaysFfTiming(
   // compound list of three or more signals has no such guarantee -- collapsing
   // arbitrary extra identifiers into clock/reset roles by position would
   // misclassify (and auto-cut) unrelated nets, so only configured-name matches
-  // count once there are more than two signals.
-  const allowPositionalFallback = edgeTerms.length === 2;
+  // count once there are more than two signals. A lone single-signal list has
+  // no reset to disambiguate from, so it's unambiguously the clock regardless
+  // of name.
+  const allowClockPositionalFallback = edgeTerms.length <= 2;
+  const allowResetPositionalFallback = edgeTerms.length === 2;
 
   const clockTerm =
     edgeTerms.find((term) => matchesSignalNameList(term.signal, clockSignalNames)) ??
-    (allowPositionalFallback ? edgeTerms[0] : undefined);
+    (allowClockPositionalFallback ? edgeTerms[0] : undefined);
   const clockSignal = clockTerm?.signal;
+  const clockActiveLow = clockTerm?.edge === 'negedge';
 
   const remainingTerms = edgeTerms.filter((term) => term !== clockTerm);
   const resetTerm =
     remainingTerms.find((term) => matchesSignalNameList(term.signal, resetSignalNames)) ??
-    (allowPositionalFallback && clockTerm ? remainingTerms[0] : undefined);
+    (allowResetPositionalFallback && clockTerm ? remainingTerms[0] : undefined);
 
   if (resetTerm) {
     const otherEventSignals = remainingTerms
       .filter((term) => term !== resetTerm)
-      .map((term) => term.signal);
+      .map((term) => ({ signal: term.signal, activeLow: term.edge === 'negedge' }));
     return {
       clockSignal,
+      clockActiveLow,
       resetSignal: resetTerm.signal,
       resetKind: 'async',
       resetActiveLow: resetTerm.edge === 'negedge',
@@ -897,12 +910,16 @@ function parseAlwaysFfTiming(
     };
   }
 
-  const otherEventSignals = remainingTerms.map((term) => term.signal);
+  const otherEventSignals = remainingTerms.map((term) => ({
+    signal: term.signal,
+    activeLow: term.edge === 'negedge',
+  }));
 
   const syncReset = detectSynchronousReset(block, clockSignal, resetSignalNames);
   if (syncReset) {
     return {
       clockSignal,
+      clockActiveLow,
       resetSignal: syncReset.signal,
       resetKind: 'sync',
       resetActiveLow: syncReset.activeLow,
@@ -912,6 +929,7 @@ function parseAlwaysFfTiming(
 
   return {
     clockSignal,
+    clockActiveLow,
     resetKind: 'none',
     otherEventSignals: otherEventSignals.length > 0 ? otherEventSignals : undefined,
   };

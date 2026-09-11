@@ -83,6 +83,10 @@ struct NodePort {
     bool isArrayNode = false;
     std::string arrayDimension;
     int arraySize = 0;
+    // Set on a register's clock port and any other event-control signal (e.g.
+    // a compound `always_ff @(posedge a or negedge b)` sensitivity list) to
+    // render the dynamic-input chevron, with a bobble added for 'negedge'.
+    std::string eventEdge;
 };
 
 struct StructField {
@@ -142,6 +146,7 @@ struct Node {
         std::string resetKind; // "async", "sync"
         bool resetActiveLow = false;
         std::string clockSignal;
+        bool clockActiveLow = false;
         std::string resetSignal;
         bool isProcedural = false;
         bool inferred = false;

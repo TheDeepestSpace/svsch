@@ -182,4 +182,64 @@ describe('textExtractor clock/reset signal name detection', () => {
     const portNames = reg?.ports.map((p) => p.name);
     expect(portNames).toEqual(expect.arrayContaining(['a', 'c', 'clk']));
   });
+
+  it('classifies a lone single-signal sensitivity list as the clock regardless of name', () => {
+    const code = `
+      module single_signal_unmatched_clock (
+        input logic trigger,
+        input logic d,
+        output logic q
+      );
+        always_ff @(posedge trigger) begin
+          q <= d;
+        end
+      endmodule
+    `;
+    // "trigger" matches neither the default nor any configured clock name, but a
+    // lone signal in an async sensitivity list has no reset to disambiguate from,
+    // so it's unambiguously the clock.
+    const reg = registerNode('single_signal_unmatched_clock', code);
+    expect(reg?.metadata?.clockSignal).toBe('trigger');
+    expect(reg?.metadata?.clockActiveLow).toBe(false);
+  });
+
+  it('records a negedge clock as active-low', () => {
+    const code = `
+      module negedge_clock (
+        input logic clk,
+        input logic d,
+        output logic q
+      );
+        always_ff @(negedge clk) begin
+          q <= d;
+        end
+      endmodule
+    `;
+    const reg = registerNode('negedge_clock', code);
+    expect(reg?.metadata?.clockSignal).toBe('clk');
+    expect(reg?.metadata?.clockActiveLow).toBe(true);
+    const clkPort = reg?.ports.find((p) => p.name === 'clk');
+    expect(clkPort?.eventEdge).toBe('negedge');
+  });
+
+  it('tags every port in a compound event expression with its own edge polarity', () => {
+    const code = `
+      module compound_event_polarity (
+        input logic a,
+        input logic b,
+        input logic c,
+        input logic d,
+        output logic q
+      );
+        always_ff @(posedge a or posedge b or negedge c) begin
+          q <= d;
+        end
+      endmodule
+    `;
+    const reg = registerNode('compound_event_polarity', code);
+    const edgeBySignal = new Map(reg?.ports.map((p) => [p.name, p.eventEdge]));
+    expect(edgeBySignal.get('a')).toBe('posedge');
+    expect(edgeBySignal.get('b')).toBe('posedge');
+    expect(edgeBySignal.get('c')).toBe('negedge');
+  });
 });

@@ -2481,6 +2481,19 @@ text {
   fill: none;
 }
 
+/* Negedge polarity bobble on a dynamic-input port lead (clock or other
+   compound-event signal), paired with the chevron above. */
+.register-event-bobble {
+  fill: var(--vscode-editorWidget-background);
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.25;
+}
+
+.hdl-node-register .register-event-bobble,
+.hdl-node-latch .register-event-bobble {
+  stroke: var(--vscode-charts-green);
+}
+
 /* SVG container inside node button — z-index 2 keeps it above z-index 1 compat layers */
 .hdl-node-svg {
   display: block;
@@ -2724,7 +2737,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="reg:register_active_low_reset:q" data-node-kind="register" transform="translate(360 24)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="144" height="96"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>q</tspan><tspan class="svsch-register-width-suffix" dx="4">[2:0]</tspan></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="132" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="0" y="66" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><g class="svsch-register-reset-port"><text class="svsch-port-label svsch-register-reset-label" x="72" y="84" text-anchor="middle" dominant-baseline="middle">R̅</text></g>
+<rect class="svsch-node-shape" width="144" height="96"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>q</tspan><tspan class="svsch-register-width-suffix" dx="4">[2:0]</tspan></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="132" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-4" y="66" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><g class="svsch-register-reset-port"><text class="svsch-port-label svsch-register-reset-label" x="72" y="84" text-anchor="middle" dominant-baseline="middle">R̅</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:register_active_low_reset:c_main" data-node-kind="port" transform="translate(24 108)">

@@ -2481,6 +2481,19 @@ text {
   fill: none;
 }
 
+/* Negedge polarity bobble on a dynamic-input port lead (clock or other
+   compound-event signal), paired with the chevron above. */
+.register-event-bobble {
+  fill: var(--vscode-editorWidget-background);
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.25;
+}
+
+.hdl-node-register .register-event-bobble,
+.hdl-node-latch .register-event-bobble {
+  stroke: var(--vscode-charts-green);
+}
+
 /* SVG container inside node button — z-index 2 keeps it above z-index 1 compat layers */
 .hdl-node-svg {
   display: block;

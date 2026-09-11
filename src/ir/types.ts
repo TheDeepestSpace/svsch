@@ -77,6 +77,10 @@ export interface DiagramPort {
   connectedSignal?: string;
   position?: number;
   source?: SourceRange;
+  /** Set on a register's clock port and any other event-control signal (e.g. a
+   *  compound `always_ff @(posedge a or negedge b)` sensitivity list) to render
+   *  the standard dynamic-input chevron, with a bobble added when 'negedge'. */
+  eventEdge?: 'posedge' | 'negedge';
 }
 
 export interface StructField {
@@ -94,6 +98,7 @@ export interface DiagramNodeMetadata {
   resetKind?: 'async' | 'sync' | string;
   resetActiveLow?: boolean;
   clockSignal?: string;
+  clockActiveLow?: boolean;
   resetSignal?: string;
   isProcedural?: boolean;
   inferred?: boolean;
@@ -198,6 +203,7 @@ export interface BaseDiagramNode {
   resetKind?: 'async' | 'sync' | string;
   resetActiveLow?: boolean;
   clockSignal?: string;
+  clockActiveLow?: boolean;
   resetSignal?: string;
   isProcedural?: boolean;
   inferred?: boolean;

@@ -2481,6 +2481,19 @@ text {
   fill: none;
 }
 
+/* Negedge polarity bobble on a dynamic-input port lead (clock or other
+   compound-event signal), paired with the chevron above. */
+.register-event-bobble {
+  fill: var(--vscode-editorWidget-background);
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.25;
+}
+
+.hdl-node-register .register-event-bobble,
+.hdl-node-latch .register-event-bobble {
+  stroke: var(--vscode-charts-green);
+}
+
 /* SVG container inside node button — z-index 2 keeps it above z-index 1 compat layers */
 .hdl-node-svg {
   display: block;
@@ -2730,7 +2743,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="reg:register_async_reset:q" data-node-kind="register" transform="translate(504 0)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="144" height="96"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>q</tspan><tspan class="svsch-register-width-suffix" dx="4">[2:0]</tspan></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="132" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="0" y="66" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><g class="svsch-register-reset-port"><text class="svsch-port-label svsch-register-reset-label" x="72" y="84" text-anchor="middle" dominant-baseline="middle">R</text></g>
+<rect class="svsch-node-shape" width="144" height="96"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>q</tspan><tspan class="svsch-register-width-suffix" dx="4">[2:0]</tspan></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="132" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-4" y="66" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><g class="svsch-register-reset-port"><text class="svsch-port-label svsch-register-reset-label" x="72" y="84" text-anchor="middle" dominant-baseline="middle">R</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:register_file:addr" data-node-kind="port" transform="translate(744 12)">
@@ -2740,7 +2753,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node hdl-node-array" data-node-id="reg:register_file:M" data-node-kind="register" transform="translate(1008 0)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
-<rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(6, 6)" width="144" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="144" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-6, -6)" width="144" height="96"></rect><text class="svsch-node-kind" x="4" y="8" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="4" y="20" text-anchor="start" dominant-baseline="middle"><tspan>M</tspan><tspan class="svsch-register-width-suffix" dx="4">[31:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="6" y="42" dominant-baseline="middle">D</text><text class="svsch-port-label" x="126" y="42" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-6" y="60" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="147" y="-4" text-anchor="start">[0:31]</text>
+<rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(6, 6)" width="144" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="144" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-6, -6)" width="144" height="96"></rect><text class="svsch-node-kind" x="4" y="8" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="4" y="20" text-anchor="start" dominant-baseline="middle"><tspan>M</tspan><tspan class="svsch-register-width-suffix" dx="4">[31:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="6" y="42" dominant-baseline="middle">D</text><text class="svsch-port-label" x="126" y="42" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-10" y="60" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="147" y="-4" text-anchor="start">[0:31]</text>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned hdl-node-array" data-node-id="port:array_port_register:in_data" data-node-kind="port" transform="translate(0 276)">
@@ -2765,7 +2778,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node hdl-node-array" data-node-id="reg:array_port_register_bit:flags" data-node-kind="register" transform="translate(1176 264)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" width="96" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="96" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" width="96" height="96"></rect><text class="svsch-node-kind" x="6" y="10" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="6" y="22" text-anchor="start" dominant-baseline="middle"><tspan>flags</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="8" y="44" dominant-baseline="middle">D</text><text class="svsch-port-label" x="80" y="44" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-4" y="62" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="99" y="-4" text-anchor="start">[0:3]</text>
+<rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" width="96" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="96" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" width="96" height="96"></rect><text class="svsch-node-kind" x="6" y="10" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="6" y="22" text-anchor="start" dominant-baseline="middle"><tspan>flags</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="8" y="44" dominant-baseline="middle">D</text><text class="svsch-port-label" x="80" y="44" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-8" y="62" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="99" y="-4" text-anchor="start">[0:3]</text>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:mux_three_inputs:y:sel:y" data-node-kind="mux" transform="translate(24 528)">

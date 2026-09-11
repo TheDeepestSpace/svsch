@@ -1185,6 +1185,7 @@ interface RawUhdmIr {
         isArrayNode?: boolean;
         arrayDimension?: string;
         arraySize?: number;
+        eventEdge?: 'posedge' | 'negedge';
         source?: { file: string; line: number; col: number; endLine: number; endCol: number };
       }>;
       source: { file: string; line: number; col: number; endLine: number; endCol: number };
@@ -2084,6 +2085,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                 isArrayNode: p.isArrayNode,
                 arrayDimension: p.arrayDimension,
                 arraySize: p.arraySize,
+                eventEdge: p.eventEdge,
                 connectedSignal: p.signal,
                 source: portSource
                   ? {
