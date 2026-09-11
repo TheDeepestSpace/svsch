@@ -4309,7 +4309,7 @@ function createNodeSizingGalleryView(extended: boolean): DiagramViewModel {
         { id: 'clk', name: 'clk', direction: 'input' },
         { id: 'q', name: 'Q', direction: 'output' },
       ],
-      metadata: width ? { width } : undefined,
+      metadata: { clockSignal: 'clk', ...(width ? { width } : undefined) },
       position: { x: secondColumnX, y: grid * 4 },
     },
     {
