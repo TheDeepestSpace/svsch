@@ -39,6 +39,16 @@ export function renderDashboardPage({ title, heading = title, description, bodyH
       .small {
         font-size: 0.75rem;
       }
+      h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      section + section {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e1e0d9;
+      }
     </style>
     <title>${title}</title>
   </head>
@@ -49,4 +59,19 @@ export function renderDashboardPage({ title, heading = title, description, bodyH
   </body>
 </html>
 `;
+}
+
+// One metric's <section> on the combined dev/index.html master dashboard
+// (#413) — a heading, that metric's own body markup (typically its trend
+// chart <img>), and a link back to its own full per-metric page. Shared so
+// generate-master-dashboard.mjs's own dev/bench section (derived directly
+// from history-averages.json, since bench has no record-*.mjs of its own to
+// write a section.html fragment) renders identically to the 4 metrics that
+// do write one.
+export function renderDashboardSection({ heading, bodyHtml, href, linkLabel = 'Full history →' }) {
+  return `<section>
+      <h2>${heading}</h2>
+      ${bodyHtml}
+      <p class="small"><a href="${href}">${linkLabel}</a></p>
+    </section>`;
 }
