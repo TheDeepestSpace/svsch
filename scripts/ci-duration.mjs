@@ -7,6 +7,7 @@ import {
   renderHistoryTrendChart,
   mergeBenchmarkHistory,
 } from './render-benchmark-charts.mjs';
+import { renderDashboardPage, renderDashboardSection } from './dashboard-page-shell.mjs';
 
 // gh-pages paths for the CI workflow wall-clock-duration history (#282) —
 // kept alongside dev/bench (the diagram-generation benchmarks) but in its
@@ -16,6 +17,11 @@ import {
 export const HISTORY_PATH = 'dev/ci-duration/history.json';
 export const TREND_SVG_PATH = 'dev/ci-duration/trend.svg';
 export const INDEX_HTML_PATH = 'dev/ci-duration/index.html';
+// The combined dev/index.html master dashboard's per-metric section
+// fragment (#413) — joined in by generate-master-dashboard.mjs alongside the
+// other metrics' own. Paths inside it are relative to dev/ (where it ends up
+// embedded), not to dev/ci-duration/ (where this file itself lives).
+export const SECTION_HTML_PATH = 'dev/ci-duration/section.html';
 
 const NETWORK_TIMEOUT_MS = 60_000;
 
@@ -78,42 +84,24 @@ export function renderCiDurationTrendChart({ history, currentPoint, currentLabel
 // generator rather than reusing it. The trend chart here is already a
 // static SVG (see renderCiDurationTrendChart), so the "viewer" is just this
 // page embedding it.
-export const INDEX_HTML = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
-    <style>
-      html {
-        font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-        -webkit-font-smoothing: antialiased;
-        background-color: #fff;
-        font-size: 16px;
-      }
-      body {
-        color: #4a4a4a;
-        margin: 8px;
-      }
-      h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
-      }
-      img {
-        max-width: 100%;
-      }
-      .small {
-        font-size: 0.75rem;
-      }
-    </style>
-    <title>CI Duration</title>
-  </head>
-  <body>
-    <h1>CI workflow duration</h1>
-    <p class="small">Wall-clock duration of the CI workflow's push-to-master runs. Raw data: <a href="history.json">history.json</a>.</p>
-    <img src="trend.svg" alt="CI workflow duration trend" />
-  </body>
-</html>
-`;
+export const INDEX_HTML = renderDashboardPage({
+  title: 'CI Duration',
+  heading: 'CI workflow duration',
+  description:
+    'Wall-clock duration of the CI workflow\'s push-to-master runs. Raw data: <a href="history.json">history.json</a>.',
+  bodyHtml: '<img src="trend.svg" alt="CI workflow duration trend" />',
+});
+
+// This metric's section on the combined dev/index.html master dashboard
+// (#413) — same trend chart, but linking/embedding via paths relative to
+// dev/ (see SECTION_HTML_PATH above) rather than dev/ci-duration/.
+export function renderCiDurationSection() {
+  return renderDashboardSection({
+    heading: 'CI workflow duration',
+    bodyHtml: '<img src="ci-duration/trend.svg" alt="CI workflow duration trend" />',
+    href: 'ci-duration/index.html',
+  });
+}
 
 function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
@@ -241,8 +229,11 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
         'utf8',
       );
       fs.writeFileSync(path.join(worktreeDir, INDEX_HTML_PATH), INDEX_HTML, 'utf8');
+      fs.writeFileSync(path.join(worktreeDir, SECTION_HTML_PATH), renderCiDurationSection(), 'utf8');
 
-      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH], { cwd: worktreeDir });
+      git(['add', HISTORY_PATH, TREND_SVG_PATH, INDEX_HTML_PATH, SECTION_HTML_PATH], {
+        cwd: worktreeDir,
+      });
       const message = describeCommit(addedCount);
       git(
         [
