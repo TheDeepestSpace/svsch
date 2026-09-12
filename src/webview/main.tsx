@@ -21,6 +21,7 @@ import {
   useEdgesState,
   useNodesState,
   useStore,
+  useStoreApi,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './diagram.css';
@@ -393,12 +394,21 @@ function DiagramApp(): React.ReactElement {
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
+  const storeApi = useStoreApi();
   const minZoom = useStore((state) => state.minZoom);
   const maxZoom = useStore((state) => state.maxZoom);
   const userSelectionRect = useStore((state) => state.userSelectionRect);
   const [selectedRegionIds, setSelectedRegionIds] = useState<Set<string>>(new Set());
   const selectionStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const fittedModuleNameRef = useRef<string | undefined>(undefined);
+  // Camera state as our own automatic fitView last left it (see the fitView
+  // effect and its pane-resize correction below). `undefined` whenever the
+  // camera is not sitting exactly where an automatic fit put it — either
+  // because no fit ran yet for this module, or because something else
+  // (user pan/zoom, double-click zoom, an explicit fitView) moved it since.
+  const autoFitCameraRef = useRef<
+    { moduleName: string; viewport: FlowViewport; width: number; height: number } | undefined
+  >(undefined);
   // Node ids to re-select in the very next view rebuild — set right before
   // posting an "Auto Layout" request, consumed (and cleared) the next time
   // the nodes array is rebuilt from an incoming view, so the just-relaid-out
@@ -1376,13 +1386,80 @@ function DiagramApp(): React.ReactElement {
     }
 
     const timeout = window.setTimeout(() => {
-      reactFlow.fitView({ padding: 0.2 });
-      fittedModuleNameRef.current = view.moduleName;
+      const moduleName = view.moduleName;
+      fittedModuleNameRef.current = moduleName;
+      // fitView is queued (applied on a later render pass), so the camera it
+      // produces can only be captured once its promise resolves.
+      void reactFlow.fitView({ padding: 0.2 }).then(() => {
+        const { width, height } = storeApi.getState();
+        autoFitCameraRef.current = {
+          moduleName,
+          viewport: reactFlow.getViewport(),
+          width,
+          height,
+        };
+      });
     }, 0);
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [nodes, reactFlow, view]);
+  }, [nodes, reactFlow, storeApi, view]);
+
+  // The effect above fits exactly once per module, as soon as the nodes first
+  // match the view — which, when the pane lives in a container that is still
+  // animating open (e.g. the editor-group split VS Code plays while a partial
+  // diagram opens beside the main one), can be while the pane is mid-resize.
+  // A fit computed against such a transient size sticks at an arbitrary
+  // in-between zoom for the rest of the session (issue #408). Delaying the
+  // initial fit instead was tried and reverted — visual-suite helpers issue
+  // their own explicit fitView right after load, and a late-firing initial
+  // fit stomped on those. So: fit immediately as before, then keep the fit
+  // *correct* — while the camera still sits exactly where our own fit left
+  // it, a pane-size increase simply re-runs the same fit against the new
+  // size. Growth only, deliberately: every wrong-transient-fit case is a
+  // pane still growing toward its final size (opening beside the main
+  // diagram, merging into the full-width group), and reclaiming the dead
+  // space a bigger pane exposes is unambiguous. A *shrinking* pane (e.g. the
+  // main diagram when a partial opens beside it) keeps its camera exactly as
+  // before this fix: cropping is ordinary viewport behavior, while zooming a
+  // view the user is currently reading is the surprising option. The first
+  // camera movement that isn't ours (pan, zoom, double-click zoom, an
+  // explicit fitView from dev tooling) breaks the equality check and disarms
+  // the correction for good, so it can never fight the user.
+  const paneWidth = useStore((state) => state.width);
+  const paneHeight = useStore((state) => state.height);
+  useEffect(() => {
+    const fitted = autoFitCameraRef.current;
+    if (!view || !fitted || fitted.moduleName !== view.moduleName) {
+      return;
+    }
+    // A hidden webview reports a zero-size pane; fitting against it would be
+    // meaningless. Keep the correction armed for when the pane comes back.
+    if (paneWidth <= 0 || paneHeight <= 0) {
+      return;
+    }
+    if (paneWidth <= fitted.width && paneHeight <= fitted.height) {
+      return;
+    }
+    const current = reactFlow.getViewport();
+    if (
+      current.x !== fitted.viewport.x ||
+      current.y !== fitted.viewport.y ||
+      current.zoom !== fitted.viewport.zoom
+    ) {
+      autoFitCameraRef.current = undefined;
+      return;
+    }
+    void reactFlow.fitView({ padding: 0.2 }).then(() => {
+      const { width, height } = storeApi.getState();
+      autoFitCameraRef.current = {
+        moduleName: view.moduleName,
+        viewport: reactFlow.getViewport(),
+        width,
+        height,
+      };
+    });
+  }, [paneWidth, paneHeight, reactFlow, storeApi, view]);
 
   const onNodeDragStart = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[]) => {
