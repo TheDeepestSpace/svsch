@@ -67,7 +67,7 @@ describe('snapshot update policy', () => {
         'test/system/__screenshots__/1.91.0/partial_diagram_interactions.spec.ts-snapshots/' +
           'partial-diagram-interaction-auto-layout-visibility-01-single-selected-linux.png',
       )?.maxDiffPixels,
-    ).toBe(14000);
+    ).toBe(6000);
   });
 
   it('rejects Playwright all mode', () => {
