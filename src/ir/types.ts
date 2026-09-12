@@ -1,6 +1,8 @@
 export type DiagramNodeKind =
   | 'module'
   | 'instance'
+  | 'funcCall'
+  | 'taskCall'
   | 'mux'
   | 'select'
   | 'register'
@@ -195,6 +197,12 @@ export interface BaseDiagramNode {
   moduleName?: string;
   parentModule?: string;
   instanceOf?: string;
+  /** Qualified key into DesignGraph.functions for a function call-site. */
+  functionId?: string;
+  functionName?: string;
+  /** Qualified key into DesignGraph.tasks for a task call-site. */
+  taskId?: string;
+  taskName?: string;
   ports: DiagramPort[];
   source?: SourceRange;
 
@@ -290,6 +298,12 @@ export interface ReplicateDiagramNode extends BaseDiagramNode {
 export interface InstanceDiagramNode extends BaseDiagramNode {
   kind: 'instance';
 }
+export interface FunctionCallDiagramNode extends BaseDiagramNode {
+  kind: 'funcCall';
+}
+export interface TaskCallDiagramNode extends BaseDiagramNode {
+  kind: 'taskCall';
+}
 export interface PortDiagramNode extends BaseDiagramNode {
   kind: 'port';
 }
@@ -326,6 +340,8 @@ export type DiagramNode =
   | LiteralDiagramNode
   | ReplicateDiagramNode
   | InstanceDiagramNode
+  | FunctionCallDiagramNode
+  | TaskCallDiagramNode
   | PortDiagramNode
   | LoopDiagramNode
   | UnknownDiagramNode
@@ -426,6 +442,18 @@ export interface GenerateRegion {
     childModuleName: string;
     parentModuleName: string;
   };
+  /** Client-only expansion region for one source-stable function call-site. */
+  expandedFunctionCall?: {
+    callId: string;
+    functionId: string;
+    parentModuleName: string;
+  };
+  /** Client-only expansion region for one source-stable task call-site. */
+  expandedTaskCall?: {
+    callId: string;
+    taskId: string;
+    parentModuleName: string;
+  };
 }
 
 export interface PositionedGenerateRegion extends GenerateRegion {
@@ -453,6 +481,13 @@ export interface DesignModule {
   generateRegions?: GenerateRegion[];
 }
 
+/** A module-shaped combinational IR body extracted from an HDL function/task. */
+export interface DesignCallable extends DesignModule {
+  parentModule: string;
+  callableName: string;
+  callableKind: 'function' | 'task';
+}
+
 export interface DesignDiagnostic {
   severity: 'info' | 'warning' | 'error';
   message: string;
@@ -462,6 +497,8 @@ export interface DesignDiagnostic {
 export interface DesignGraph {
   rootModules: string[];
   modules: Record<string, DesignModule>;
+  functions?: Record<string, DesignCallable>;
+  tasks?: Record<string, DesignCallable>;
   diagnostics: DesignDiagnostic[];
   generatedAt: string;
 }

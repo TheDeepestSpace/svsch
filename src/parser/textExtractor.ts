@@ -115,6 +115,8 @@ export function extractDesignFromText(
   const graph: DesignGraph = {
     rootModules: [],
     modules: {},
+    functions: {},
+    tasks: {},
     diagnostics: [],
     generatedAt: new Date().toISOString(),
   };

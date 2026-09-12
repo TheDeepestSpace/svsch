@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeRunDurationEntry,
   mergeCiDurationHistory,
+  renderCiDurationSection,
   renderCiDurationTrendChart,
 } from '../../scripts/ci-duration.mjs';
 
@@ -87,5 +88,13 @@ describe('renderCiDurationTrendChart', () => {
     });
     expect(svg).toContain('this run (so far)');
     expect(svg).toContain('stroke-dasharray="5,4"');
+  });
+});
+
+describe('renderCiDurationSection', () => {
+  it('links/embeds via paths relative to dev/, not dev/ci-duration/', () => {
+    const section = renderCiDurationSection();
+    expect(section).toContain('ci-duration/trend.svg');
+    expect(section).toContain('ci-duration/index.html');
   });
 });
