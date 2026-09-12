@@ -32,6 +32,14 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   outputDir: path.join(root, 'test-results/system/playwright-output'),
   snapshotDir: path.join(__dirname, '__screenshots__', vscodeVersion),
   workers: 1,
+  // fitView locks in whatever pane size is current the moment it fires; on a
+  // newly opened editor group that's still animating open, that can be a
+  // transient width/height, producing a nondeterministic zoom level on the
+  // resulting screenshot (observed in CI: same scenario, same baseline,
+  // different pixel-diff counts across runs). One retry absorbs that without
+  // masking a real regression, mirroring test/bdd/playwright.config.ts's
+  // retries for its own CI-only convergence flake.
+  retries: process.env.CI ? 1 : 0,
   timeout: 240_000,
   reporter: reporters,
   expect: {
