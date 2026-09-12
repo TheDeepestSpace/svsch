@@ -1362,17 +1362,6 @@ function DiagramApp(): React.ReactElement {
     }
   }, [nodes, updateNodeInternals]);
 
-  // React Flow tracks its own pane size via a live ResizeObserver (see
-  // `paneWidth`/`paneHeight` below), which keeps changing for a few frames
-  // after a view first mounts inside a container that's still animating
-  // open (e.g. VS Code's editor-group split when a partial-diagram pane is
-  // created). fitView only ever runs once per view (guarded by
-  // `fittedModuleNameRef`), so fitting against a transient size sticks at
-  // the wrong zoom for the rest of the session. Debounce on the pane's
-  // tracked dimensions so fitView only fires once they've stopped moving.
-  const paneWidth = useStore((s) => s.width);
-  const paneHeight = useStore((s) => s.height);
-
   useEffect(() => {
     if (!view || nodes.length === 0) {
       return;
@@ -1389,11 +1378,11 @@ function DiagramApp(): React.ReactElement {
     const timeout = window.setTimeout(() => {
       reactFlow.fitView({ padding: 0.2 });
       fittedModuleNameRef.current = view.moduleName;
-    }, 100);
+    }, 0);
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [nodes, reactFlow, view, paneWidth, paneHeight]);
+  }, [nodes, reactFlow, view]);
 
   const onNodeDragStart = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[]) => {
