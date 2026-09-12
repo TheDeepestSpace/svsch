@@ -183,17 +183,17 @@ async function findCutLabelIdAttachedTo(
 // mid-flight.
 async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
   await webview.locator('body').evaluate(async () => {
-    // main.tsx's fitView effect only fires once per module name
+    // main.tsx's fitView effect fires once per module name
     // (fittedModuleNameRef) as soon as the node count first matches the
     // extension host's view — which can be before ELK has actually
-    // positioned the newly added node(s). The outer viewport's own
-    // transform is then stable for good (fitView never runs again for this
-    // module), but individual nodes can still jump to their real ELK
-    // position afterward, changing what's on screen without the pane's
-    // camera transform ever moving — a settle check on the viewport alone
-    // misses that and can screenshot mid-reflow (observed in CI as the same
-    // two nodes rendered at a different scale/position between runs). Track
-    // every node's own transform alongside the viewport's.
+    // positioned the newly added node(s) — and then re-fits only while the
+    // pane is still resizing under an untouched camera (issue #408). Nodes
+    // can still jump to their real ELK position after the camera has gone
+    // quiet, changing what's on screen without the pane's camera transform
+    // ever moving — a settle check on the viewport alone misses that and
+    // can screenshot mid-reflow (observed in CI as the same two nodes
+    // rendered at a different scale/position between runs). Track every
+    // node's own transform alongside the viewport's.
     const getSignature = () => {
       const viewportTransform =
         (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
@@ -369,13 +369,11 @@ async function addNodesToPartial(
   const partialFrameIndex = await findFrameIndex(workbox, 'partial');
   // A fixed 300ms wait above isn't a reliable proxy for "the editor-group
   // relayout has finished": if the outer iframe is still animating from its
-  // half-width split-view size toward the full-width merged-group size when
-  // main.tsx's one-shot-per-module fitView effect fires (see the comment on
-  // waitForViewportToSettle), fitView computes its padding against a
-  // too-narrow container and never gets a second chance to correct — the
-  // pane then stays visibly more zoomed-in than a fit against the true final
-  // width would produce, for the rest of the test. Wait for the iframe's own
-  // width to hold steady before trusting the pane is really full-width.
+  // half-width split-view size toward the full-width merged-group size,
+  // main.tsx's fitView may still be chasing the moving pane size (it re-fits
+  // on pane resizes while the camera is untouched — issue #408). Wait for
+  // the iframe's own width to hold steady so the fit the screenshots below
+  // capture is the one computed against the true final width.
   await waitForOuterFrameWidthToSettle(workbox, partialFrameIndex);
   const partialWebview = webviewAt(workbox, partialFrameIndex);
   await partialWebview.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
@@ -396,6 +394,15 @@ async function waitForOuterFrameWidthToSettle(workbox: Page, frameIndex: number)
     if (stable >= 5) return;
   }
   throw new Error('Partial pane iframe width did not settle within 5 seconds');
+}
+
+// Reads the partial pane's current React Flow camera (pan x/y + zoom).
+async function currentPartialViewport(
+  webview: FrameLocator,
+): Promise<{ x: number; y: number; zoom: number }> {
+  return webview
+    .locator('html')
+    .evaluate(() => (window as any).reactFlowInstance.getViewport() as any);
 }
 
 const casesByTitle = new Map(PARTIAL_INTERACTION_CASES.map((c) => [c.title, c]));
@@ -475,6 +482,100 @@ test.describe('Partial diagram interaction parity', () => {
       partialWebview,
       'partial-diagram-interaction-auto-layout-visibility-02-multi-selected.png',
     );
+  });
+
+  // -- Regression: the one-shot auto-fit must track late pane resizes -------
+  // The screenshots above flaked for a long time on CI (issue #408): the
+  // webview's one-shot fitView could fire while the editor group hosting the
+  // partial pane was still animating between its half-width split size and
+  // its full merged width, freezing an arbitrary in-between zoom for the
+  // rest of the session. src/webview/main.tsx now corrects for that: as long
+  // as the camera still sits exactly where the automatic fit left it, any
+  // pane-size change re-runs the fit against the new size. CI hit the race
+  // through scheduler timing that a fast local run can't reproduce, so this
+  // case forces the same half-width-fit-then-grow sequence deterministically:
+  // let the pane render and auto-fit while it is still split (no merge), only
+  // then merge the groups, and require the camera to land exactly on the
+  // full-width fit rather than keeping the stale half-width one.
+  test('Partial pane re-fits after its editor group grows to full width', async ({
+    workbox,
+    evaluateInVSCode,
+  }) => {
+    await workbox.waitForSelector('.monaco-workbench', { timeout: 30_000 });
+    await dismissSystemNotifications(workbox);
+
+    const { mainWebview } = await openMainDiagram(workbox, evaluateInVSCode, {
+      'top.sv': `
+          module leaf(input logic a, output logic y);
+            assign y = a;
+          endmodule
+
+          module top(input logic a, input logic b, output logic x, output logic y);
+            leaf u1(.a(a), .y(x));
+            leaf u2(.a(b), .y(y));
+          endmodule
+        `,
+    });
+
+    const u1MainId = await findSystemNodeId(mainWebview, 'u1', 'instance');
+    const u2MainId = await findSystemNodeId(mainWebview, 'u2', 'instance');
+    if (!u1MainId || !u2MainId) {
+      throw new Error('Instances "u1"/"u2" did not render in the main diagram');
+    }
+
+    await marqueeSelectNodes(workbox, mainWebview, [u1MainId, u2MainId]);
+    const addToPartialButton = mainWebview.locator('.svsch-selection-toolbar button', {
+      hasText: 'Add to Partial',
+    });
+    await expect(addToPartialButton).toBeVisible();
+    await addToPartialButton.click({ force: true });
+
+    const partialTabs = workbox.locator(
+      '.tab[aria-label*="SVSCH Partial Diagram"], .tab[title*="SVSCH Partial Diagram"]',
+    );
+    await partialTabs.first().waitFor({ timeout: 30_000 });
+
+    // Unlike addNodesToPartial, deliberately do NOT merge the editor groups
+    // yet: let the pane render and auto-fit at its half-width split size.
+    const splitFrameIndex = await findFrameIndex(workbox, 'partial');
+    await waitForOuterFrameWidthToSettle(workbox, splitFrameIndex);
+    const splitWebview = webviewAt(workbox, splitFrameIndex);
+    await splitWebview.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
+    await waitForViewportToSettle(splitWebview);
+    const halfWidthViewport = await currentPartialViewport(splitWebview);
+
+    // Now grow the pane: merge the partial tab into the (full-width) first
+    // group, exactly like every other partial-pane test does.
+    await partialTabs.first().click();
+    await evaluateInVSCode((vscode) =>
+      vscode.commands.executeCommand('workbench.action.moveEditorToFirstGroup'),
+    );
+    await workbox.waitForTimeout(300);
+    const mergedFrameIndex = await findFrameIndex(workbox, 'partial');
+    await waitForOuterFrameWidthToSettle(workbox, mergedFrameIndex);
+    const mergedWebview = webviewAt(workbox, mergedFrameIndex);
+    await waitForViewportToSettle(mergedWebview);
+
+    // The camera must have moved off the stale half-width fit...
+    const fullWidthViewport = await currentPartialViewport(mergedWebview);
+    expect(fullWidthViewport).not.toEqual(halfWidthViewport);
+
+    // ...and must now sit exactly on the pane's own full-width fit: running
+    // the same fit again from here must be a no-op.
+    const refitDelta = await mergedWebview.locator('html').evaluate(async () => {
+      const rf = (window as any).reactFlowInstance;
+      const before = rf.getViewport();
+      await rf.fitView({ padding: 0.2 });
+      const after = rf.getViewport();
+      return {
+        x: Math.abs(after.x - before.x),
+        y: Math.abs(after.y - before.y),
+        zoom: Math.abs(after.zoom - before.zoom),
+      };
+    });
+    expect(refitDelta.x).toBeLessThan(0.5);
+    expect(refitDelta.y).toBeLessThan(0.5);
+    expect(refitDelta.zoom).toBeLessThan(0.001);
   });
 
   // -- A second worked example: Auto Layout All vs. a surviving cut end -----
