@@ -118,4 +118,42 @@ describe('annotateWireStyles stacked components', () => {
     expect(nodes[3].metadata?.stackWide).toBeUndefined();
     expect(nodes[4].metadata?.stackWide).toBeUndefined();
   });
+
+  it(
+    'keeps a write-address mux chain uniformly wide even when only the ' +
+      'write-data port carries a known width (issue #205)',
+    () => {
+      // Mirrors the register_file write path reported in #205: write_data feeds
+      // a reset-candidate mux, which feeds a write-address mux, which feeds the
+      // storage register. None of those connecting edges carry their own known
+      // width — only the write_data port does — so the pre-fix per-node check
+      // (an array node widens only via its own ports or a directly incident
+      // thick edge) left the address mux and register on a narrower layer
+      // offset than the reset-candidate mux immediately upstream of them,
+      // producing the mismatched stack spacing from the original report.
+      const nodes = [
+        node('write_data', { portWidth: '[DATA_WIDTH-1:0]' }),
+        node('mux:register_file:regs_i_:reset_n:regs_rst_candidate', { array: true }),
+        node('mux:register_file:regs_addr', { array: true }),
+        node('reg:register_file:regs', { array: true }),
+      ];
+      const edges = [
+        stackedEdge(
+          'write_data->rst_candidate',
+          'write_data',
+          'mux:register_file:regs_i_:reset_n:regs_rst_candidate',
+        ),
+        stackedEdge(
+          'rst_candidate->regs_addr',
+          'mux:register_file:regs_i_:reset_n:regs_rst_candidate',
+          'mux:register_file:regs_addr',
+        ),
+        stackedEdge('regs_addr->regs', 'mux:register_file:regs_addr', 'reg:register_file:regs'),
+      ];
+
+      annotateWireStyles({ nodes, edges });
+
+      expect(nodes.slice(1).map((item) => item.metadata?.stackWide)).toEqual([true, true, true]);
+    },
+  );
 });
