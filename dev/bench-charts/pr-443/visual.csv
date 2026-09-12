@@ -1,141 +1,141 @@
 name,elaboration_unit,elaboration_baseline,elaboration_value,elaboration_delta_ms,elaboration_delta_pct,elaboration_is_new,rendering_unit,rendering_baseline,rendering_value,rendering_delta_ms,rendering_delta_pct,rendering_is_new,total_value
-selection_styles.visual.spec.ts › shows the selection outline for every node kind,ms,27,26,-1,-3.70,false,,,,,,,26
-interface.visual.spec.ts › renders an interface view without modports as a blue breakout,ms,12,16,4,33.33,false,ms,85,89,4,4.71,false,105
-interface.visual.spec.ts › renders interface scalar caps without side modports,ms,15,22,7,46.67,false,ms,105,112,7,6.67,false,134
-latch.visual.spec.ts › renders a structural cross-coupled NAND SR latch with feedback edges,ms,35,50,15,42.86,false,ms,111,104,-7,-6.31,false,154
-latch.visual.spec.ts › renders a mux hold loop as a single node feeding back into itself,ms,32,45,13,40.63,false,ms,121,114,-7,-5.79,false,159
-"inout.visual.spec.ts › routes a mux into a multi-bit boundary inout port with no overlap, same as the scalar case",ms,30,38,8,26.67,false,ms,136,128,-8,-5.88,false,166
-latch.visual.spec.ts › renders a structural cross-coupled NOR SR latch with feedback edges,ms,35,48,13,37.14,false,ms,134,121,-13,-9.70,false,169
-interface.visual.spec.ts › renders interface ports and patterned aggregate edges,ms,60,71,11,18.33,false,ms,118,104,-14,-11.86,false,175
-port_array.visual.spec.ts › stacked port selection covers the entire stack,ms,24,27,3,12.50,false,ms,166,153,-13,-7.83,false,180
-mixed_select_breakout.visual.spec.ts › renders both bus breakout and variable select from same input,ms,30,40,10,33.33,false,ms,123,153,30,24.39,false,193
-typing.visual.spec.ts › renders enum types instead of widths for ports and registers,ms,43,43,0,0.00,false,ms,148,154,6,4.05,false,197
-latch.visual.spec.ts › renders an S-R latch as a case-selected mux feeding an inferred latch,ms,54,71,17,31.48,false,ms,154,129,-25,-16.23,false,200
-mux.visual.spec.ts › renders connected combinational ports with flat orthogonal connectors,ms,90,89,-1,-1.11,false,ms,106,115,9,8.49,false,204
-interface.visual.spec.ts › renders interface modports as dual-sided harnesses,ms,57,74,17,29.82,false,ms,129,136,7,5.43,false,210
-struct_passing.visual.spec.ts › renders thick aggregate edges for structs passed between modules,ms,80,80,0,0.00,false,ms,137,136,-1,-0.73,false,216
-typing.visual.spec.ts › keeps struct wires unlabeled by type name,ms,47,49,2,4.26,false,ms,174,173,-1,-0.57,false,222
-mux.visual.spec.ts › renders a bus with one breakout,ms,108,122,14,12.96,false,ms,99,108,9,9.09,false,230
-parameter.visual.spec.ts › renders module parameters and symbolic port widths as inline metadata,ms,111,110,-1,-0.90,false,ms,113,125,12,10.62,false,235
-inout.visual.spec.ts › renders boundary and instance inout ports as bidirectional,ms,82,91,9,10.98,false,ms,156,145,-11,-7.05,false,236
-mux.visual.spec.ts › renders a bus with three overlapping breakouts,ms,148,105,-43,-29.05,false,ms,116,131,15,12.93,false,236
-variable_bit_select.visual.spec.ts › renders variable bit select block,ms,52,53,1,1.92,false,ms,182,183,1,0.55,false,236
-"inout.visual.spec.ts › routes an unpacked-array boundary inout port as a single hub edge, not a duplicate from the array composition",ms,51,64,13,25.49,false,ms,202,184,-18,-8.91,false,248
-mux.visual.spec.ts › renders a variable-index array read as a flat mux fed by converging stacked wires,ms,100,103,3,3.00,false,ms,147,150,3,2.04,false,253
-latch.visual.spec.ts › renders a gated D-latch built from four cross-coupled NAND gates,ms,72,95,23,31.94,false,ms,154,160,6,3.90,false,255
-inverter.visual.spec.ts › renders scalar and vector bitwise inversion as inverter gates,ms,62,84,22,35.48,false,ms,171,172,1,0.58,false,256
-mux.visual.spec.ts › renders a bus with two breakouts,ms,129,139,10,7.75,false,ms,115,125,10,8.70,false,264
-mux.visual.spec.ts › renders a mux node interpreted from SystemVerilog,ms,202,159,-43,-21.29,false,ms,161,122,-39,-24.22,false,281
-"generate_regions.visual.spec.ts › auto-layouts if, else-if, and else generate regions with ELK compound parents",ms,88,103,15,17.05,false,ms,236,179,-57,-24.15,false,282
-generate_regions.visual.spec.ts › resizes the right side of a generate region with a two-grid content clamp,ms,101,106,5,4.95,false,ms,221,176,-45,-20.36,false,282
-parameter.visual.spec.ts › renders parameter values and symbolic overrides on module instance blocks,ms,107,109,2,1.87,false,ms,178,174,-4,-2.25,false,283
-parameter.visual.spec.ts › stacks many instance parameters without truncating compile-time expressions,ms,110,113,3,2.73,false,ms,138,170,32,23.19,false,283
-nested_case.visual.spec.ts › renders sibling nested-case arms with identical labels as distinct literal nodes,ms,80,78,-2,-2.50,false,ms,197,206,9,4.57,false,284
-generate_regions.visual.spec.ts › resizes the bottom side of a generate region with a two-grid content clamp,ms,98,106,8,8.16,false,ms,196,182,-14,-7.14,false,288
-generate_regions.visual.spec.ts › resizes the top side of a generate region with a two-grid content clamp,ms,99,103,4,4.04,false,ms,187,190,3,1.60,false,293
-generate_regions.visual.spec.ts › auto-layouts all generate case arms with ELK compound parents,ms,105,108,3,2.86,false,ms,201,188,-13,-6.47,false,296
-generate_regions.visual.spec.ts › marquee-selects arms with the standard selection border and moves them together,ms,92,102,10,10.87,false,ms,197,195,-2,-1.02,false,297
-generate_regions.visual.spec.ts › renders all generate case arms from a fixture,ms,87,106,19,21.84,false,ms,186,192,6,3.23,false,298
-"generate_regions.visual.spec.ts › renders if, else-if, and else generate regions from a fixture",ms,101,107,6,5.94,false,ms,205,195,-10,-4.88,false,302
-generate_regions.visual.spec.ts › resizes the left side of a generate region with a two-grid content clamp,ms,95,109,14,14.74,false,ms,198,198,0,0.00,false,307
-mux.visual.spec.ts › renders a packed struct breakout with field annotations and a thick aggregate net,ms,175,178,3,1.71,false,ms,139,140,1,0.72,false,318
-mux.visual.spec.ts › renders an array input through a stacked register to an array output,ms,183,182,-1,-0.55,false,ms,132,147,15,11.36,false,329
-bus_composition.visual.spec.ts › renders per-element array assignments as stacked array composition,ms,156,123,-33,-21.15,false,ms,265,210,-55,-20.75,false,333
-mux.visual.spec.ts › renders a ternary expression as a two-way mux,ms,183,163,-20,-10.93,false,ms,122,180,58,47.54,false,343
-variable_bit_select_complex.visual.spec.ts › renders multiple variable bit select block combinations,ms,99,98,-1,-1.01,false,ms,253,247,-6,-2.37,false,345
-bus_composition.visual.spec.ts › renders an always_comb array assignment pattern as stacked array composition,ms,103,116,13,12.62,false,ms,216,230,14,6.48,false,346
-inout.visual.spec.ts › renders an I2C open-drain SDA line as a real-world inout usecase,ms,113,140,27,23.89,false,ms,230,207,-23,-10.00,false,347
-mux.visual.spec.ts › renders a register without reset,ms,154,201,47,30.52,false,ms,136,150,14,10.29,false,351
-mux.visual.spec.ts › renders a struct composition with field drivers merging into a thick aggregate net,ms,202,203,1,0.50,false,ms,141,152,11,7.80,false,355
-mux.visual.spec.ts › renders a register with recovered clock and reset ports,ms,155,197,42,27.10,false,ms,120,163,43,35.83,false,360
-bus_composition.visual.spec.ts › renders array element accesses as stacked array breakouts (single-bit),ms,145,147,2,1.38,false,ms,253,215,-38,-15.02,false,362
-"mux.visual.spec.ts › shows a declared net name directly on an uncut wire, with an alias popover for the rest of the chain",,,,,,,ms,334,367,33,9.88,false,367
-mux.visual.spec.ts › renders a clock-enabled register with feedback mux and reset,ms,192,208,16,8.33,false,ms,182,163,-19,-10.44,false,371
-mux.visual.spec.ts › renders a whole-array reset as a stacked register reset,ms,200,203,3,1.50,false,ms,163,168,5,3.07,false,371
-mux.visual.spec.ts › renders long mux signal names in the full webview,ms,198,199,1,0.51,false,ms,129,179,50,38.76,false,378
-mux.visual.spec.ts › renders cascaded arithmetic as a combinational block,ms,175,187,12,6.86,false,ms,181,198,17,9.39,false,385
-bus_composition.visual.spec.ts › renders an always_comb array assignment pattern as stacked array composition (single-bit),ms,143,124,-19,-13.29,false,ms,177,264,87,49.15,false,388
-mux.visual.spec.ts › renders connected arithmetic ALU ports with flat orthogonal connectors,ms,155,175,20,12.90,false,ms,180,217,37,20.56,false,392
-mux.visual.spec.ts › renders a scalar write through a stacked address mux into an array register,ms,162,193,31,19.14,false,ms,176,200,24,13.64,false,393
-mux.visual.spec.ts › renders cut labels for vertical reset connections on registers,,,,,,,ms,420,393,-27,-6.43,false,393
-mux.visual.spec.ts › renders muxes with different input counts,ms,232,245,13,5.60,false,ms,195,149,-46,-23.59,false,394
-mux.visual.spec.ts › renders selected stack outlines for array address mux and storage register,ms,152,201,49,32.24,false,ms,191,197,6,3.14,false,398
-mux.visual.spec.ts › renders cut labels for clock connections to stacked registers (plurality check),,,,,,,ms,413,411,-2,-0.48,false,411
-mux.visual.spec.ts › renders a register with active-low reset bar,ms,170,244,74,43.53,false,ms,182,169,-13,-7.14,false,413
-mux.visual.spec.ts › renders RV for a non-zero full-range reset loop,ms,205,228,23,11.22,false,ms,184,188,4,2.17,false,416
-mux.visual.spec.ts › renders a connected mux canvas interpreted from SystemVerilog,ms,225,258,33,14.67,false,ms,170,159,-11,-6.47,false,417
-bus_composition.visual.spec.ts › renders array element accesses as stacked array breakouts,ms,141,168,27,19.15,false,ms,194,252,58,29.90,false,420
-mux.visual.spec.ts › renders a stacked write-enable mux chained upstream of the stacked address mux for a conditional array write,ms,217,228,11,5.07,false,ms,166,195,29,17.47,false,423
-mux.visual.spec.ts › renders a ternary mux feeding its containing ALU,ms,301,233,-68,-22.59,false,ms,157,190,33,21.02,false,423
-mux.visual.spec.ts › renders a full-range zero reset loop on the stacked array register,ms,250,249,-1,-0.40,false,ms,165,181,16,9.70,false,430
-mux.visual.spec.ts › renders a full-range descending reset loop on the stacked array register,ms,198,255,57,28.79,false,ms,188,179,-9,-4.79,false,434
-bus_composition.visual.spec.ts › renders per-element array assignments as stacked array composition (single-bit),ms,193,192,-1,-0.52,false,ms,266,261,-5,-1.88,false,453
-mux.visual.spec.ts › renders nested ternaries as cascaded muxes,ms,324,288,-36,-11.11,false,ms,172,168,-4,-2.33,false,456
-param_bus_widths.visual.spec.ts › resolves a bus breakout on an interface field sized from an instance-overridden parameter,ms,306,317,11,3.59,false,ms,158,141,-17,-10.76,false,458
-mux.visual.spec.ts › renders struct field mux reads separately from output recomposition,ms,236,231,-5,-2.12,false,ms,224,238,14,6.25,false,469
-param_bus_widths.visual.spec.ts › resolves a bus breakout into taps sized from a parameterized input width,ms,325,319,-6,-1.85,false,ms,146,157,11,7.53,false,476
-"expand_instance.visual.spec.ts › example design: instr_mem with every instance expanded, outer auto-layout applied",,,,,,,ms,509,479,-30,-5.89,false,479
-mux.visual.spec.ts › renders junction dots for a branched same-source net,,,,,,,ms,511,482,-29,-5.68,false,482
-instance_array.visual.spec.ts › renders a [MSB:LSB] multi-instance instantiation as a single stacked instance node,ms,167,209,42,25.15,false,ms,311,275,-36,-11.58,false,484
-param_bus_widths.visual.spec.ts › resolves a bus composition whose replication count is a parameter expression,ms,298,320,22,7.38,false,ms,197,166,-31,-15.74,false,486
-"expand_instance.visual.spec.ts › example design: adder with every instance expanded, outer auto-layout applied",,,,,,,ms,473,491,18,3.81,false,491
-mux.visual.spec.ts › renders overlap hints for two manually routed assignments that share a segment,,,,,,,ms,534,492,-42,-7.87,false,492
-interface.visual.spec.ts › renders multi-modport interface instances with separate side taps and top inputs,ms,271,344,73,26.94,false,ms,171,150,-21,-12.28,false,494
-mux.visual.spec.ts › renders line jumps for two manually routed assignments that intersect,,,,,,,ms,402,496,94,23.38,false,496
-generate_regions.visual.spec.ts › renders the shared error highlight for each block type and a generate arm,,,,,,,ms,530,504,-26,-4.91,false,504
-"expand_instance.visual.spec.ts › example design: mux2 with every instance expanded, outer auto-layout applied",,,,,,,ms,501,505,4,0.80,false,505
-gate_chains.visual.spec.ts › flattens same-operator &&/|| chains and keeps mixed expressions opaque,ms,192,205,13,6.77,false,ms,327,303,-24,-7.34,false,508
-mux.visual.spec.ts › shows a single declared wire name with no alias marker,ms,168,169,1,0.60,false,ms,346,341,-5,-1.45,false,510
-"expand_instance.visual.spec.ts › selecting a single instance shows Expand; clicking it splices in the child module, Collapse removes it",,,,,,,ms,561,512,-49,-8.73,false,512
-"expand_instance.visual.spec.ts › example design: pc_reg with every instance expanded, outer auto-layout applied",,,,,,,ms,534,517,-17,-3.18,false,517
-mux.visual.spec.ts › renders a mux with complex literal expressions on side ports (write-enable decode case),ms,186,180,-6,-3.23,false,ms,202,342,140,69.31,false,522
-mux.visual.spec.ts › renders every current node kind widened for long labels,,,,,,,ms,536,524,-12,-2.24,false,524
-mux.visual.spec.ts › renders an array register with isometric stacking layers and a dimension badge,ms,266,255,-11,-4.14,false,ms,272,271,-1,-0.37,false,526
-mux.visual.spec.ts › renders a loop block with input and output connections,ms,204,283,79,38.73,false,ms,203,247,44,21.67,false,530
-expand_instance.visual.spec.ts › an instance with an overridden parameter expanded: spliced content clears the parameter chip row,,,,,,,ms,572,561,-11,-1.92,false,561
-bus_composition.visual.spec.ts › renders a bus composition node for multiple slice assignments,ms,299,315,16,5.35,false,ms,248,274,26,10.48,false,589
-mux.visual.spec.ts › shows no label on a plain assign with no intermediate wire,ms,139,174,35,25.18,false,ms,368,435,67,18.21,false,609
-"expand_instance.visual.spec.ts › example design: alu with every instance expanded, outer auto-layout applied",,,,,,,ms,604,615,11,1.82,false,615
-expand_instance.visual.spec.ts › a multi-node child: boundary leads carry the wire styles and every internal wire stays inside the frame,,,,,,,ms,615,617,2,0.33,false,617
-mux.visual.spec.ts › shows joined reroute and cut controls on edge hover,,,,,,,ms,559,619,60,10.73,false,619
-"expand_instance.visual.spec.ts › example design: register_file with every instance expanded, outer auto-layout applied",,,,,,,ms,644,667,23,3.57,false,667
-mux.visual.spec.ts › removes stale edge paths when switching to a smaller diagram,ms,940,675,-265,-28.19,false,,,,,,,675
-mux.visual.spec.ts › renders replication as a red xN block with distinct input and output nets,ms,303,357,54,17.82,false,ms,352,324,-28,-7.95,false,681
-"expand_instance.visual.spec.ts › example design: data_mem with every instance expanded, outer auto-layout applied",,,,,,,ms,897,685,-212,-23.63,false,685
-mux.visual.spec.ts › renders every current node kind at its default width,,,,,,,ms,816,694,-122,-14.95,false,694
-"expand_instance.visual.spec.ts › example design: imm_gen with every instance expanded, outer auto-layout applied",,,,,,,ms,607,703,96,15.82,false,703
-aggregate_assignment_branches.visual.spec.ts › renders one aggregate priority-mux chain and one final breakout,ms,220,251,31,14.09,false,ms,402,454,52,12.94,false,705
-intersection.visual.spec.ts › renders all wire types crossing combinations in both directions,,,,,,,ms,674,709,35,5.19,false,709
-mux.visual.spec.ts › shows the first-declared wire name with an alias popover for a multi-hop chain,ms,174,202,28,16.09,false,ms,451,528,77,17.07,false,730
-generate_regions.visual.spec.ts › flags a block that overlaps a generate block but no arm,,,,,,,ms,697,733,36,5.16,false,733
-mux.visual.spec.ts › renders cut labels above styled wire stubs of every kind,,,,,,,ms,754,737,-17,-2.25,false,737
-generate_regions.visual.spec.ts › shows warning icons when arm blocks overlap,,,,,,,ms,947,789,-158,-16.68,false,789
-generate_regions.visual.spec.ts › shows a warning icon when an arm block contains an unrelated node,,,,,,,ms,853,797,-56,-6.57,false,797
-"mux.visual.spec.ts › shows declared and freshly-cut labels in regular type (locked/unrenamed), and only a renamed one in italic with a Revert button",,,,,,,ms,880,815,-65,-7.39,false,815
-example_design.visual.spec.ts › renders the adder module,,,,,,,ms,858,842,-16,-1.86,false,842
-example_design.visual.spec.ts › renders the mux2 module,,,,,,,ms,813,851,38,4.67,false,851
-generate_regions.visual.spec.ts › flags both generate blocks when they overlap,,,,,,,ms,919,877,-42,-4.57,false,877
-example_design.visual.spec.ts › renders the instr_mem module,,,,,,,ms,862,887,25,2.90,false,887
-example_design.visual.spec.ts › renders the pc_reg module,,,,,,,ms,850,902,52,6.12,false,902
-example_design.visual.spec.ts › renders the imm_gen module,,,,,,,ms,953,996,43,4.51,false,996
-example_design.visual.spec.ts › renders the data_mem module,,,,,,,ms,1028,1037,9,0.88,false,1037
-enum_concat_case.visual.spec.ts › renders correct bus tap widths for an instantiated case-selector concat,,,,,,,ms,1188,1068,-120,-10.10,false,1068
-example_design.visual.spec.ts › renders the alu module,,,,,,,ms,1053,1139,86,8.17,false,1139
-"expand_instance.visual.spec.ts › example design: control_unit with every instance expanded, outer auto-layout applied",,,,,,,ms,1160,1140,-20,-1.72,false,1140
-mux.visual.spec.ts › highlights a drag-selected dangling end with the same halo and name style as its hovered net,,,,,,,ms,1348,1249,-99,-7.34,false,1249
-typing.visual.spec.ts › renders enum literal type links as clickable,ms,42,44,2,4.76,false,ms,1263,1228,-35,-2.77,false,1272
-typing.visual.spec.ts › keeps user type labels off module instance ports,ms,46,48,2,4.35,false,ms,1237,1233,-4,-0.32,false,1281
-typing.visual.spec.ts › renders parametric port widths as clickable parameter tokens,ms,101,100,-1,-0.99,false,ms,1152,1200,48,4.17,false,1300
-example_design.visual.spec.ts › renders the register_file module,,,,,,,ms,1248,1342,94,7.53,false,1342
-generate_regions.visual.spec.ts › selects a region on single click and keeps it highlighted while moving,ms,95,104,9,9.47,false,ms,1228,1246,18,1.47,false,1350
-"expand_instance.visual.spec.ts › example design: cpu_top with u_alu expanded, outer auto-layout applied",,,,,,,ms,1330,1414,84,6.32,false,1414
-elk_geometry.visual.spec.ts › shows elk bounds and port anchors for every node kind,ms,17,20,3,17.65,false,ms,1404,1477,73,5.20,false,1497
-"gate_curved_edge.visual.spec.ts › wires reach the concave edge of OR/NOR/XOR/XNOR gates for 2, 3, 4, 5, and 10 inputs",,,,,,,ms,1612,1548,-64,-3.97,false,1548
-example_design.visual.spec.ts › renders the control_unit module,,,,,,,ms,1526,1570,44,2.88,false,1570
-example_design.visual.spec.ts › renders the cpu_top module,,,,,,,ms,1585,1712,127,8.01,false,1712
-interface.visual.spec.ts › renders alternate multi-modport interface arrangements,ms,1462,1946,484,33.11,false,ms,137,136,-1,-0.73,false,2082
-interface.visual.spec.ts › renders interface instance scalar outputs with a bottom cap,ms,1451,1953,502,34.60,false,ms,145,138,-7,-4.83,false,2091
-interface.visual.spec.ts › renders modules with multiple interface modport ports,ms,1450,1945,495,34.14,false,ms,145,149,4,2.76,false,2094
-interface.visual.spec.ts › renders a gate whose operand is an inverted interface field with a single clean driver,ms,1472,1990,518,35.19,false,ms,125,155,30,24.00,false,2145
-example_design.visual.spec.ts › cpu example design elaboration (shared),ms,3911,3911,0,0.00,false,,,,,,,3911
-"expand_instance.visual.spec.ts › example design: cpu_top with every instance expanded, outer auto-layout applied",,,,,,,ms,4240,4247,7,0.17,false,4247
+selection_styles.visual.spec.ts › shows the selection outline for every node kind,ms,27,32,5,18.52,false,,,,,,,32
+interface.visual.spec.ts › renders an interface view without modports as a blue breakout,ms,12,17,5,41.67,false,ms,85,106,21,24.71,false,123
+interface.visual.spec.ts › renders interface scalar caps without side modports,ms,15,23,8,53.33,false,ms,105,118,13,12.38,false,141
+port_array.visual.spec.ts › stacked port selection covers the entire stack,ms,24,22,-2,-8.33,false,ms,166,152,-14,-8.43,false,174
+typing.visual.spec.ts › renders enum types instead of widths for ports and registers,ms,43,34,-9,-20.93,false,ms,148,151,3,2.03,false,185
+struct_passing.visual.spec.ts › renders thick aggregate edges for structs passed between modules,ms,80,65,-15,-18.75,false,ms,137,134,-3,-2.19,false,199
+latch.visual.spec.ts › renders a mux hold loop as a single node feeding back into itself,ms,32,56,24,75.00,false,ms,121,148,27,22.31,false,204
+mixed_select_breakout.visual.spec.ts › renders both bus breakout and variable select from same input,ms,30,52,22,73.33,false,ms,123,155,32,26.02,false,207
+parameter.visual.spec.ts › renders module parameters and symbolic port widths as inline metadata,ms,111,86,-25,-22.52,false,ms,113,124,11,9.73,false,210
+latch.visual.spec.ts › renders a structural cross-coupled NOR SR latch with feedback edges,ms,35,63,28,80.00,false,ms,134,148,14,10.45,false,211
+"inout.visual.spec.ts › routes a mux into a multi-bit boundary inout port with no overlap, same as the scalar case",ms,30,49,19,63.33,false,ms,136,163,27,19.85,false,212
+latch.visual.spec.ts › renders a structural cross-coupled NAND SR latch with feedback edges,ms,35,61,26,74.29,false,ms,111,154,43,38.74,false,215
+inout.visual.spec.ts › renders boundary and instance inout ports as bidirectional,ms,82,76,-6,-7.32,false,ms,156,140,-16,-10.26,false,216
+typing.visual.spec.ts › keeps struct wires unlabeled by type name,ms,47,40,-7,-14.89,false,ms,174,176,2,1.15,false,216
+variable_bit_select.visual.spec.ts › renders variable bit select block,ms,52,69,17,32.69,false,ms,182,165,-17,-9.34,false,234
+interface.visual.spec.ts › renders interface modports as dual-sided harnesses,ms,57,98,41,71.93,false,ms,129,138,9,6.98,false,236
+parameter.visual.spec.ts › stacks many instance parameters without truncating compile-time expressions,ms,110,91,-19,-17.27,false,ms,138,151,13,9.42,false,242
+mux.visual.spec.ts › renders connected combinational ports with flat orthogonal connectors,ms,90,112,22,24.44,false,ms,106,132,26,24.53,false,244
+interface.visual.spec.ts › renders interface ports and patterned aggregate edges,ms,60,96,36,60.00,false,ms,118,158,40,33.90,false,254
+latch.visual.spec.ts › renders an S-R latch as a case-selected mux feeding an inferred latch,ms,54,89,35,64.81,false,ms,154,165,11,7.14,false,254
+mux.visual.spec.ts › renders a bus with one breakout,ms,108,107,-1,-0.93,false,ms,99,150,51,51.52,false,257
+generate_regions.visual.spec.ts › resizes the bottom side of a generate region with a two-grid content clamp,ms,98,99,1,1.02,false,ms,196,164,-32,-16.33,false,263
+nested_case.visual.spec.ts › renders sibling nested-case arms with identical labels as distinct literal nodes,ms,80,66,-14,-17.50,false,ms,197,199,2,1.02,false,265
+parameter.visual.spec.ts › renders parameter values and symbolic overrides on module instance blocks,ms,107,94,-13,-12.15,false,ms,178,174,-4,-2.25,false,268
+generate_regions.visual.spec.ts › auto-layouts all generate case arms with ELK compound parents,ms,105,99,-6,-5.71,false,ms,201,179,-22,-10.95,false,278
+"generate_regions.visual.spec.ts › auto-layouts if, else-if, and else generate regions with ELK compound parents",ms,88,98,10,11.36,false,ms,236,181,-55,-23.31,false,279
+generate_regions.visual.spec.ts › resizes the left side of a generate region with a two-grid content clamp,ms,95,99,4,4.21,false,ms,198,183,-15,-7.58,false,282
+generate_regions.visual.spec.ts › renders all generate case arms from a fixture,ms,87,94,7,8.05,false,ms,186,197,11,5.91,false,291
+generate_regions.visual.spec.ts › resizes the right side of a generate region with a two-grid content clamp,ms,101,92,-9,-8.91,false,ms,221,199,-22,-9.95,false,291
+"generate_regions.visual.spec.ts › renders if, else-if, and else generate regions from a fixture",ms,101,96,-5,-4.95,false,ms,205,201,-4,-1.95,false,297
+generate_regions.visual.spec.ts › marquee-selects arms with the standard selection border and moves them together,ms,92,90,-2,-2.17,false,ms,197,210,13,6.60,false,300
+inverter.visual.spec.ts › renders scalar and vector bitwise inversion as inverter gates,ms,62,107,45,72.58,false,ms,171,194,23,13.45,false,301
+generate_regions.visual.spec.ts › resizes the top side of a generate region with a two-grid content clamp,ms,99,94,-5,-5.05,false,ms,187,216,29,15.51,false,310
+bus_composition.visual.spec.ts › renders per-element array assignments as stacked array composition,ms,156,111,-45,-28.85,false,ms,265,204,-61,-23.02,false,315
+mux.visual.spec.ts › renders a variable-index array read as a flat mux fed by converging stacked wires,ms,100,115,15,15.00,false,ms,147,205,58,39.46,false,320
+bus_composition.visual.spec.ts › renders an always_comb array assignment pattern as stacked array composition,ms,103,107,4,3.88,false,ms,216,221,5,2.31,false,328
+mux.visual.spec.ts › renders a ternary expression as a two-way mux,ms,183,190,7,3.83,false,ms,122,139,17,13.93,false,329
+"inout.visual.spec.ts › routes an unpacked-array boundary inout port as a single hub edge, not a duplicate from the array composition",ms,51,84,33,64.71,false,ms,202,246,44,21.78,false,330
+latch.visual.spec.ts › renders a gated D-latch built from four cross-coupled NAND gates,ms,72,121,49,68.06,false,ms,154,212,58,37.66,false,333
+variable_bit_select_complex.visual.spec.ts › renders multiple variable bit select block combinations,ms,99,84,-15,-15.15,false,ms,253,257,4,1.58,false,341
+bus_composition.visual.spec.ts › renders an always_comb array assignment pattern as stacked array composition (single-bit),ms,143,113,-30,-20.98,false,ms,177,231,54,30.51,false,344
+bus_composition.visual.spec.ts › renders array element accesses as stacked array breakouts (single-bit),ms,145,161,16,11.03,false,ms,253,193,-60,-23.72,false,354
+mux.visual.spec.ts › renders a packed struct breakout with field annotations and a thick aggregate net,ms,175,177,2,1.14,false,ms,139,192,53,38.13,false,369
+mux.visual.spec.ts › renders a mux node interpreted from SystemVerilog,ms,202,226,24,11.88,false,ms,161,149,-12,-7.45,false,375
+mux.visual.spec.ts › renders a bus with two breakouts,ms,129,172,43,33.33,false,ms,115,204,89,77.39,false,376
+mux.visual.spec.ts › renders a bus with three overlapping breakouts,ms,148,157,9,6.08,false,ms,116,220,104,89.66,false,377
+mux.visual.spec.ts › renders cut labels for vertical reset connections on registers,,,,,,,ms,420,379,-41,-9.76,false,379
+mux.visual.spec.ts › renders a register without reset,ms,154,202,48,31.17,false,ms,136,187,51,37.50,false,389
+mux.visual.spec.ts › renders a whole-array reset as a stacked register reset,ms,200,219,19,9.50,false,ms,163,180,17,10.43,false,399
+param_bus_widths.visual.spec.ts › resolves a bus composition whose replication count is a parameter expression,ms,298,254,-44,-14.77,false,ms,197,148,-49,-24.87,false,402
+mux.visual.spec.ts › renders connected arithmetic ALU ports with flat orthogonal connectors,ms,155,178,23,14.84,false,ms,180,226,46,25.56,false,404
+mux.visual.spec.ts › renders cut labels for clock connections to stacked registers (plurality check),,,,,,,ms,413,405,-8,-1.94,false,405
+mux.visual.spec.ts › renders cascaded arithmetic as a combinational block,ms,175,160,-15,-8.57,false,ms,181,253,72,39.78,false,413
+"mux.visual.spec.ts › shows a declared net name directly on an uncut wire, with an alias popover for the rest of the chain",,,,,,,ms,334,422,88,26.35,false,422
+bus_composition.visual.spec.ts › renders per-element array assignments as stacked array composition (single-bit),ms,193,161,-32,-16.58,false,ms,266,262,-4,-1.50,false,423
+mux.visual.spec.ts › renders an array input through a stacked register to an array output,ms,183,238,55,30.05,false,ms,132,187,55,41.67,false,425
+inout.visual.spec.ts › renders an I2C open-drain SDA line as a real-world inout usecase,ms,113,177,64,56.64,false,ms,230,253,23,10.00,false,430
+mux.visual.spec.ts › renders a register with recovered clock and reset ports,ms,155,190,35,22.58,false,ms,120,240,120,100.00,false,430
+mux.visual.spec.ts › renders a register with active-low reset bar,ms,170,241,71,41.76,false,ms,182,190,8,4.40,false,431
+param_bus_widths.visual.spec.ts › resolves a bus breakout into taps sized from a parameterized input width,ms,325,277,-48,-14.77,false,ms,146,154,8,5.48,false,431
+mux.visual.spec.ts › renders line jumps for two manually routed assignments that intersect,,,,,,,ms,402,441,39,9.70,false,441
+mux.visual.spec.ts › renders long mux signal names in the full webview,ms,198,291,93,46.97,false,ms,129,156,27,20.93,false,447
+param_bus_widths.visual.spec.ts › resolves a bus breakout on an interface field sized from an instance-overridden parameter,ms,306,266,-40,-13.07,false,ms,158,185,27,17.09,false,451
+"expand_instance.visual.spec.ts › example design: instr_mem with every instance expanded, outer auto-layout applied",,,,,,,ms,509,451,-58,-11.39,false,451
+mux.visual.spec.ts › renders a loop block with input and output connections,ms,204,237,33,16.18,false,ms,203,221,18,8.87,false,458
+mux.visual.spec.ts › renders a scalar write through a stacked address mux into an array register,ms,162,237,75,46.30,false,ms,176,221,45,25.57,false,458
+mux.visual.spec.ts › renders junction dots for a branched same-source net,,,,,,,ms,511,465,-46,-9.00,false,465
+mux.visual.spec.ts › renders a connected mux canvas interpreted from SystemVerilog,ms,225,295,70,31.11,false,ms,170,175,5,2.94,false,470
+mux.visual.spec.ts › renders RV for a non-zero full-range reset loop,ms,205,264,59,28.78,false,ms,184,215,31,16.85,false,479
+gate_chains.visual.spec.ts › flattens same-operator &&/|| chains and keeps mixed expressions opaque,ms,192,187,-5,-2.60,false,ms,327,295,-32,-9.79,false,482
+"expand_instance.visual.spec.ts › example design: adder with every instance expanded, outer auto-layout applied",,,,,,,ms,473,486,13,2.75,false,486
+"expand_instance.visual.spec.ts › example design: pc_reg with every instance expanded, outer auto-layout applied",,,,,,,ms,534,502,-32,-5.99,false,502
+mux.visual.spec.ts › renders a clock-enabled register with feedback mux and reset,ms,192,227,35,18.23,false,ms,182,279,97,53.30,false,506
+mux.visual.spec.ts › shows joined reroute and cut controls on edge hover,,,,,,,ms,559,513,-46,-8.23,false,513
+mux.visual.spec.ts › renders selected stack outlines for array address mux and storage register,ms,152,250,98,64.47,false,ms,191,264,73,38.22,false,514
+mux.visual.spec.ts › renders a ternary mux feeding its containing ALU,ms,301,322,21,6.98,false,ms,157,193,36,22.93,false,515
+"expand_instance.visual.spec.ts › example design: mux2 with every instance expanded, outer auto-layout applied",,,,,,,ms,501,517,16,3.19,false,517
+generate_regions.visual.spec.ts › renders the shared error highlight for each block type and a generate arm,,,,,,,ms,530,518,-12,-2.26,false,518
+mux.visual.spec.ts › renders a struct composition with field drivers merging into a thick aggregate net,ms,202,254,52,25.74,false,ms,141,266,125,88.65,false,520
+mux.visual.spec.ts › renders a full-range zero reset loop on the stacked array register,ms,250,235,-15,-6.00,false,ms,165,290,125,75.76,false,525
+mux.visual.spec.ts › shows a single declared wire name with no alias marker,ms,168,155,-13,-7.74,false,ms,346,374,28,8.09,false,529
+mux.visual.spec.ts › renders every current node kind widened for long labels,,,,,,,ms,536,531,-5,-0.93,false,531
+bus_composition.visual.spec.ts › renders a bus composition node for multiple slice assignments,ms,299,276,-23,-7.69,false,ms,248,270,22,8.87,false,546
+mux.visual.spec.ts › renders a full-range descending reset loop on the stacked array register,ms,198,296,98,49.49,false,ms,188,253,65,34.57,false,549
+mux.visual.spec.ts › renders overlap hints for two manually routed assignments that share a segment,,,,,,,ms,534,549,15,2.81,false,549
+mux.visual.spec.ts › renders muxes with different input counts,ms,232,327,95,40.95,false,ms,195,223,28,14.36,false,550
+"expand_instance.visual.spec.ts › selecting a single instance shows Expand; clicking it splices in the child module, Collapse removes it",,,,,,,ms,561,554,-7,-1.25,false,554
+expand_instance.visual.spec.ts › an instance with an overridden parameter expanded: spliced content clears the parameter chip row,,,,,,,ms,572,567,-5,-0.87,false,567
+mux.visual.spec.ts › shows no label on a plain assign with no intermediate wire,ms,139,189,50,35.97,false,ms,368,383,15,4.08,false,572
+expand_instance.visual.spec.ts › a multi-node child: boundary leads carry the wire styles and every internal wire stays inside the frame,,,,,,,ms,615,579,-36,-5.85,false,579
+mux.visual.spec.ts › renders a stacked write-enable mux chained upstream of the stacked address mux for a conditional array write,ms,217,263,46,21.20,false,ms,166,319,153,92.17,false,582
+mux.visual.spec.ts › renders a mux with complex literal expressions on side ports (write-enable decode case),ms,186,314,128,68.82,false,ms,202,293,91,45.05,false,607
+"expand_instance.visual.spec.ts › example design: alu with every instance expanded, outer auto-layout applied",,,,,,,ms,604,613,9,1.49,false,613
+mux.visual.spec.ts › renders nested ternaries as cascaded muxes,ms,324,337,13,4.01,false,ms,172,279,107,62.21,false,616
+bus_composition.visual.spec.ts › renders array element accesses as stacked array breakouts,ms,141,219,78,55.32,false,ms,194,398,204,105.15,false,617
+interface.visual.spec.ts › renders multi-modport interface instances with separate side taps and top inputs,ms,271,439,168,61.99,false,ms,171,187,16,9.36,false,626
+instance_array.visual.spec.ts › renders a [MSB:LSB] multi-instance instantiation as a single stacked instance node,ms,167,273,106,63.47,false,ms,311,356,45,14.47,false,629
+"expand_instance.visual.spec.ts › example design: register_file with every instance expanded, outer auto-layout applied",,,,,,,ms,644,644,0,0.00,false,644
+"expand_instance.visual.spec.ts › example design: imm_gen with every instance expanded, outer auto-layout applied",,,,,,,ms,607,658,51,8.40,false,658
+generate_regions.visual.spec.ts › flags a block that overlaps a generate block but no arm,,,,,,,ms,697,674,-23,-3.30,false,674
+mux.visual.spec.ts › renders replication as a red xN block with distinct input and output nets,ms,303,318,15,4.95,false,ms,352,364,12,3.41,false,682
+aggregate_assignment_branches.visual.spec.ts › renders one aggregate priority-mux chain and one final breakout,ms,220,249,29,13.18,false,ms,402,436,34,8.46,false,685
+mux.visual.spec.ts › shows the first-declared wire name with an alias popover for a multi-hop chain,ms,174,176,2,1.15,false,ms,451,510,59,13.08,false,686
+mux.visual.spec.ts › renders an array register with isometric stacking layers and a dimension badge,ms,266,255,-11,-4.14,false,ms,272,433,161,59.19,false,688
+mux.visual.spec.ts › renders struct field mux reads separately from output recomposition,ms,236,274,38,16.10,false,ms,224,440,216,96.43,false,714
+"expand_instance.visual.spec.ts › example design: data_mem with every instance expanded, outer auto-layout applied",,,,,,,ms,897,724,-173,-19.29,false,724
+mux.visual.spec.ts › renders cut labels above styled wire stubs of every kind,,,,,,,ms,754,734,-20,-2.65,false,734
+mux.visual.spec.ts › renders every current node kind at its default width,,,,,,,ms,816,738,-78,-9.56,false,738
+generate_regions.visual.spec.ts › shows warning icons when arm blocks overlap,,,,,,,ms,947,739,-208,-21.96,false,739
+mux.visual.spec.ts › removes stale edge paths when switching to a smaller diagram,ms,940,773,-167,-17.77,false,,,,,,,773
+intersection.visual.spec.ts › renders all wire types crossing combinations in both directions,,,,,,,ms,674,801,127,18.84,false,801
+generate_regions.visual.spec.ts › flags both generate blocks when they overlap,,,,,,,ms,919,824,-95,-10.34,false,824
+example_design.visual.spec.ts › renders the mux2 module,,,,,,,ms,813,833,20,2.46,false,833
+generate_regions.visual.spec.ts › shows a warning icon when an arm block contains an unrelated node,,,,,,,ms,853,842,-11,-1.29,false,842
+example_design.visual.spec.ts › renders the pc_reg module,,,,,,,ms,850,867,17,2.00,false,867
+example_design.visual.spec.ts › renders the instr_mem module,,,,,,,ms,862,878,16,1.86,false,878
+example_design.visual.spec.ts › renders the adder module,,,,,,,ms,858,889,31,3.61,false,889
+"mux.visual.spec.ts › shows declared and freshly-cut labels in regular type (locked/unrenamed), and only a renamed one in italic with a Revert button",,,,,,,ms,880,897,17,1.93,false,897
+example_design.visual.spec.ts › renders the imm_gen module,,,,,,,ms,953,978,25,2.62,false,978
+example_design.visual.spec.ts › renders the data_mem module,,,,,,,ms,1028,1030,2,0.19,false,1030
+enum_concat_case.visual.spec.ts › renders correct bus tap widths for an instantiated case-selector concat,,,,,,,ms,1188,1087,-101,-8.50,false,1087
+example_design.visual.spec.ts › renders the alu module,,,,,,,ms,1053,1091,38,3.61,false,1091
+"expand_instance.visual.spec.ts › example design: control_unit with every instance expanded, outer auto-layout applied",,,,,,,ms,1160,1113,-47,-4.05,false,1113
+typing.visual.spec.ts › keeps user type labels off module instance ports,ms,46,39,-7,-15.22,false,ms,1237,1135,-102,-8.25,false,1174
+typing.visual.spec.ts › renders enum literal type links as clickable,ms,42,35,-7,-16.67,false,ms,1263,1168,-95,-7.52,false,1203
+typing.visual.spec.ts › renders parametric port widths as clickable parameter tokens,ms,101,83,-18,-17.82,false,ms,1152,1146,-6,-0.52,false,1229
+example_design.visual.spec.ts › renders the register_file module,,,,,,,ms,1248,1284,36,2.88,false,1284
+mux.visual.spec.ts › highlights a drag-selected dangling end with the same halo and name style as its hovered net,,,,,,,ms,1348,1290,-58,-4.30,false,1290
+generate_regions.visual.spec.ts › selects a region on single click and keeps it highlighted while moving,ms,95,92,-3,-3.16,false,ms,1228,1250,22,1.79,false,1342
+"expand_instance.visual.spec.ts › example design: cpu_top with u_alu expanded, outer auto-layout applied",,,,,,,ms,1330,1360,30,2.26,false,1360
+"gate_curved_edge.visual.spec.ts › wires reach the concave edge of OR/NOR/XOR/XNOR gates for 2, 3, 4, 5, and 10 inputs",,,,,,,ms,1612,1397,-215,-13.34,false,1397
+elk_geometry.visual.spec.ts › shows elk bounds and port anchors for every node kind,ms,17,21,4,23.53,false,ms,1404,1456,52,3.70,false,1477
+example_design.visual.spec.ts › renders the control_unit module,,,,,,,ms,1526,1577,51,3.34,false,1577
+example_design.visual.spec.ts › renders the cpu_top module,,,,,,,ms,1585,1651,66,4.16,false,1651
+interface.visual.spec.ts › renders alternate multi-modport interface arrangements,ms,1462,2458,996,68.13,false,ms,137,153,16,11.68,false,2611
+interface.visual.spec.ts › renders interface instance scalar outputs with a bottom cap,ms,1451,2468,1017,70.09,false,ms,145,157,12,8.28,false,2625
+interface.visual.spec.ts › renders modules with multiple interface modport ports,ms,1450,2475,1025,70.69,false,ms,145,176,31,21.38,false,2651
+interface.visual.spec.ts › renders a gate whose operand is an inverted interface field with a single clean driver,ms,1472,2543,1071,72.76,false,ms,125,179,54,43.20,false,2722
+"expand_instance.visual.spec.ts › example design: cpu_top with every instance expanded, outer auto-layout applied",,,,,,,ms,4240,4059,-181,-4.27,false,4059
+example_design.visual.spec.ts › cpu example design elaboration (shared),ms,3911,4204,293,7.49,false,,,,,,,4204
