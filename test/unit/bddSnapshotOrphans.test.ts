@@ -147,4 +147,16 @@ describe('findOrphanedBddSnapshots', () => {
     expect(orphans).toHaveLength(1);
     expect(orphans[0].reason).toContain('step suffix');
   });
+
+  it('finds live scenarios in feature files nested under subdirectories', () => {
+    const subDir = path.join(featuresDir, 'diagram_interaction');
+    fs.mkdirSync(subDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(subDir, 'cutting.feature'),
+      `Feature: cutting\n\n  Scenario: Cutting a net\n    Given x\n`,
+    );
+    touch('cutting-a-net--01--after-cut.png');
+    touch('cutting-a-net--01--after-cut.json');
+    expect(findOrphanedBddSnapshots(featuresDir, snapshotsDir)).toEqual([]);
+  });
 });
