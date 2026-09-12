@@ -108,7 +108,7 @@
         "y": 24
       },
       "width": 96,
-      "height": 144,
+      "height": 168,
       "data": {
         "kind": "register",
         "ports": [
@@ -148,7 +148,7 @@
       "target": "reg:compound_event_unmatched:q",
       "sourceHandle": "port:a",
       "targetHandle": "a",
-      "path": "M 144 96 L 168 96 L 336 96 L 360 96"
+      "path": "M 144 96 L 168 96 L 336 96 L 336 120 L 360 120"
     },
     {
       "id": "edge:port:compound_event_unmatched:b:reg:compound_event_unmatched:q:b",
@@ -156,7 +156,7 @@
       "target": "reg:compound_event_unmatched:q",
       "sourceHandle": "port:b",
       "targetHandle": "b",
-      "path": "M 144 144 L 168 144 L 240 144 L 240 120 L 336 120 L 360 120"
+      "path": "M 144 144 L 168 144 L 336 144 L 360 144"
     },
     {
       "id": "edge:port:compound_event_unmatched:c:reg:compound_event_unmatched:q:c",
@@ -164,7 +164,7 @@
       "target": "reg:compound_event_unmatched:q",
       "sourceHandle": "port:c",
       "targetHandle": "c",
-      "path": "M 144 192 L 168 192 L 264 192 L 264 144 L 336 144 L 360 144"
+      "path": "M 144 192 L 168 192 L 264 192 L 264 168 L 336 168 L 360 168"
     },
     {
       "id": "edge:port:compound_event_unmatched:d:reg:compound_event_unmatched:q:d",

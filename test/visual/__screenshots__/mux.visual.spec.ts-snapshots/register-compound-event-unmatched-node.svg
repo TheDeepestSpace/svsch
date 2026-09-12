@@ -874,7 +874,9 @@ text {
 }
 
 .hdl-node-module,
-.hdl-node-instance {
+.hdl-node-instance,
+.hdl-node-funcCall,
+.hdl-node-taskCall {
   box-shadow: inset 0 0 0 1px var(--vscode-charts-blue);
   padding: 0 12px;
 }
@@ -2082,6 +2084,8 @@ text {
 }
 .hdl-node-instance .svsch-node-shape,
 .hdl-node-module .svsch-node-shape,
+.hdl-node-funcCall .svsch-node-shape,
+.hdl-node-taskCall .svsch-node-shape,
 .svsch-node-shape.hdl-node-instance {
   stroke: var(--vscode-charts-blue);
 }
@@ -2737,8 +2741,8 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="reg:compound_event_unmatched:q" data-node-kind="register" transform="translate(360 24)">
-<svg class="hdl-node-svg" width="96" height="144" aria-hidden="true">
-<rect class="svsch-node-shape" width="96" height="144"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>q</tspan></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-event-port"><svg x="-4" y="90" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg><text class="svsch-port-label" x="14" y="96" dominant-baseline="middle">a</text></g><g class="svsch-register-event-port"><svg x="-4" y="114" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg><text class="svsch-port-label" x="14" y="120" dominant-baseline="middle">b</text></g><g class="svsch-register-event-port"><svg x="-4" y="126" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path><circle class="register-event-bobble" cx="-1.5" cy="6" r="2.25"></circle></svg><text class="svsch-port-label" x="14" y="132" dominant-baseline="middle">c</text></g>
+<svg class="hdl-node-svg" width="96" height="168" aria-hidden="true">
+<rect class="svsch-node-shape" width="96" height="168"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>q</tspan></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-event-port"><svg x="-4" y="90" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg><text class="svsch-port-label" x="14" y="96" dominant-baseline="middle">a</text></g><g class="svsch-register-event-port"><svg x="-4" y="114" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg><text class="svsch-port-label" x="14" y="120" dominant-baseline="middle">b</text></g><g class="svsch-register-event-port"><svg x="-4" y="138" width="16" height="12" viewBox="-4 0 16 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path><circle class="register-event-bobble" cx="-1.5" cy="6" r="2.25"></circle></svg><text class="svsch-port-label" x="14" y="144" dominant-baseline="middle">c</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:compound_event_unmatched:a" data-node-kind="port" transform="translate(24 84)">
