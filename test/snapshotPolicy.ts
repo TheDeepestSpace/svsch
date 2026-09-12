@@ -25,16 +25,17 @@ export const SNAPSHOT_THRESHOLDS = {
       cutOutBlockStubMove: 500,
       // partial-diagram-interaction-auto-layout-visibility-{01,02} capture the
       // partial pane right after "Add to Partial" populates it fresh with two
-      // nodes. Unlike cutOutBlockStubMove above, this isn't purely
-      // antialiasing — the pane's fitView can genuinely land at one of two
-      // stable zoom levels for the same two-node input (observed up to
-      // ~4967px, real node/diagram pixels affected, reproduces even after
-      // hardening the test's own settle/width-stability waits — issue #408).
-      // The two outcomes are each internally consistent, well-formed
-      // renders, not a broken layout, so this is a known-nondeterminism
-      // tolerance rather than a real-regression mask; a from-scratch fix
-      // belongs in the fitView/layout-timing code, not this test suite.
-      // Sized with headroom over the largest observed diff.
+      // nodes. Unlike cutOutBlockStubMove above, this wasn't purely
+      // antialiasing — the pane's one-shot fitView used to land at one of
+      // several stable zoom levels for the same two-node input (observed up
+      // to ~9435px, real node/diagram pixels affected — issue #408) whenever
+      // it fired while the pane's editor group was still animating open.
+      // src/webview/main.tsx now re-runs the fit when the pane size changes
+      // under an untouched camera (regression-tested by "Partial pane
+      // re-fits after its editor group grows to full width" in
+      // partial_diagram_interactions.spec.ts), so the fit is deterministic;
+      // this tolerance is kept as-is until CI history confirms the fix holds
+      // there too, at which point it can drop back to the suite default.
       partialDiagramAutoLayoutVisibility: 6000,
     },
   },
