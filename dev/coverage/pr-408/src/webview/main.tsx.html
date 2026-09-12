@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/1174</span>
+                <span class='fraction'>0/1178</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/276</span>
+                <span class='fraction'>0/278</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/1004</span>
+                <span class='fraction'>0/1006</span>
             </div>
         
             
@@ -3207,7 +3207,18 @@
 <a name='L3142'></a><a href='#L3142'>3142</a>
 <a name='L3143'></a><a href='#L3143'>3143</a>
 <a name='L3144'></a><a href='#L3144'>3144</a>
-<a name='L3145'></a><a href='#L3145'>3145</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L3145'></a><a href='#L3145'>3145</a>
+<a name='L3146'></a><a href='#L3146'>3146</a>
+<a name='L3147'></a><a href='#L3147'>3147</a>
+<a name='L3148'></a><a href='#L3148'>3148</a>
+<a name='L3149'></a><a href='#L3149'>3149</a>
+<a name='L3150'></a><a href='#L3150'>3150</a>
+<a name='L3151'></a><a href='#L3151'>3151</a>
+<a name='L3152'></a><a href='#L3152'>3152</a>
+<a name='L3153'></a><a href='#L3153'>3153</a>
+<a name='L3154'></a><a href='#L3154'>3154</a>
+<a name='L3155'></a><a href='#L3155'>3155</a>
+<a name='L3156'></a><a href='#L3156'>3156</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -4570,6 +4581,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -7715,6 +7737,17 @@ function <span class="fstat-no" title="function not covered" >DiagramApp(): Reac
     }
   }, [nodes, updateNodeInternals]);
 &nbsp;
+  // React Flow tracks its own pane size via a live ResizeObserver (see
+  // `paneWidth`/`paneHeight` below), which keeps changing for a few frames
+  // after a view first mounts inside a container that's still animating
+  // open (e.g. VS Code's editor-group split when a partial-diagram pane is
+  // created). fitView only ever runs once per view (guarded by
+  // `fittedModuleNameRef`), so fitting against a transient size sticks at
+  // the wrong zoom for the rest of the session. Debounce on the pane's
+  // tracked dimensions so fitView only fires once they've stopped moving.
+  const paneWidth = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useStore((s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.width)</span>;</span>
+  const paneHeight = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useStore((s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.height)</span>;</span>
+&nbsp;
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >  useEffect(() =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >    if (!view || nodes.length === 0) {</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
@@ -7731,11 +7764,11 @@ function <span class="fstat-no" title="function not covered" >DiagramApp(): Reac
     const timeout = <span class="cstat-no" title="statement not covered" >window.<span class="fstat-no" title="function not covered" >setTimeout(() =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >      reactFlow.fitView({ padding: 0.2 });</span>
 <span class="cstat-no" title="statement not covered" >      fittedModuleNameRef.current = view.moduleName;</span>
-    }, 0);
+    }, 100);
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >    return () =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >      window.clearTimeout(timeout);</span>
     };
-  }, [nodes, reactFlow, view]);
+  }, [nodes, reactFlow, view, paneWidth, paneHeight]);
 &nbsp;
   const onNodeDragStart = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useCallback(</span></span>
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[]) =&gt; {
@@ -9502,7 +9535,7 @@ function <span class="fstat-no" title="function not covered" >snapRegionBounds(<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-12T03:04:35.717Z
+                at 2026-09-12T03:32:00.833Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
