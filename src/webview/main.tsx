@@ -2672,9 +2672,9 @@ function NodeSelectionToolbar({
               type="button"
               className="svsch-selection-collapse-control"
               title={
-                activeSplice.expansionKind === 'funcCall'
+                collapseSplice.expansionKind === 'funcCall'
                   ? "Collapse this function's unfolded logic"
-                  : activeSplice.expansionKind === 'taskCall'
+                  : collapseSplice.expansionKind === 'taskCall'
                     ? "Collapse this task's unfolded logic"
                     : "Collapse this instance's unfolded diagram"
               }
