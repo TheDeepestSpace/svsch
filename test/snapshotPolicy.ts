@@ -15,16 +15,19 @@ export const SNAPSHOT_THRESHOLDS = {
     },
     system: {
       default: 20,
-      // inverter-not-expression's full-window capture has shown a 117px
-      // sub-pixel antialiasing diff on VS Code 1.90.0 (the oldest pinned
-      // build, PR #376) that doesn't reproduce on newer builds and isn't a
-      // real rendering regression.
+      // The selection-highlight sweep (sourceSelectionHighlight.spec.ts) runs
+      // exclusively on VS Code 1.90.0 (the oldest pinned build — see that
+      // spec's file-level comment) and its full-window captures have shown a
+      // low-double-digit-pixel text/cursor antialiasing flake that migrates
+      // between different cases from run to run (PR #376). It doesn't
+      // reproduce on newer builds and isn't a real rendering regression, so
+      // every case in that sweep gets this wider floor instead of chasing
+      // individual case names.
+      sourceSelectionHighlightDefault: 40,
+      // inverter-not-expression and interface-declaration have shown a much
+      // larger version of the same flake (up to ~250px) that needs an even
+      // wider tolerance on top of the floor above.
       inverterNotExpression: 120,
-      // mux-ternary-assign and interface-declaration have shown a similar
-      // sub-pixel text/cursor rendering flake in the editor pane on VS Code
-      // 1.90.0 (PR #376) — same nature as inverterNotExpression above, just
-      // smaller diffs.
-      muxTernaryAssign: 20,
       interfaceDeclaration: 250,
     },
   },

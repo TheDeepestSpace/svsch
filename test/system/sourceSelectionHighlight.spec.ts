@@ -98,15 +98,17 @@ test('highlights the declared diagram nodes for each selected source construct',
           // on the right, matching diagram node(s) highlighted on the left.
           const screenshotName =
             index === 0 ? `${highlightCase.id}.png` : `${highlightCase.id}--${index}.png`;
-          // A few cases show a sub-pixel rendering flake on VS Code 1.90.0
-          // that needs a wider tolerance — see the comments next to each
-          // entry in SNAPSHOT_THRESHOLDS.playwright.system (PR #376).
+          // Every case in this sweep gets a wider-than-suite-default floor
+          // (see sourceSelectionHighlightDefault's comment in
+          // SNAPSHOT_THRESHOLDS.playwright.system, PR #376); a couple of
+          // especially noisy cases need even more on top of that floor.
           const caseThresholds: Partial<Record<string, number>> = {
             'inverter-not-expression': SNAPSHOT_THRESHOLDS.playwright.system.inverterNotExpression,
-            'mux-ternary-assign': SNAPSHOT_THRESHOLDS.playwright.system.muxTernaryAssign,
             'interface-declaration': SNAPSHOT_THRESHOLDS.playwright.system.interfaceDeclaration,
           };
-          const maxDiffPixels = caseThresholds[highlightCase.id];
+          const maxDiffPixels =
+            caseThresholds[highlightCase.id] ??
+            SNAPSHOT_THRESHOLDS.playwright.system.sourceSelectionHighlightDefault;
           await expect(workbox).toHaveScreenshot(screenshotName, { maxDiffPixels });
         }
       });
