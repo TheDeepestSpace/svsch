@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">31.81% </span>
+                <span class="strong">36.84% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>7/22</span>
+                <span class='fraction'>7/19</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">26.31% </span>
+                <span class="strong">31.25% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>5/19</span>
+                <span class='fraction'>5/16</span>
             </div>
         
             
@@ -130,26 +130,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -165,9 +151,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -188,7 +188,7 @@ export function busTapPortCenterY(index: number, startUnits = 1): number {
 }
 &nbsp;
 function <span class="fstat-no" title="function not covered" >pipeCapPivotFromTapCount(t</span>apCount: number, pipeX: number): { x: number; y: number } {
-  const g = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize;</span>
+  const g = diagramSizing.gridSize;
 <span class="cstat-no" title="statement not covered" >  if (tapCount === 0) {</span>
 <span class="cstat-no" title="statement not covered" >    return { x: pipeX + 2, y: g / 2 - 3 };</span>
   }
@@ -208,7 +208,7 @@ function <span class="fstat-no" title="function not covered" >pipeCapPivotFromTa
  * diagonal without duplicating (and risking drift from) that layout.
  */
 export function <span class="fstat-no" title="function not covered" >arrayBreakoutPipeCapPivot(n</span>ode: DiagramNode): { x: number; y: number } {
-  const g = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize;</span>
+  const g = diagramSizing.gridSize;
   const tapCount = <span class="cstat-no" title="statement not covered" >node.ports.<span class="fstat-no" title="function not covered" >filter((p</span>ort: DiagramPort) =&gt; <span class="cstat-no" title="statement not covered" >port.direction === 'output')</span>.length;</span>
 <span class="cstat-no" title="statement not covered" >  return pipeCapPivotFromTapCount(tapCount, g * 0.5 - 3);</span>
 }
@@ -225,7 +225,7 @@ export function <span class="fstat-no" title="function not covered" >arrayCompos
   node: DiagramNode,
   width: number,
 ): { x: number; y: number } {
-  const g = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize;</span>
+  const g = diagramSizing.gridSize;
   const tapCount = <span class="cstat-no" title="statement not covered" >node.ports.filter(isInputSidePort).length;</span>
 <span class="cstat-no" title="statement not covered" >  return pipeCapPivotFromTapCount(tapCount, width - g * 0.5 - 3);</span>
 }
@@ -244,7 +244,7 @@ export function isBusComposition(node: DiagramNode, role?: string): boolean {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-07T19:19:20.082Z
+                at 2026-09-12T23:18:38.557Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
