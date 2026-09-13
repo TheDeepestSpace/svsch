@@ -312,7 +312,7 @@
       "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b00",
       "sourceHandle": "port:sel_inner",
       "targetHandle": "sel",
-      "path": "M 192 192 L 216 192 L 360 192 L 360 153 Q 369 144 360 135 L 360 72 L 480 72 L 480 120"
+      "path": "M 192 192 L 216 192 L 384 192 L 384 72 L 480 72 L 480 120"
     },
     {
       "id": "edge:port:nested_case_literal_collision:sel_inner:mux:nested_case_literal_collision:out:sel_inner:out_2_b01:sel_inner",
@@ -320,7 +320,7 @@
       "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b01",
       "sourceHandle": "port:sel_inner",
       "targetHandle": "sel",
-      "path": "M 192 192 L 216 192 L 360 192 L 360 216 L 375 216 Q 384 207 393 216 L 480 216 L 480 264"
+      "path": "M 192 192 L 216 192 L 384 192 L 384 216 L 480 216 L 480 264"
     },
     {
       "id": "edge:port:nested_case_literal_collision:sel_outer:mux:nested_case_literal_collision:out:sel_outer:out:sel_outer",
