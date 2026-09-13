@@ -33,8 +33,12 @@ export function renderDashboardPage({ title, heading = title, description, bodyH
         font-size: 1.75rem;
         font-weight: 600;
       }
-      img {
+      img,
+      svg {
+        display: block;
+        width: 100%;
         max-width: 100%;
+        height: auto;
       }
       .small {
         font-size: 0.75rem;
