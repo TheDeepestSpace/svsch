@@ -81,10 +81,23 @@ jobs:
             git commit -m "Remove video galleries for closed PRs"
             attempt=1
             while ! git push origin HEAD:gh-pages; do
-              if [ "$attempt" -ge 3 ]; then
+              if [ "$attempt" -ge 25 ]; then
                 echo "Failed to update gh-pages after ${attempt} attempts" >&2
                 exit 1
               fi
+              # Same capped-exponential-backoff-plus-jitter shape as the
+              # .mjs publishers' publishBackoffMs (#450): min(2^attempt*250,
+              # 15000)ms + 0-500ms jitter, so simultaneous pushers don't
+              # retry in lockstep. Needed now that the shared gh-pages lock
+              # has been split into per-job groups (#449), so this push can
+              # race against other publishers instead of always queuing
+              # behind them.
+              backoff_ms=$(( 2 ** attempt * 250 ))
+              if [ "$backoff_ms" -gt 15000 ]; then
+                backoff_ms=15000
+              fi
+              backoff_ms=$(( backoff_ms + RANDOM % 500 ))
+              sleep "$(printf '%d.%03d' $((backoff_ms / 1000)) $((backoff_ms % 1000)))"
               attempt=$((attempt + 1))
               git fetch origin gh-pages
               git rebase origin/gh-pages
