@@ -63,6 +63,13 @@ export function registerClockSignal(node: DiagramNode): string | undefined {
   return node.kind === 'register' ? (node.clockSignal ?? node.metadata?.clockSignal) : undefined;
 }
 
+export function registerClockActiveLow(node: DiagramNode): boolean {
+  return (
+    node.kind === 'register' &&
+    (node.clockActiveLow === true || node.metadata?.clockActiveLow === true)
+  );
+}
+
 export function registerResetSignal(node: DiagramNode): string | undefined {
   return node.kind === 'register' ? (node.resetSignal ?? node.metadata?.resetSignal) : undefined;
 }
