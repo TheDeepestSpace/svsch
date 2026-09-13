@@ -75,14 +75,21 @@ function gitAuthed(args, opts = {}) {
 // gh-pages doesn't carry ~5MB of redundant pages per PR.
 const EXCLUDE_FROM_PUBLISH = new Set(['lcov-report', 'lcov.info', 'coverage-summary.json']);
 
+// Concurrent PR runs across the whole repo can race to push to gh-pages
+// (the per-job concurrency group only protects against the same job
+// re-running for the same PR, not against other PRs/metrics — see #449), so
+// this retries generously with exponential backoff + jitter, mirroring
+// ci-duration.mjs's fetchGitHubJson.
+const MAX_PUBLISH_ATTEMPTS = 25;
+
 // Copies the coverage report into dev/coverage/pr-<N>/ on gh-pages via a
 // throwaway worktree, replacing whatever that PR published last time (so
 // files removed/renamed since don't linger). Retries a few times since
 // concurrent PR runs can race to push.
-function publishReport() {
+async function publishReport() {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-coverage-'));
   try {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
       try {
         gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
         if (attempt > 1) {
@@ -127,11 +134,15 @@ function publishReport() {
         gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
         return;
       } catch (err) {
-        if (attempt === 3) throw err;
-        // Retry transient fetch failures and concurrent push races.
+        if (attempt === MAX_PUBLISH_ATTEMPTS) throw err;
+        // Retry transient fetch failures and concurrent push races, backing
+        // off exponentially (capped) with jitter so simultaneous pushers
+        // don't retry in lockstep.
+        const backoffMs = Math.min(2 ** attempt * 250, 15_000) + Math.random() * 500;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
-    throw new Error('Failed to publish coverage report after 3 attempts');
+    throw new Error(`Failed to publish coverage report after ${MAX_PUBLISH_ATTEMPTS} attempts`);
   } finally {
     try {
       git(['worktree', 'remove', '--force', worktreeDir]);
@@ -168,7 +179,7 @@ try {
 // (with a link back to this run, since that's where the actual error is).
 if (fs.existsSync(reportIndexPath)) {
   try {
-    publishReport();
+    await publishReport();
     const reportUrl = `https://${owner.toLowerCase()}.github.io/${repo}/dev/coverage/pr-${PR_NUMBER}/index.html`;
     sections.push(`[Browse full coverage report →](${reportUrl})`);
   } catch (err) {

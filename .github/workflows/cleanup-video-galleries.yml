@@ -15,13 +15,14 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci.yml's merge_visual_reports, ci-duration.yml) so pushes are
-      # serialized repo-wide instead of racing this job's own ad-hoc
-      # retry loop against theirs (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + triggering PR (falling back to a shared key for
+      # the schedule/workflow_dispatch full-repo sweep, which isn't tied to
+      # any one PR) so only a re-run of this same cleanup cancels its own
+      # stale in-flight run — not ci.yml's or ci-duration.yml's now
+      # per-job/per-ref gh-pages groups (#449). This job's own ad-hoc
+      # retry loop below still handles push races against those.
+      group: gh-pages-cleanup-videos-${{ github.event.pull_request.number || 'scheduled' }}
+      cancel-in-progress: true
     steps:
       - name: Checkout gh-pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

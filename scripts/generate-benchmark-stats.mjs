@@ -195,6 +195,13 @@ for (const { name, file } of suiteArgs) {
   chartGroups.set(meta.chartKey, group);
 }
 
+// Concurrent PR runs across the whole repo can race to push to gh-pages
+// (the per-job concurrency group only protects against the same job
+// re-running for the same PR, not against other PRs/metrics — see #449), so
+// this retries generously with exponential backoff + jitter, mirroring
+// ci-duration.mjs's fetchGitHubJson.
+const MAX_PUBLISH_ATTEMPTS = 25;
+
 // Publishes chart SVGs (and, for CHART_KEYS_WITH_CSV, per-metric CSVs) to
 // gh-pages (dev/bench-charts/pr-<N>/<file>) via a throwaway worktree, so
 // they're reachable at a raw.githubusercontent URL for the PR comment —
@@ -203,10 +210,10 @@ for (const { name, file } of suiteArgs) {
 // benchmark history to; this just adds a few static files there rather than
 // a second place to manage. Retries a few times since concurrent PR runs can
 // race to push.
-function publishFiles(contentByFilename) {
+async function publishFiles(contentByFilename) {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-charts-'));
   try {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
       try {
         gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
         if (attempt > 1) {
@@ -241,11 +248,15 @@ function publishFiles(contentByFilename) {
         gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
         return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
       } catch (err) {
-        if (attempt === 3) throw err;
-        // Retry transient fetch failures and concurrent push races.
+        if (attempt === MAX_PUBLISH_ATTEMPTS) throw err;
+        // Retry transient fetch failures and concurrent push races, backing
+        // off exponentially (capped) with jitter so simultaneous pushers
+        // don't retry in lockstep.
+        const backoffMs = Math.min(2 ** attempt * 250, 15_000) + Math.random() * 500;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
-    throw new Error('Failed to publish benchmark charts after 3 attempts');
+    throw new Error(`Failed to publish benchmark charts after ${MAX_PUBLISH_ATTEMPTS} attempts`);
   } finally {
     try {
       git(['worktree', 'remove', '--force', worktreeDir]);
@@ -306,7 +317,7 @@ if (elaborationMetric && renderingMetric) {
   );
 }
 
-const chartCommitSha = publishFiles(contentByFilename);
+const chartCommitSha = await publishFiles(contentByFilename);
 
 // A one-line "how'd it move" per tracked metric, surfaced right after the
 // report header — so the headline number is visible without expanding any

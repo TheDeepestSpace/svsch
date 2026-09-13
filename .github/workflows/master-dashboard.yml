@@ -9,12 +9,11 @@ name: Publish Master Dashboard
 # Fires independently of, not downstream of, ci-duration.yml/
 # mem-profile-history.yml/coverage-history.yml/backend-coverage-history.yml —
 # all 5 workflows share the same workflow_run trigger, so which order they
-# actually run in for a given push isn't guaranteed (the shared
-# gh-pages-publish concurrency group only serializes them, it doesn't order
-# them by dependency). That's an accepted trade-off for staying simple and
-# self-healing: if this runs before, say, coverage-history.yml finishes for
-# this push, the dashboard just shows coverage's previous section until the
-# next master push's run picks up the fresher one — never a hard failure.
+# actually run in for a given push isn't guaranteed. That's an accepted
+# trade-off for staying simple and self-healing: if this runs before, say,
+# coverage-history.yml finishes for this push, the dashboard just shows
+# coverage's previous section until the next master push's run picks up the
+# fresher one — never a hard failure.
 on:
   workflow_run:
     workflows: [CI]
@@ -24,20 +23,16 @@ permissions:
   contents: read
 
 concurrency:
-  # Shared across every job/workflow that pushes to gh-pages (see ci.yml's
-  # merge_visual_reports, ci-duration.yml, mem-profile-history.yml,
-  # coverage-history.yml, backend-coverage-history.yml,
-  # cleanup-video-galleries.yml) so pushes are serialized repo-wide rather
-  # than relying solely on publishMasterDashboard's own retry-on-push-race
-  # loop (#380).
-  group: gh-pages-publish
-  cancel-in-progress: false
-  # Default queueing (`single`) only keeps one run pending and cancels any
-  # further arrival outright — with this many producers sharing the group
-  # (five report_*_stats jobs in ci.yml alone, per #421/#422) that would
-  # leave the dashboard stuck showing a stale section instead of just
-  # delaying the refresh.
-  queue: max
+  # Scoped to this workflow + triggering branch so a newer completed run's
+  # dashboard rebuild cancels an in-flight older one instead of queuing
+  # behind it — this only ever contends with itself (the `publish` job below
+  # only does real work for master, via its own branch filter), not with
+  # ci.yml's per-job/per-ref gh-pages groups or the other 4 gh-pages-history
+  # workflows, which now each have their own group too (#449). Push races
+  # against those are handled by publishMasterDashboard's own retry+backoff
+  # instead of a shared lock.
+  group: gh-pages-master-dashboard-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
 
 jobs:
   publish:

@@ -431,12 +431,13 @@ jobs:
       # Needed to delete the per-shard artifacts below once they're merged.
       actions: write
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
-      # serialized repo-wide, not just within this workflow/ref (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + ref (see report_benchmark_stats below) so only
+      # a re-run of this same PR/master job cancels its own stale in-flight
+      # run — auto-push only fires on master anyway (see comment above), so
+      # this mainly protects against two overlapping master pushes racing
+      # github-action-benchmark's own gh-pages write (#449).
+      group: gh-pages-bench-history-${{ github.event.pull_request.number || 'master' }}
+      cancel-in-progress: true
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1135,12 +1136,16 @@ jobs:
       # already publishes there).
       contents: write
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
-      # serialized repo-wide, not just within this workflow/ref (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + ref (same pattern as bdd-video-gallery-${{
+      # github.event.pull_request.number }} below) so only a force-push
+      # retrigger of this same PR's benchmark job cancels its own stale
+      # in-flight run — different metrics, different PRs, and master all
+      # publish to disjoint gh-pages paths and proceed in parallel.
+      # Cross-job/cross-PR push races are handled by
+      # generate-benchmark-stats.mjs's retry+backoff instead of a shared
+      # lock (#449).
+      group: gh-pages-benchmark-${{ github.event.pull_request.number || 'master' }}
+      cancel-in-progress: true
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1198,12 +1203,7 @@ jobs:
     # into the combined PR stats comment below — mirrors
     # report_benchmark_stats above, run at the same point in the workflow
     # graph so the "so far" preview covers a comparable share of the run.
-    #
-    # Chained after report_benchmark_stats (see report_backend_coverage_stats'
-    # comment above) so both never become ready for the gh-pages-publish
-    # concurrency group at the same instant as report_memory_stats below.
-    needs:
-      [prep, build_ci_image, merge_visual_reports, test_system, report_benchmark_stats]
+    needs: [prep, build_ci_image, merge_visual_reports, test_system]
     if: >
       always() &&
       github.event_name == 'pull_request' &&
@@ -1219,12 +1219,12 @@ jobs:
       # preview point.
       actions: read
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
-      # serialized repo-wide, not just within this workflow/ref (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + ref (see report_benchmark_stats above) so only
+      # a force-push retrigger of this same PR's job cancels its own stale
+      # in-flight run. Cross-job/cross-PR push races are handled by
+      # ci-duration.mjs's retry+backoff instead of a shared lock (#449).
+      group: gh-pages-ci-duration-${{ github.event.pull_request.number || 'master' }}
+      cancel-in-progress: true
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1272,20 +1272,8 @@ jobs:
     # shard/leg across all three profiled suites (visual, BDD, system), not
     # just visual+system like those two, since it's the only one of the
     # three that also covers BDD.
-    #
-    # Chained after report_ci_duration_stats (see report_backend_coverage_stats'
-    # comment above) so the three gh-pages-publish jobs gated on
-    # merge_visual_reports/test_system don't all queue for the concurrency
-    # group in the same instant.
     needs:
-      [
-        prep,
-        build_ci_image,
-        merge_visual_reports,
-        merge_bdd_reports,
-        test_system,
-        report_ci_duration_stats,
-      ]
+      [prep, build_ci_image, merge_visual_reports, merge_bdd_reports, test_system]
     if: >
       always() &&
       github.event_name == 'pull_request' &&
@@ -1298,12 +1286,13 @@ jobs:
       # history data it already publishes there).
       contents: write
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
-      # serialized repo-wide, not just within this workflow/ref (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + ref (see report_benchmark_stats above) so only
+      # a force-push retrigger of this same PR's job cancels its own stale
+      # in-flight run. Cross-job/cross-PR push races are handled by
+      # generate-memory-stats.mjs's retry+backoff instead of a shared lock
+      # (#449).
+      group: gh-pages-memory-${{ github.event.pull_request.number || 'master' }}
+      cancel-in-progress: true
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1368,12 +1357,13 @@ jobs:
       # browsable instead of only downloadable as a workflow artifact.
       contents: write
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
-      # serialized repo-wide, not just within this workflow/ref (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + ref (see report_benchmark_stats above) so only
+      # a force-push retrigger of this same PR's job cancels its own stale
+      # in-flight run. Cross-job/cross-PR push races are handled by
+      # generate-coverage-stats.mjs's retry+backoff instead of a shared lock
+      # (#449).
+      group: gh-pages-coverage-${{ github.event.pull_request.number || 'master' }}
+      cancel-in-progress: true
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -1411,16 +1401,10 @@ jobs:
     # mirrors report_coverage_stats above, for the C++ backend's gcov/lcov
     # data instead of vitest's.
     #
-    # Chained after report_coverage_stats (rather than running in parallel)
-    # so the two never queue for the gh-pages-publish concurrency group at
-    # the same instant — GitHub Actions only keeps one pending job per group
-    # and cancels the previous pending job when a new one arrives, so 3+
-    # simultaneous claimants cause cascading cancellations instead of
-    # queueing (#421/#422 follow-up). `always()` lets this still run if
-    # report_coverage_stats's own push failed, matching the existing
+    # `always()` lets this still run (and report "no data") even if
+    # collect_backend_coverage itself didn't succeed, matching the existing
     # tolerance for a missing coverage artifact below.
-    needs:
-      [prep, build_ci_image, collect_backend_coverage, report_coverage_stats]
+    needs: [prep, build_ci_image, collect_backend_coverage]
     if: >
       always() &&
       github.event_name == 'pull_request' &&
@@ -1433,12 +1417,13 @@ jobs:
       # browsable instead of only downloadable as a workflow artifact.
       contents: write
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci-duration.yml, cleanup-video-galleries.yml) so pushes are
-      # serialized repo-wide, not just within this workflow/ref (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + ref (see report_benchmark_stats above) so only
+      # a force-push retrigger of this same PR's job cancels its own stale
+      # in-flight run. Cross-job/cross-PR push races are handled by
+      # generate-backend-coverage-stats.mjs's retry+backoff instead of a
+      # shared lock (#449).
+      group: gh-pages-backend-coverage-${{ github.event.pull_request.number || 'master' }}
+      cancel-in-progress: true
     steps:
       - *checkout_step
       - *restore_npm_step

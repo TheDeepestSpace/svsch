@@ -13,13 +13,15 @@ permissions:
   contents: read
 
 concurrency:
-  # Shared across every job/workflow that pushes to gh-pages (see ci.yml's
-  # merge_visual_reports, cleanup-video-galleries.yml) so pushes are
-  # serialized repo-wide rather than relying solely on
-  # record-ci-duration.mjs's own retry-on-push-race loop (#380).
-  group: gh-pages-publish
-  cancel-in-progress: false
-  queue: max
+  # Scoped to this workflow + triggering branch so a newer completed run's
+  # duration recording cancels an in-flight older one instead of queuing
+  # behind it — this only ever contends with itself (the `record` job below
+  # only does real work for master, via its own branch filter), not with any
+  # of ci.yml's per-job/per-ref gh-pages groups or cleanup-video-galleries.yml
+  # (#449). Push races against those are handled by ci-duration.mjs's own
+  # retry+backoff instead of a shared lock.
+  group: gh-pages-record-ci-duration-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
 
 jobs:
   record:

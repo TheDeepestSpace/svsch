@@ -15,18 +15,16 @@ permissions:
   contents: read
 
 concurrency:
-  # Shared across every job/workflow that pushes to gh-pages (see ci.yml's
-  # merge_visual_reports, ci-duration.yml, mem-profile-history.yml,
-  # cleanup-video-galleries.yml) so pushes are serialized repo-wide rather
-  # than relying solely on publishCoverageHistory's own retry-on-push-race
-  # loop (#380).
-  group: gh-pages-publish
-  cancel-in-progress: false
-  # Default queueing (`single`) only keeps one run pending and cancels any
-  # further arrival outright — with this many producers sharing the group
-  # (five report_*_stats jobs in ci.yml alone, per #421/#422) that would
-  # silently drop history recordings instead of just delaying them.
-  queue: max
+  # Scoped to this workflow + triggering branch so a newer completed run's
+  # history recording cancels an in-flight older one instead of queuing
+  # behind it — this only ever contends with itself (the `record` job below
+  # only does real work for master, via its own branch filter), not with
+  # ci.yml's per-job/per-ref gh-pages groups or the other gh-pages-history
+  # workflows, which now each have their own group too (#449). Push races
+  # against those are handled by publishCoverageHistory's own retry+backoff
+  # instead of a shared lock.
+  group: gh-pages-coverage-history-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
 
 jobs:
   record:
