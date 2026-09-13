@@ -42,6 +42,10 @@ interface ConditionalExpression {
   condition: string;
   whenTrue: string;
   whenFalse: string;
+  /** Offsets of each operand relative to the `expression` passed to parseConditionalExpression. */
+  conditionOffset: number;
+  whenTrueOffset: number;
+  whenFalseOffset: number;
 }
 
 interface PromotedTextExpression {
@@ -52,10 +56,31 @@ interface PromotedTextExpression {
 }
 
 interface RegisterTimingInfo {
-  clockSignal: string;
+  clockSignal?: string;
+  clockActiveLow?: boolean;
   resetSignal?: string;
   resetKind: 'none' | 'async' | 'sync';
   resetActiveLow?: boolean;
+  /** Event-control identifiers that are neither the clock nor the reset (e.g. a
+   *  compound `always_ff @(posedge a or posedge b or negedge c)` sensitivity list
+   *  where at most one signal each can be classified as clock/reset by name). */
+  otherEventSignals?: Array<{ signal: string; activeLow: boolean }>;
+}
+
+export interface TextExtractorOptions {
+  clockSignalNames?: string[];
+  resetSignalNames?: string[];
+}
+
+// Keep in sync with the svsch.clockSignalNames/resetSignalNames defaults in package.json
+// (VS Code config schemas must be static JSON, so they can't import these directly);
+// test/unit/packageJsonDefaults.test.ts fails if the two drift apart.
+export const DEFAULT_CLOCK_SIGNAL_NAMES = ['clk', 'clock'];
+export const DEFAULT_RESET_SIGNAL_NAMES = ['rst', 'reset'];
+
+function matchesSignalNameList(signal: string, names: string[]): boolean {
+  const lower = signal.toLowerCase();
+  return names.some((name) => name.length > 0 && lower.includes(name.toLowerCase()));
 }
 
 const KEYWORDS = new Set([
@@ -83,17 +108,25 @@ const KEYWORDS = new Set([
   'wire',
 ]);
 
-export function extractDesignFromText(sources: SourceFile[]): DesignGraph {
+export function extractDesignFromText(
+  sources: SourceFile[],
+  options?: TextExtractorOptions,
+): DesignGraph {
   const graph: DesignGraph = {
     rootModules: [],
     modules: {},
+    functions: {},
+    tasks: {},
     diagnostics: [],
     generatedAt: new Date().toISOString(),
   };
 
+  const clockSignalNames = options?.clockSignalNames ?? DEFAULT_CLOCK_SIGNAL_NAMES;
+  const resetSignalNames = options?.resetSignalNames ?? DEFAULT_RESET_SIGNAL_NAMES;
+
   const allModules = sources.flatMap(findModules);
   for (const match of allModules) {
-    graph.modules[match.name] = extractModule(match);
+    graph.modules[match.name] = extractModule(match, clockSignalNames, resetSignalNames);
   }
   enrichInstanceConnections(graph);
   graph.diagnostics.push(...detectMultipleDrivers(graph));
@@ -166,7 +199,11 @@ function findModules(source: SourceFile): ModuleMatch[] {
   return matches;
 }
 
-function extractModule(match: ModuleMatch): DesignModule {
+function extractModule(
+  match: ModuleMatch,
+  clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
+): DesignModule {
   const ports = extractPorts(match);
   const signalWidths = extractSignalWidths(match.header, match.body, ports);
   const nodes: DiagramNode[] = [
@@ -188,7 +225,13 @@ function extractModule(match: ModuleMatch): DesignModule {
 
   const edges: DesignModule['edges'] = [];
   const instances = extractInstances(match);
-  const registers = extractRegisters(match, ports, signalWidths);
+  const registers = extractRegisters(
+    match,
+    ports,
+    signalWidths,
+    clockSignalNames,
+    resetSignalNames,
+  );
   const continuousAssigns = extractContinuousAssigns(
     match,
     ports,
@@ -475,6 +518,8 @@ function extractRegisters(
   match: ModuleMatch,
   modulePorts: DiagramPort[],
   signalWidths: Map<string, string>,
+  clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
 ): RegisterExtraction {
   const nodes: DiagramNode[] = [];
   const edges: DesignModule['edges'] = [];
@@ -484,8 +529,9 @@ function extractRegisters(
     target: string;
     expression: string;
     resetExpression?: string;
-    clk: string;
+    clk?: string;
     reset?: string;
+    otherEventSignals?: string[];
     sourceRange: { file: string; startLine: number; endLine: number };
   }> = [];
   const alwaysRegex =
@@ -495,7 +541,7 @@ function extractRegisters(
   while ((alwaysMatch = alwaysRegex.exec(match.body))) {
     const eventExpression = alwaysMatch[1];
     const block = alwaysMatch[2];
-    const timing = parseAlwaysFfTiming(eventExpression, block);
+    const timing = parseAlwaysFfTiming(eventExpression, block, clockSignalNames, resetSignalNames);
 
     // Find all targets in this block
     const targets = new Set<string>();
@@ -531,8 +577,15 @@ function extractRegisters(
       const registerPorts: DiagramPort[] = [
         { id: stableId('d'), name: 'D', direction: 'input', width: signalWidths.get(target) },
         { id: stableId('q'), name: 'Q', direction: 'output', width: signalWidths.get(target) },
-        { id: stableId('clk'), name: timing.clockSignal, direction: 'input' },
       ];
+      if (timing.clockSignal) {
+        registerPorts.push({
+          id: stableId('clk'),
+          name: timing.clockSignal,
+          direction: 'input',
+          eventEdge: timing.clockActiveLow ? 'negedge' : 'posedge',
+        });
+      }
       if (timing.resetSignal) {
         registerPorts.push({ id: stableId('reset'), name: timing.resetSignal, direction: 'input' });
         if (expressions.reset && isNonZeroExpression(expressions.reset)) {
@@ -544,6 +597,14 @@ function extractRegisters(
           });
         }
       }
+      for (const eventSignal of timing.otherEventSignals ?? []) {
+        registerPorts.push({
+          id: stableId('event', eventSignal.signal),
+          name: eventSignal.signal,
+          direction: 'input',
+          eventEdge: eventSignal.activeLow ? 'negedge' : 'posedge',
+        });
+      }
 
       nodes.push({
         id: nodeId,
@@ -554,6 +615,7 @@ function extractRegisters(
         metadata: {
           width: signalWidths.get(target),
           clockSignal: timing.clockSignal,
+          clockActiveLow: timing.clockActiveLow,
           resetSignal: timing.resetSignal,
           resetKind: timing.resetKind,
           resetActiveLow: timing.resetActiveLow,
@@ -570,6 +632,7 @@ function extractRegisters(
             : undefined,
         clk: timing.clockSignal,
         reset: timing.resetSignal,
+        otherEventSignals: timing.otherEventSignals?.map((eventSignal) => eventSignal.signal),
         sourceRange,
       });
     }
@@ -758,6 +821,21 @@ function extractRegisters(
       }
     }
 
+    for (const eventSignal of assignment.otherEventSignals ?? []) {
+      const eventPort = modulePorts.find((port) => port.name === eventSignal);
+      if (eventPort) {
+        edges.push({
+          id: edgeId(stableId('port', match.name, eventPort.name), assignment.nodeId, eventSignal),
+          source: stableId('port', match.name, eventPort.name),
+          target: assignment.nodeId,
+          sourcePort: eventPort.id,
+          targetPort: stableId('event', eventSignal),
+          label: eventSignal,
+          signal: eventSignal,
+        });
+      }
+    }
+
     const targetPort = modulePorts.find((port) => port.name === assignment.target);
     if (targetPort) {
       edges.push({
@@ -776,46 +854,93 @@ function extractRegisters(
   return { nodes: [...nodes, ...combNodes], edges };
 }
 
-function parseAlwaysFfTiming(eventExpression: string, block: string): RegisterTimingInfo {
-  const edgeTerms = [...eventExpression.matchAll(/\b(posedge|negedge)\s+([A-Za-z_$][\w$]*)/g)].map(
-    (term) => ({
-      edge: term[1],
-      signal: term[2],
-    }),
-  );
+function parseAlwaysFfTiming(
+  eventExpression: string,
+  block: string,
+  clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
+): RegisterTimingInfo {
+  const rawEdgeTerms = [
+    ...eventExpression.matchAll(/\b(posedge|negedge)\s+([A-Za-z_$][\w$]*)/g),
+  ].map((term) => ({
+    edge: term[1],
+    signal: term[2],
+  }));
 
-  const fallbackClock = edgeTerms[0]?.signal ?? 'clk';
-  const clockTerm = edgeTerms.find((term) => /^c/i.test(term.signal)) ?? edgeTerms[0];
-  const clockSignal = clockTerm?.signal ?? fallbackClock;
-  const resetTerm = edgeTerms.find((term) => term.signal !== clockSignal);
+  // De-dupe by signal, preserving first-seen order (a compound expression could
+  // repeat a signal, e.g. `posedge a or negedge a`).
+  const seenSignals = new Set<string>();
+  const edgeTerms = rawEdgeTerms.filter((term) => {
+    if (seenSignals.has(term.signal)) return false;
+    seenSignals.add(term.signal);
+    return true;
+  });
+
+  // A two-signal async sensitivity list can only ever be a clock paired with a
+  // reset (SystemVerilog convention), so positional inference is safe there. A
+  // compound list of three or more signals has no such guarantee -- collapsing
+  // arbitrary extra identifiers into clock/reset roles by position would
+  // misclassify (and auto-cut) unrelated nets, so only configured-name matches
+  // count once there are more than two signals. A lone single-signal list has
+  // no reset to disambiguate from, so it's unambiguously the clock regardless
+  // of name.
+  const allowClockPositionalFallback = edgeTerms.length <= 2;
+  const allowResetPositionalFallback = edgeTerms.length === 2;
+
+  const clockTerm =
+    edgeTerms.find((term) => matchesSignalNameList(term.signal, clockSignalNames)) ??
+    (allowClockPositionalFallback ? edgeTerms[0] : undefined);
+  const clockSignal = clockTerm?.signal;
+  const clockActiveLow = clockTerm?.edge === 'negedge';
+
+  const remainingTerms = edgeTerms.filter((term) => term !== clockTerm);
+  const resetTerm =
+    remainingTerms.find((term) => matchesSignalNameList(term.signal, resetSignalNames)) ??
+    (allowResetPositionalFallback && clockTerm ? remainingTerms[0] : undefined);
+
   if (resetTerm) {
+    const otherEventSignals = remainingTerms
+      .filter((term) => term !== resetTerm)
+      .map((term) => ({ signal: term.signal, activeLow: term.edge === 'negedge' }));
     return {
       clockSignal,
+      clockActiveLow,
       resetSignal: resetTerm.signal,
       resetKind: 'async',
       resetActiveLow: resetTerm.edge === 'negedge',
+      otherEventSignals: otherEventSignals.length > 0 ? otherEventSignals : undefined,
     };
   }
 
-  const syncReset = detectSynchronousReset(block, clockSignal);
+  const otherEventSignals = remainingTerms.map((term) => ({
+    signal: term.signal,
+    activeLow: term.edge === 'negedge',
+  }));
+
+  const syncReset = detectSynchronousReset(block, clockSignal, resetSignalNames);
   if (syncReset) {
     return {
       clockSignal,
+      clockActiveLow,
       resetSignal: syncReset.signal,
       resetKind: 'sync',
       resetActiveLow: syncReset.activeLow,
+      otherEventSignals: otherEventSignals.length > 0 ? otherEventSignals : undefined,
     };
   }
 
   return {
     clockSignal,
+    clockActiveLow,
     resetKind: 'none',
+    otherEventSignals: otherEventSignals.length > 0 ? otherEventSignals : undefined,
   };
 }
 
 function detectSynchronousReset(
   block: string,
-  clockSignal: string,
+  clockSignal: string | undefined,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
 ): { signal: string; activeLow: boolean } | undefined {
   const condition = block.match(/\bif\s*\(([^)]*)\)/)?.[1];
   if (!condition) {
@@ -829,7 +954,17 @@ function detectSynchronousReset(
     return undefined;
   }
 
-  const resetSignal = identifiers.find((identifier) => !/^c/i.test(identifier)) ?? identifiers[0];
+  // An if/else condition can be an arbitrary boolean (e.g. a plain mux select),
+  // unlike an async sensitivity list where every identifier present is
+  // necessarily a clock or reset signal -- so there is no positional fallback
+  // here: only treat this as a synchronous reset when a configured/default
+  // reset name actually matches.
+  const resetSignal = identifiers.find((identifier) =>
+    matchesSignalNameList(identifier, resetSignalNames),
+  );
+  if (!resetSignal) {
+    return undefined;
+  }
   return {
     signal: resetSignal,
     activeLow: isActiveLowResetCondition(condition, resetSignal),
@@ -1104,6 +1239,11 @@ function extractContinuousAssigns(
       };
 
       if (containsConditionalExpression(expression)) {
+        const rawCapture = assignment[2];
+        const rawCaptureOffsetInMatch = assignment[0].length - rawCapture.length - 1;
+        const exprLeadingTrim = rawCapture.length - rawCapture.trimStart().length;
+        const exprOffsetInBody = assignment.index + rawCaptureOffsetInMatch + exprLeadingTrim;
+        const expressionOffset = match.header.length + 1 + exprOffsetInBody;
         const promoted = promoteTextExpression(
           match,
           expression,
@@ -1115,6 +1255,7 @@ function extractContinuousAssigns(
           signalWidths,
           edges,
           sourceRange,
+          expressionOffset,
           signalWidths.get(targetSignal),
         );
         if (promoted) {
@@ -1207,7 +1348,7 @@ function containsConditionalExpression(expression: string): boolean {
 }
 
 function parseConditionalExpression(expression: string): ConditionalExpression | undefined {
-  const text = stripOuterParentheses(expression);
+  const { text, offset: baseOffset } = stripOuterParenthesesWithOffset(expression);
   let question = -1;
   let nestedConditionals = 0;
   let parenDepth = 0;
@@ -1247,11 +1388,23 @@ function parseConditionalExpression(expression: string): ConditionalExpression |
     } else if (char === ':' && nestedConditionals > 0) {
       nestedConditionals--;
     } else if (char === ':') {
-      const condition = text.slice(0, question).trim();
-      const whenTrue = text.slice(question + 1, index).trim();
-      const whenFalse = text.slice(index + 1).trim();
+      const conditionRaw = text.slice(0, question);
+      const whenTrueRaw = text.slice(question + 1, index);
+      const whenFalseRaw = text.slice(index + 1);
+      const condition = conditionRaw.trim();
+      const whenTrue = whenTrueRaw.trim();
+      const whenFalse = whenFalseRaw.trim();
       if (condition && whenTrue && whenFalse) {
-        return { condition, whenTrue, whenFalse };
+        return {
+          condition,
+          whenTrue,
+          whenFalse,
+          conditionOffset: baseOffset + (conditionRaw.length - conditionRaw.trimStart().length),
+          whenTrueOffset:
+            baseOffset + question + 1 + (whenTrueRaw.length - whenTrueRaw.trimStart().length),
+          whenFalseOffset:
+            baseOffset + index + 1 + (whenFalseRaw.length - whenFalseRaw.trimStart().length),
+        };
       }
       return undefined;
     }
@@ -1261,11 +1414,53 @@ function parseConditionalExpression(expression: string): ConditionalExpression |
 }
 
 function stripOuterParentheses(expression: string): string {
+  return stripOuterParenthesesWithOffset(expression).text;
+}
+
+/** Like stripOuterParentheses, but also reports the returned text's offset within `expression`. */
+function stripOuterParenthesesWithOffset(expression: string): { text: string; offset: number } {
   let text = expression.trim();
+  let offset = expression.length - expression.trimStart().length;
   while (text.startsWith('(') && matchingClosingParen(text, 0) === text.length - 1) {
-    text = text.slice(1, -1).trim();
+    const inner = text.slice(1, -1);
+    offset += 1 + (inner.length - inner.trimStart().length);
+    text = inner.trim();
   }
-  return text;
+  return { text, offset };
+}
+
+function getCombinedSource(match: ModuleMatch): string {
+  return match.header + ';' + match.body;
+}
+
+function computeSourceRange(
+  match: ModuleMatch,
+  combined: string,
+  start: number,
+  length: number,
+): { file: string; startLine: number; startColumn: number; endLine: number; endColumn: number } {
+  const end = start + length;
+  return {
+    file: match.file,
+    startLine: match.startLine + lineAt(combined, start) - 1,
+    startColumn: columnAt(combined, start),
+    endLine: match.startLine + lineAt(combined, end) - 1,
+    endColumn: columnAt(combined, end),
+  };
+}
+
+/**
+ * Like computeSourceRange, but first strips any wrapping parentheses from `rawText` so a
+ * ternary operand like "(sel2 ? a : b)" highlights just the conditional, not its grouping parens.
+ */
+function narrowedOperandRange(
+  match: ModuleMatch,
+  combined: string,
+  rawOffset: number,
+  rawText: string,
+): { file: string; startLine: number; startColumn: number; endLine: number; endColumn: number } {
+  const { text, offset } = stripOuterParenthesesWithOffset(rawText);
+  return computeSourceRange(match, combined, rawOffset + offset, text.length);
 }
 
 function matchingClosingParen(expression: string, openingIndex: number): number {
@@ -1321,6 +1516,7 @@ function promoteTextExpression(
   signalWidths: Map<string, string>,
   edges: DesignModule['edges'],
   sourceRange: { file: string; startLine: number; endLine: number },
+  expressionOffset: number,
   outputWidth?: string,
 ): PromotedTextExpression | undefined {
   const conditional = parseConditionalExpression(expression);
@@ -1337,6 +1533,7 @@ function promoteTextExpression(
       signalWidths,
       edges,
       sourceRange,
+      expressionOffset,
       outputWidth,
     );
   }
@@ -1382,9 +1579,23 @@ function promoteTextExpression(
 
   let rewritten = expression;
   let embeddedIndex = 0;
+  let searchCursor = 0;
   let embedded = findParenthesizedConditional(rewritten);
   while (embedded) {
     const embeddedSignal = `${preferredSignal}_ternary_${embeddedIndex}`;
+    const literalMatch = `(${embedded.expression})`;
+    const foundAt = expression.indexOf(literalMatch, searchCursor);
+    const childOffset = foundAt >= 0 ? expressionOffset + foundAt + 1 : expressionOffset;
+    const childRange =
+      foundAt >= 0
+        ? computeSourceRange(
+            match,
+            getCombinedSource(match),
+            childOffset,
+            embedded.expression.length,
+          )
+        : sourceRange;
+    if (foundAt >= 0) searchCursor = foundAt + literalMatch.length;
     const promoted = promoteTextExpression(
       match,
       embedded.expression,
@@ -1395,7 +1606,8 @@ function promoteTextExpression(
       existingNodes,
       signalWidths,
       edges,
-      sourceRange,
+      childRange,
+      childOffset,
     );
     if (!promoted) break;
     rewritten =
@@ -1441,6 +1653,7 @@ function promoteTextConditional(
   signalWidths: Map<string, string>,
   edges: DesignModule['edges'],
   sourceRange: { file: string; startLine: number; endLine: number },
+  expressionOffset: number,
   outputWidth?: string,
 ): PromotedTextExpression | undefined {
   const nodeCount = mutableNodes.length;
@@ -1451,6 +1664,14 @@ function promoteTextConditional(
     return undefined;
   };
 
+  const combined = getCombinedSource(match);
+  const conditionOffset = expressionOffset + conditional.conditionOffset;
+  const conditionRange = narrowedOperandRange(
+    match,
+    combined,
+    conditionOffset,
+    conditional.condition,
+  );
   const selector = promoteTextExpression(
     match,
     conditional.condition,
@@ -1461,9 +1682,12 @@ function promoteTextConditional(
     existingNodes,
     signalWidths,
     edges,
-    sourceRange,
+    conditionRange,
+    conditionOffset,
   );
   if (!selector) return rollback();
+  const whenTrueOffset = expressionOffset + conditional.whenTrueOffset;
+  const whenTrueRange = narrowedOperandRange(match, combined, whenTrueOffset, conditional.whenTrue);
   const whenTrue = promoteTextExpression(
     match,
     conditional.whenTrue,
@@ -1474,10 +1698,18 @@ function promoteTextConditional(
     existingNodes,
     signalWidths,
     edges,
-    sourceRange,
+    whenTrueRange,
+    whenTrueOffset,
     outputWidth,
   );
   if (!whenTrue) return rollback();
+  const whenFalseOffset = expressionOffset + conditional.whenFalseOffset;
+  const whenFalseRange = narrowedOperandRange(
+    match,
+    combined,
+    whenFalseOffset,
+    conditional.whenFalse,
+  );
   const whenFalse = promoteTextExpression(
     match,
     conditional.whenFalse,
@@ -1488,7 +1720,8 @@ function promoteTextConditional(
     existingNodes,
     signalWidths,
     edges,
-    sourceRange,
+    whenFalseRange,
+    whenFalseOffset,
     outputWidth,
   );
   if (!whenFalse) return rollback();

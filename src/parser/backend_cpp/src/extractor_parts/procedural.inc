@@ -85,7 +85,12 @@ void DesignExtractor::processStatement(vpiHandle stmt, Module& mod, vpiHandle pr
     } else if (type == vpiCase) {
         processMux(stmt, mod, process_handle);
     } else if (type == vpiAssignment || type == 84 || type == 85) { // vpiAssignment, vpiBlockingAssignment, vpiNonBlockingAssignment
-        processAssign(stmt, mod, true);
+        // A task/function body is already a purely-combinational IR scope, so
+        // don't introduce the procedural "_next" lowering used by module
+        // always blocks. processCallableDeclaration passes a null process.
+        processAssign(stmt, mod, process_handle != nullptr);
+    } else if (type == vpiTaskCall) {
+        processTaskCall(stmt, mod, process_handle != nullptr);
     } else if (type == vpiIf || type == vpiIfElse) {
         std::vector<vpiHandle> assigns;
         findAssignments(stmt, assigns);
@@ -407,28 +412,100 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
     }
 
     std::string clk_signal = "";
+    bool clock_active_low = false;
     std::string rst_signal = "";
     std::string reset_kind = "";
     bool reset_active_low = false;
+    // Event-control identifiers that are neither the clock nor the reset (e.g. a
+    // compound `always_ff @(posedge a or posedge b or negedge c)` sensitivity list
+    // where at most one signal each can be classified as clock/reset by name),
+    // paired with whether that signal's operand in the event expression is
+    // 'negedge'.
+    std::vector<std::pair<std::string, bool>> extra_event_signals;
 
     // Async reset inference
     vpiHandle event_control = vpi_handle(vpiStmt, always_handle);
     if (event_control && vpi_get(vpiType, event_control) == vpiEventControl) {
         vpiHandle cond = vpi_handle(vpiCondition, event_control);
         if (cond) {
+             std::vector<vpiHandle> raw_cond_ids;
+             collectIdentifierHandles(cond, raw_cond_ids);
+
+             // De-dupe by signal name, preserving first-seen order (a compound
+             // expression could repeat a signal, e.g. `posedge a or negedge a`).
              std::vector<vpiHandle> cond_ids;
-             collectIdentifierHandles(cond, cond_ids);
-             if (!cond_ids.empty()) clk_signal = getSignalName(cond_ids[0]);
-             if (cond_ids.size() > 1) {
-                 rst_signal = getSignalName(cond_ids[1]);
-                 reset_kind = "async";
-                 if (vpi_get(vpiType, cond) == vpiOperation) {
-                     vpiHandle op_itr = vpi_iterate(vpiOperand, cond);
-                     vpi_scan(op_itr);
-                     vpiHandle rst_op = vpi_scan(op_itr);
-                     if (rst_op && vpi_get(vpiOpType, rst_op) == 40) reset_active_low = true; // negedge
-                     vpi_release_handle(op_itr);
+             std::set<std::string> seen_cond_names;
+             for (vpiHandle id : raw_cond_ids) {
+                 if (seen_cond_names.insert(getSignalName(id)).second) cond_ids.push_back(id);
+             }
+
+             // Whether `signal_name`'s own posedge/negedge operand in the event
+             // expression is a negedge (op type 40).
+             auto isNegedgeOperand = [&](const std::string& signal_name) -> bool {
+                 if (vpi_get(vpiType, cond) != vpiOperation) return false;
+                 // A single-term event control (`@(negedge clk)`, no "or") has `cond`
+                 // itself as the posedge/negedge op, rather than wrapping per-signal
+                 // operands the way a compound "or" expression does.
+                 std::vector<vpiHandle> direct_ids;
+                 collectIdentifierHandles(cond, direct_ids);
+                 if (direct_ids.size() == 1 && getSignalName(direct_ids[0]) == signal_name) {
+                     return vpi_get(vpiOpType, cond) == 40; // negedge
                  }
+                 bool is_negedge = false;
+                 vpiHandle op_itr = vpi_iterate(vpiOperand, cond);
+                 while (vpiHandle op = vpi_scan(op_itr)) {
+                     std::vector<vpiHandle> op_ids;
+                     collectIdentifierHandles(op, op_ids);
+                     if (!op_ids.empty() && getSignalName(op_ids[0]) == signal_name) {
+                         if (vpi_get(vpiType, op) == vpiOperation && vpi_get(vpiOpType, op) == 40) is_negedge = true; // negedge
+                         break;
+                     }
+                 }
+                 vpi_release_handle(op_itr);
+                 return is_negedge;
+             };
+
+             // A two-signal async sensitivity list can only ever be a clock paired
+             // with a reset (SystemVerilog convention), so positional inference is
+             // safe there. A compound list of three or more signals has no such
+             // guarantee -- collapsing arbitrary extra identifiers into clock/reset
+             // roles by position would misclassify (and auto-cut) unrelated nets,
+             // so only configured-name matches count once there are more than two
+             // signals. A lone single-signal list has no reset to disambiguate
+             // from, so it's unambiguously the clock regardless of name.
+             bool allow_clock_positional_fallback = cond_ids.size() <= 2;
+             bool allow_reset_positional_fallback = cond_ids.size() == 2;
+
+             auto clk_it = std::find_if(cond_ids.begin(), cond_ids.end(), [&](vpiHandle id) {
+                 return looksClockSignal(getSignalName(id), clock_signal_names);
+             });
+             if (clk_it == cond_ids.end() && allow_clock_positional_fallback) clk_it = cond_ids.begin();
+             if (clk_it != cond_ids.end()) {
+                 clk_signal = getSignalName(*clk_it);
+                 clock_active_low = isNegedgeOperand(clk_signal);
+             }
+
+             auto rst_it = std::find_if(cond_ids.begin(), cond_ids.end(), [&](vpiHandle id) {
+                 bool is_clk = clk_it != cond_ids.end() && id == *clk_it;
+                 return !is_clk && looksResetSignal(getSignalName(id), reset_signal_names);
+             });
+             if (rst_it == cond_ids.end() && allow_reset_positional_fallback && clk_it != cond_ids.end()) {
+                 rst_it = std::find_if(cond_ids.begin(), cond_ids.end(), [&](vpiHandle id) {
+                     return id != *clk_it;
+                 });
+             }
+
+             if (rst_it != cond_ids.end()) {
+                 rst_signal = getSignalName(*rst_it);
+                 reset_kind = "async";
+                 reset_active_low = isNegedgeOperand(rst_signal);
+             }
+
+             for (vpiHandle id : cond_ids) {
+                 if (clk_it != cond_ids.end() && id == *clk_it) continue;
+                 if (rst_it != cond_ids.end() && id == *rst_it) continue;
+                 std::string signal_name = getSignalName(id);
+                 extra_event_signals.push_back({signal_name, isNegedgeOperand(signal_name)});
              }
         }
     }
@@ -445,10 +522,38 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             vpiHandle cond = vpi_handle(vpiCondition, body);
             std::vector<vpiHandle> cond_ids;
             collectIdentifierHandles(cond, cond_ids);
-            if (!cond_ids.empty() && looksResetSignal(getSignalName(cond_ids[0]))) {
-                rst_signal = getSignalName(cond_ids[0]);
+            // Unlike the async event-control sensitivity list (which can only ever
+            // contain clock/reset signals), this if/else condition can be an
+            // arbitrary boolean (e.g. a plain mux select), so -- unlike clk_it/rst_it
+            // above -- there is no positional fallback here: only treat this as a
+            // synchronous reset when a configured/default reset name actually matches.
+            auto reset_id = std::find_if(cond_ids.begin(), cond_ids.end(), [&](vpiHandle id) {
+                return looksResetSignal(getSignalName(id), reset_signal_names);
+            });
+            if (reset_id != cond_ids.end()) {
+                rst_signal = getSignalName(*reset_id);
                 reset_kind = "sync";
-                if (vpi_get(vpiType, cond) == vpiOperation && vpi_get(vpiOpType, cond) == 43) reset_active_low = true;
+                if (vpi_get(vpiType, cond) == vpiOperation) {
+                    if (vpi_get(vpiOpType, cond) == vpiNotOp) {
+                        std::vector<vpiHandle> not_ids;
+                        collectIdentifierHandles(cond, not_ids);
+                        if (!not_ids.empty() && getSignalName(not_ids[0]) == rst_signal) reset_active_low = true;
+                    } else {
+                        vpiHandle op_itr = vpi_iterate(vpiOperand, cond);
+                        while (vpiHandle op = vpi_scan(op_itr)) {
+                            std::vector<vpiHandle> op_ids;
+                            collectIdentifierHandles(op, op_ids);
+                            bool contains_rst = std::any_of(op_ids.begin(), op_ids.end(), [&](vpiHandle id) {
+                                return getSignalName(id) == rst_signal;
+                            });
+                            if (contains_rst) {
+                                if (vpi_get(vpiType, op) == vpiOperation && vpi_get(vpiOpType, op) == vpiNotOp) reset_active_low = true;
+                                break;
+                            }
+                        }
+                        vpi_release_handle(op_itr);
+                    }
+                }
             }
         }
     }
@@ -538,6 +643,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             n.source.endLine = getEndLine(always_handle);
             n.source.endCol = getEndCol(always_handle);
             n.metadata.clockSignal = clk_signal;
+            n.metadata.clockActiveLow = clock_active_low;
             n.metadata.isProcedural = true;
 
             std::string reg_base = reg_name;
@@ -549,7 +655,11 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
 
             n.ports.push_back({"D", "input", value.signal, reg_width});
             n.ports.push_back({"Q", "output", reg_name, reg_width});
-            if (!clk_signal.empty()) n.ports.push_back({clk_signal, "input", clk_signal, ""});
+            if (!clk_signal.empty()) {
+                NodePort clk_port{clk_signal, "input", clk_signal, ""};
+                clk_port.eventEdge = clock_active_low ? "negedge" : "posedge";
+                n.ports.push_back(clk_port);
+            }
             mod.nodes.push_back(n);
 
             if (reg_name.find('[') != std::string::npos) {
@@ -647,6 +757,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         n.metadata.resetKind = reset_kind;
         n.metadata.resetActiveLow = reset_active_low;
         n.metadata.clockSignal = clk_signal;
+        n.metadata.clockActiveLow = clock_active_low;
         n.metadata.isProcedural = true;
         n.metadata.resetSignal = rst_signal;
         n.metadata.typeName = getTypeName(lhs_first);
@@ -733,13 +844,18 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 arr_reg.label = reg_base;
                 arr_reg.source = n.source;
                 arr_reg.metadata.clockSignal = clk_signal;
+                arr_reg.metadata.clockActiveLow = clock_active_low;
                 arr_reg.metadata.isProcedural = true;
                 arr_reg.metadata.isArrayNode = true;
                 arr_reg.metadata.arrayDimension = mod.arrayDimensions[reg_base];
                 arr_reg.metadata.arraySize = mod.arraySizes[reg_base];
                 arr_reg.ports.push_back({"D", "input", reg_base, reg_width});
                 arr_reg.ports.push_back({"Q", "output", reg_base, reg_width});
-                if (!clk_signal.empty()) arr_reg.ports.push_back({clk_signal, "input", clk_signal, ""});
+                if (!clk_signal.empty()) {
+                    NodePort clk_port{clk_signal, "input", clk_signal, ""};
+                    clk_port.eventEdge = clock_active_low ? "negedge" : "posedge";
+                    arr_reg.ports.push_back(clk_port);
+                }
                 mod.nodes.push_back(arr_reg);
                 array_reg = &mod.nodes.back();
             }
@@ -823,8 +939,17 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             n.ports.push_back({literal_signal, "input", literal_signal, reg_width, literal_signal});
         }
         n.ports.push_back({"Q", "output", reg_name, reg_width});
-        if (!clk_signal.empty()) n.ports.push_back({clk_signal, "input", clk_signal, ""});
+        if (!clk_signal.empty()) {
+            NodePort clk_port{clk_signal, "input", clk_signal, ""};
+            clk_port.eventEdge = clock_active_low ? "negedge" : "posedge";
+            n.ports.push_back(clk_port);
+        }
         if (!rst_signal.empty()) n.ports.push_back({rst_signal, "input", rst_signal, ""});
+        for (const auto& [event_signal, event_active_low] : extra_event_signals) {
+            NodePort event_port{event_signal, "input", event_signal, ""};
+            event_port.eventEdge = event_active_low ? "negedge" : "posedge";
+            n.ports.push_back(event_port);
+        }
 
         // Array handling: stacked mux for variable-index writes; tag array registers
         if (is_variable_index) {
@@ -843,6 +968,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 arr_reg.label = reg_base;
                 arr_reg.source = n.source;
                 arr_reg.metadata.clockSignal = clk_signal;
+                arr_reg.metadata.clockActiveLow = clock_active_low;
                 arr_reg.metadata.resetSignal = rst_signal;
                 arr_reg.metadata.resetKind = reset_kind;
                 arr_reg.metadata.resetActiveLow = reset_active_low;
@@ -852,7 +978,11 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 arr_reg.metadata.arraySize = arr_size;
                 arr_reg.ports.push_back({"D", "input", reg_base + "_next", reg_width});
                 arr_reg.ports.push_back({"Q", "output", reg_base, reg_width});
-                if (!clk_signal.empty()) arr_reg.ports.push_back({clk_signal, "input", clk_signal, ""});
+                if (!clk_signal.empty()) {
+                    NodePort clk_port{clk_signal, "input", clk_signal, ""};
+                    clk_port.eventEdge = clock_active_low ? "negedge" : "posedge";
+                    arr_reg.ports.push_back(clk_port);
+                }
                 // When reset is per-index (variable-index write), rst belongs in the mux chain,
                 // not as a direct R pin that would imply whole-array reset.
                 if (!rst_signal.empty() && !is_reset_condition) arr_reg.ports.push_back({rst_signal, "input", rst_signal, ""});

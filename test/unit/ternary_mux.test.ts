@@ -15,6 +15,20 @@ function muxSelectedBy(module: DesignModule, selector: string): DiagramNode | un
   );
 }
 
+function sliceSource(text: string, source: DiagramNode['source']): string {
+  if (!source) return '';
+  const lines = text.split('\n');
+  const startLine = source.startLine ?? 1;
+  const startColumn = source.startColumn ?? 0;
+  const endLine = source.endLine ?? startLine;
+  const endColumn = source.endColumn ?? lines[endLine - 1]?.length ?? 0;
+
+  const offset = (line: number, column: number) =>
+    lines.slice(0, line - 1).reduce((sum, l) => sum + l.length + 1, 0) + column;
+
+  return text.slice(offset(startLine, startColumn), offset(endLine, endColumn));
+}
+
 describe('text fallback ternary extraction', () => {
   it('emits a mux with bit-literal arm labels', () => {
     const module = extract(`
@@ -47,7 +61,7 @@ describe('text fallback ternary extraction', () => {
   });
 
   it('recursively emits nested ternaries as cascaded muxes', () => {
-    const module = extract(`
+    const text = `
       module top(
         input logic sel1,
         input logic sel2,
@@ -58,7 +72,8 @@ describe('text fallback ternary extraction', () => {
       );
         assign y = sel1 ? (sel2 ? a : b) : c;
       endmodule
-    `);
+    `;
+    const module = extract(text);
     const outer = muxSelectedBy(module, 'sel1');
     const inner = muxSelectedBy(module, 'sel2');
 
@@ -68,6 +83,11 @@ describe('text fallback ternary extraction', () => {
     expect(
       module.edges.some((edge) => edge.source === inner?.id && edge.target === outer?.id),
     ).toBe(true);
+
+    // The outer mux's source spans the whole assign statement, while the inner mux's
+    // source is narrowed to just its own sub-expression, not the whole line.
+    expect(sliceSource(text, outer?.source).trim()).toBe('assign y = sel1 ? (sel2 ? a : b) : c;');
+    expect(sliceSource(text, inner?.source).trim()).toBe('sel2 ? a : b');
   });
 
   it('marks a whole-array ternary as a stacked mux', () => {
