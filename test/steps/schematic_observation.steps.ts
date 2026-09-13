@@ -71,21 +71,21 @@ Given(
   },
 );
 
-Given(
-  'I disable clock and reset cuts using this setting:',
-  async function (this: BddWorld, docString: string) {
-    const [key, value] = Object.entries(JSON.parse(`{${docString.trim()}}`))[0];
-    const configKey = key.startsWith('svsch.') ? key.slice('svsch.'.length) : key;
-    await this.evaluateInVSCode(
-      (_vscode, arg) => {
-        return (_vscode as any).workspace
-          .getConfiguration('svsch')
-          .update(arg.key, arg.value, (_vscode as any).ConfigurationTarget.Workspace);
-      },
-      { key: configKey, value },
-    );
-  },
-);
+async function updateSvschSetting(this: BddWorld, docString: string) {
+  const [key, value] = Object.entries(JSON.parse(`{${docString.trim()}}`))[0];
+  const configKey = key.startsWith('svsch.') ? key.slice('svsch.'.length) : key;
+  await this.evaluateInVSCode(
+    (_vscode, arg) => {
+      return (_vscode as any).workspace
+        .getConfiguration('svsch')
+        .update(arg.key, arg.value, (_vscode as any).ConfigurationTarget.Workspace);
+    },
+    { key: configKey, value },
+  );
+}
+
+Given('I disable clock and reset cuts using this setting:', updateSvschSetting);
+Given('I configure clock and reset signal names using this setting:', updateSvschSetting);
 
 When('I open the {string} module in SVSCH', async function (this: BddWorld, moduleName: string) {
   if (this._bddWorkspaceFiles.length === 0) {
