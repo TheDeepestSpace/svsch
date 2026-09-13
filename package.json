@@ -107,6 +107,28 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically cut nets feeding register clock and reset pins when a module diagram is first opened."
+        },
+        "svsch.clockSignalNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "clk",
+            "clock"
+          ],
+          "description": "Case-insensitive substrings used to recognize clock signal names (e.g. matches clk, clk_i, i_clk, sys_clk, core_clk, clock)."
+        },
+        "svsch.resetSignalNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "rst",
+            "reset"
+          ],
+          "description": "Case-insensitive substrings used to recognize reset signal names (e.g. matches rst, rst_n, reset_n, arst_n, aresetn, nrst)."
         }
       }
     }
@@ -166,7 +188,7 @@
   "devDependencies": {
     "@changesets/cli": "^3.0.0",
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "1.62.0",
+    "@playwright/test": "1.63.0",
     "@types/diff": "^8.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.1.0",
