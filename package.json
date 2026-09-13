@@ -176,7 +176,7 @@
     "@types/react-dom": "^19.0.0",
     "@types/vscode": "^1.90.0",
     "@vitejs/plugin-react": "^6.0.3",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.0",
     "@vscode/vsce": "^3.2.1",
     "diff": "^9.0.0",
     "eslint": "^9.39.5",
@@ -199,7 +199,7 @@
     "typescript-eslint": "^8.67.0",
     "typescript-eslint-ts-compat": "npm:typescript@6.0.3",
     "vite": "^8.0.16",
-    "vitest": "^4.1.11",
+    "vitest": "^5.0.0",
     "vscode-test-playwright": "^0.0.1-beta2"
   },
   "overrides": {
