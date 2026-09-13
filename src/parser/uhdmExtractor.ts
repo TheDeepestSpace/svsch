@@ -200,6 +200,8 @@ export async function extractDesignWithUhdm(
   moduleName?: string,
   onProgress?: (message: string, increment: number) => void,
   fileListPath?: string,
+  clockSignalNames?: string[],
+  resetSignalNames?: string[],
 ): Promise<DesignGraph> {
   const cacheDir = path.join(workspaceRoot, '.svsch', 'uhdm_cache');
   const fingerprintFile = path.join(cacheDir, 'fingerprint.json');
@@ -303,6 +305,7 @@ export async function extractDesignWithUhdm(
       backendArgs.push(''); // empty targetModule means extract all
     }
     backendArgs.push(workspaceRoot);
+    backendArgs.push(JSON.stringify({ clockSignalNames, resetSignalNames }));
 
     const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, backendExecOptions());
     if (stderr) {
@@ -314,7 +317,12 @@ export async function extractDesignWithUhdm(
 
   const graph = transformToDesignGraph(raw, workspaceRoot);
 
-  const sourceGraph = await extractSourceAwareGraph(files);
+  const sourceGraph = await extractSourceAwareGraph(
+    files,
+    workspaceRoot,
+    clockSignalNames,
+    resetSignalNames,
+  );
   mergeBusNodesFromSourceGraph(graph, workspaceRoot, sourceGraph);
 
   // Array aggregate bus nodes: UHDM reports full-element taps (arr[i]) as
@@ -652,7 +660,12 @@ export async function extractDesignWithUhdm(
   return orderGraphModules(graph);
 }
 
-async function extractSourceAwareGraph(files: string[]): Promise<DesignGraph | undefined> {
+async function extractSourceAwareGraph(
+  files: string[],
+  workspaceRoot: string,
+  clockSignalNames?: string[],
+  resetSignalNames?: string[],
+): Promise<DesignGraph | undefined> {
   try {
     const sourceFiles = await Promise.all(
       files.map(async (f) => ({
@@ -660,7 +673,7 @@ async function extractSourceAwareGraph(files: string[]): Promise<DesignGraph | u
         text: await fs.readFile(f, 'utf-8'),
       })),
     );
-    return extractDesignFromText(sourceFiles);
+    return extractDesignFromText(sourceFiles, { clockSignalNames, resetSignalNames });
   } catch (err) {
     console.error(`[SVSCH] Failed to extract source-aware graph: ${err}`);
     return undefined;
@@ -1183,6 +1196,7 @@ interface RawUhdmIr {
         isArrayNode?: boolean;
         arrayDimension?: string;
         arraySize?: number;
+        eventEdge?: 'posedge' | 'negedge';
         source?: { file: string; line: number; col: number; endLine: number; endCol: number };
       }>;
       source: { file: string; line: number; col: number; endLine: number; endCol: number };
@@ -2095,6 +2109,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                 isArrayNode: p.isArrayNode,
                 arrayDimension: p.arrayDimension,
                 arraySize: p.arraySize,
+                eventEdge: p.eventEdge,
                 connectedSignal: p.signal,
                 source: portSource
                   ? {
