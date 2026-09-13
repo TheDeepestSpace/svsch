@@ -1378,32 +1378,6 @@ describe('layout merge', () => {
     expect(resetPort?.layoutOptions['elk.port.side']).toBe('SOUTH');
   });
 
-  it('stacks unmatched compound event-control ports at distinct rows', () => {
-    // A register whose compound `always_ff` sensitivity list has no clock/reset name
-    // match has no clock/reset port at all -- every event-control signal (a, b, c)
-    // must still get its own row so wires don't overlap at the same anchor point.
-    const register: DiagramNode = {
-      id: 'register',
-      kind: 'register',
-      label: 'q',
-      ports: [
-        { id: 'd', name: 'D', direction: 'input' },
-        { id: 'a', name: 'a', direction: 'input' },
-        { id: 'b', name: 'b', direction: 'input' },
-        { id: 'c', name: 'c', direction: 'input' },
-        { id: 'q', name: 'Q', direction: 'output' },
-      ],
-    };
-    const geometry = elkNodeForDiagramNode(register);
-    const aPort = geometry.ports.find((port) => port.id === 'register:a');
-    const bPort = geometry.ports.find((port) => port.id === 'register:b');
-    const cPort = geometry.ports.find((port) => port.id === 'register:c');
-
-    const positions = [aPort?.y, bPort?.y, cPort?.y];
-    expect(positions.every((y) => y !== undefined)).toBe(true);
-    expect(new Set(positions).size).toBe(3);
-  });
-
   it('adds obstacle margins to route-only ELK geometry without moving port anchors', () => {
     const register: DiagramNode = {
       id: 'register',

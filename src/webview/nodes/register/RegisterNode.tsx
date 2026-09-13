@@ -53,9 +53,7 @@ export function RegisterNode({ id, data }: { id: string; data: HdlNodeData }): R
   const qPort = outputs.find((port: DiagramPort) => port.name === 'Q') ?? outputs[0];
   const clockPort =
     inputs.find((port: DiagramPort) => port.name === clockSignal) ??
-    (node.kind === 'latch'
-      ? inputs.find((port: DiagramPort) => port.name !== 'D' && port.name !== resetSignal)
-      : undefined);
+    inputs.find((port: DiagramPort) => port.name !== 'D' && port.name !== resetSignal);
   const resetPort = resetSignal
     ? inputs.find((port: DiagramPort) => port.name === resetSignal)
     : undefined;
