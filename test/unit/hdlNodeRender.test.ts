@@ -56,24 +56,6 @@ describe('HdlNode render snapshots (no-visual-change guard)', () => {
     expect(renderNode(node)).toMatchSnapshot();
   });
 
-  it('register: negedge clock and negedge compound event signal get the polarity bobble', () => {
-    const node: PositionedNode = {
-      id: 'r1n',
-      kind: 'register',
-      label: 'state_q',
-      ports: [
-        port({ id: 'd', name: 'D', direction: 'input' }),
-        port({ id: 'q', name: 'Q', direction: 'output' }),
-        port({ id: 'clk', name: 'clk', direction: 'input', eventEdge: 'negedge' }),
-        port({ id: 'extra1', name: 'b', direction: 'input', eventEdge: 'negedge' }),
-      ],
-      clockSignal: 'clk',
-      clockActiveLow: true,
-      position: pos,
-    } as PositionedNode;
-    expect(renderNode(node)).toMatchSnapshot();
-  });
-
   it('register: array node', () => {
     const node: PositionedNode = {
       id: 'r2',

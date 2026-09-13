@@ -13,8 +13,6 @@ export interface ParserOptions {
   backendPath?: string;
   includePaths?: string[];
   defines?: Record<string, string>;
-  clockSignalNames?: string[];
-  resetSignalNames?: string[];
   moduleName?: string;
   listOnly?: boolean;
   onProgress?: (message: string, increment: number) => void;
@@ -96,8 +94,6 @@ export async function buildDesignGraph(options: ParserOptions): Promise<DesignGr
       options.listOnly ? '--list-only' : options.moduleName,
       options.onProgress,
       fileListPath,
-      options.clockSignalNames,
-      options.resetSignalNames,
     );
   } catch (e: any) {
     logger.error('UHDM Extraction Crashed', e);

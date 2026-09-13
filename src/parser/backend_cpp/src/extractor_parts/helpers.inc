@@ -152,24 +152,10 @@ bool declarationListContains(const std::string& declarations, const std::string&
     return false;
 }
 
-bool matchesSignalNameList(const std::string& name, const std::vector<std::string>& candidates) {
+bool looksResetSignal(const std::string& name) {
     std::string lower = name;
     std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
-    for (const std::string& candidate : candidates) {
-        if (candidate.empty()) continue;
-        std::string lowerCandidate = candidate;
-        std::transform(lowerCandidate.begin(), lowerCandidate.end(), lowerCandidate.begin(), [](unsigned char c) { return std::tolower(c); });
-        if (lower.find(lowerCandidate) != std::string::npos) return true;
-    }
-    return false;
-}
-
-bool looksResetSignal(const std::string& name, const std::vector<std::string>& reset_signal_names) {
-    return matchesSignalNameList(name, reset_signal_names);
-}
-
-bool looksClockSignal(const std::string& name, const std::vector<std::string>& clock_signal_names) {
-    return matchesSignalNameList(name, clock_signal_names);
+    return lower.find("rst") != std::string::npos || lower.find("reset") != std::string::npos;
 }
 
 std::string constantIntString(vpiHandle handle) {
