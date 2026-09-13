@@ -1,26 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { extractDesignFromText } from '../../src/parser/textExtractor';
 
-function registerNode(
-  moduleName: string,
-  code: string,
-  options?: { clockSignalNames?: string[]; resetSignalNames?: string[] },
-) {
-  const graph = extractDesignFromText([{ file: `${moduleName}.sv`, text: code }], options);
+function registerNode(moduleName: string, code: string) {
+  const graph = extractDesignFromText([{ file: `${moduleName}.sv`, text: code }]);
   const mod = graph.modules[moduleName];
   return mod.nodes.find((n) => n.kind === 'register');
 }
 
-function registerMetadata(
-  moduleName: string,
-  code: string,
-  options?: { clockSignalNames?: string[]; resetSignalNames?: string[] },
-) {
-  return registerNode(moduleName, code, options)?.metadata;
+function registerMetadata(moduleName: string, code: string) {
+  return registerNode(moduleName, code)?.metadata;
 }
 
 describe('textExtractor clock/reset signal name detection', () => {
-  it('identifies default-named clk/rst_n without any configuration', () => {
+  it('identifies default-named clk/rst_n', () => {
     const code = `
       module default_names (
         input logic clk,
@@ -40,32 +32,6 @@ describe('textExtractor clock/reset signal name detection', () => {
     expect(metadata?.resetKind).toBe('async');
   });
 
-  it('identifies a non-default clock/reset pair listed reset-first, using configured names', () => {
-    // "clr_n" starts with 'c' (the old heuristic picked whichever signal started with
-    // 'c' as the clock), and it's listed before "tck" in the sensitivity list, so the
-    // old positional-plus-prefix heuristic would have misidentified the reset as the clock.
-    const code = `
-      module custom_names_reordered (
-        input logic tck,
-        input logic clr_n,
-        input logic d,
-        output logic q
-      );
-        always_ff @(negedge clr_n or posedge tck) begin
-          if (!clr_n) q <= 1'b0;
-          else q <= d;
-        end
-      endmodule
-    `;
-    const metadata = registerMetadata('custom_names_reordered', code, {
-      clockSignalNames: ['TCK'],
-      resetSignalNames: ['CLR'],
-    });
-    expect(metadata?.clockSignal).toBe('tck');
-    expect(metadata?.resetSignal).toBe('clr_n');
-    expect(metadata?.resetActiveLow).toBe(true);
-  });
-
   it('falls back to positional guessing (and can misidentify) when names are non-default', () => {
     const code = `
       module custom_names_reordered_default (
@@ -83,36 +49,13 @@ describe('textExtractor clock/reset signal name detection', () => {
     const metadata = registerMetadata('custom_names_reordered_default', code);
     // Neither "clr_n" nor "tck" matches the default clock/reset substring lists, so
     // detection falls back to sensitivity-list order and picks the first term as the
-    // clock -- which is wrong here. This documents the gap that configuring
-    // svsch.clockSignalNames/svsch.resetSignalNames closes.
+    // clock -- which is wrong here, but a two-signal async sensitivity list can only
+    // ever be a clock paired with a reset, so positional fallback is the best available
+    // guess absent a name match.
     expect(metadata?.clockSignal).toBe('clr_n');
   });
 
-  it('identifies a sync reset by configured name among multiple if-condition identifiers', () => {
-    const code = `
-      module sync_reset_custom (
-        input logic tck,
-        input logic en_n,
-        input logic clr,
-        input logic d,
-        output logic q
-      );
-        always_ff @(posedge tck) begin
-          if (en_n && clr) q <= 1'b0;
-          else q <= d;
-        end
-      endmodule
-    `;
-    const metadata = registerMetadata('sync_reset_custom', code, {
-      clockSignalNames: ['tck'],
-      resetSignalNames: ['clr'],
-    });
-    expect(metadata?.clockSignal).toBe('tck');
-    expect(metadata?.resetSignal).toBe('clr');
-    expect(metadata?.resetKind).toBe('sync');
-  });
-
-  it('does not guess a synchronous reset when no configured name matches', () => {
+  it('does not guess a synchronous reset when no default name matches', () => {
     const code = `
       module sync_reset_default (
         input logic tck,
@@ -162,9 +105,9 @@ describe('textExtractor clock/reset signal name detection', () => {
     expect(portNames).toEqual(expect.arrayContaining(['a', 'b', 'c']));
   });
 
-  it('classifies only configured names in a compound event, leaving the rest plain', () => {
+  it('classifies only default-named signals in a compound event, leaving the rest plain', () => {
     const code = `
-      module compound_event_configured (
+      module compound_event_default_name (
         input logic a,
         input logic clk,
         input logic c,
@@ -176,7 +119,7 @@ describe('textExtractor clock/reset signal name detection', () => {
         end
       endmodule
     `;
-    const reg = registerNode('compound_event_configured', code);
+    const reg = registerNode('compound_event_default_name', code);
     expect(reg?.metadata?.clockSignal).toBe('clk');
     expect(reg?.metadata?.resetSignal).toBeUndefined();
     const portNames = reg?.ports.map((p) => p.name);
@@ -195,9 +138,9 @@ describe('textExtractor clock/reset signal name detection', () => {
         end
       endmodule
     `;
-    // "trigger" matches neither the default nor any configured clock name, but a
-    // lone signal in an async sensitivity list has no reset to disambiguate from,
-    // so it's unambiguously the clock.
+    // "trigger" matches no default clock name, but a lone signal in an async
+    // sensitivity list has no reset to disambiguate from, so it's unambiguously
+    // the clock.
     const reg = registerNode('single_signal_unmatched_clock', code);
     expect(reg?.metadata?.clockSignal).toBe('trigger');
     expect(reg?.metadata?.clockActiveLow).toBe(false);

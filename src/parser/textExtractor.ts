@@ -67,16 +67,8 @@ interface RegisterTimingInfo {
   otherEventSignals?: Array<{ signal: string; activeLow: boolean }>;
 }
 
-export interface TextExtractorOptions {
-  clockSignalNames?: string[];
-  resetSignalNames?: string[];
-}
-
-// Keep in sync with the svsch.clockSignalNames/resetSignalNames defaults in package.json
-// (VS Code config schemas must be static JSON, so they can't import these directly);
-// test/unit/packageJsonDefaults.test.ts fails if the two drift apart.
-export const DEFAULT_CLOCK_SIGNAL_NAMES = ['clk', 'clock'];
-export const DEFAULT_RESET_SIGNAL_NAMES = ['rst', 'reset'];
+const DEFAULT_CLOCK_SIGNAL_NAMES = ['clk', 'clock'];
+const DEFAULT_RESET_SIGNAL_NAMES = ['rst', 'reset'];
 
 function matchesSignalNameList(signal: string, names: string[]): boolean {
   const lower = signal.toLowerCase();
@@ -108,10 +100,7 @@ const KEYWORDS = new Set([
   'wire',
 ]);
 
-export function extractDesignFromText(
-  sources: SourceFile[],
-  options?: TextExtractorOptions,
-): DesignGraph {
+export function extractDesignFromText(sources: SourceFile[]): DesignGraph {
   const graph: DesignGraph = {
     rootModules: [],
     modules: {},
@@ -121,8 +110,8 @@ export function extractDesignFromText(
     generatedAt: new Date().toISOString(),
   };
 
-  const clockSignalNames = options?.clockSignalNames ?? DEFAULT_CLOCK_SIGNAL_NAMES;
-  const resetSignalNames = options?.resetSignalNames ?? DEFAULT_RESET_SIGNAL_NAMES;
+  const clockSignalNames = DEFAULT_CLOCK_SIGNAL_NAMES;
+  const resetSignalNames = DEFAULT_RESET_SIGNAL_NAMES;
 
   const allModules = sources.flatMap(findModules);
   for (const match of allModules) {

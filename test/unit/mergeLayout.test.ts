@@ -219,8 +219,8 @@ describe('first-open auto-cuts', () => {
 
   it('does not auto-cut an untagged compound event-control signal', () => {
     // A register whose compound `always_ff` sensitivity list has no signal matching
-    // svsch.clockSignalNames/resetSignalNames -- so the extractor leaves clockSignal
-    // and resetSignal unset, and the extra event-control ports (a, b, c) must not be
+    // a default clock/reset name -- so the extractor leaves clockSignal and
+    // resetSignal unset, and the extra event-control ports (a, b, c) must not be
     // first-open auto-cut even though includeClockAndReset is true.
     const compoundModule = {
       name: 'top',
