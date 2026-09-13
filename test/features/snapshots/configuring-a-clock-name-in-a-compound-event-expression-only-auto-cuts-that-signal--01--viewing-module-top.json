@@ -212,7 +212,7 @@
       "target": "reg:top:q",
       "sourceHandle": "port:c",
       "targetHandle": "c",
-      "path": "M 144 240 L 168 240 L 240 240 L 240 216 L 432 216 L 456 216"
+      "path": "M 144 240 L 168 240 L 312 240 L 312 216 L 432 216 L 456 216"
     },
     {
       "id": "edge:port:top:d:reg:top:q:d",
