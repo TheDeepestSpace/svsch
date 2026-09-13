@@ -85,7 +85,6 @@ async function updateSvschSetting(this: BddWorld, docString: string) {
 }
 
 Given('I disable clock and reset cuts using this setting:', updateSvschSetting);
-Given('I configure clock and reset signal names using this setting:', updateSvschSetting);
 
 When('I open the {string} module in SVSCH', async function (this: BddWorld, moduleName: string) {
   if (this._bddWorkspaceFiles.length === 0) {
