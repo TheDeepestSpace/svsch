@@ -83,10 +83,6 @@ struct NodePort {
     bool isArrayNode = false;
     std::string arrayDimension;
     int arraySize = 0;
-    // Set on a register's clock port and any other event-control signal (e.g.
-    // a compound `always_ff @(posedge a or negedge b)` sensitivity list) to
-    // render the dynamic-input chevron, with a bobble added for 'negedge'.
-    std::string eventEdge;
 };
 
 struct StructField {
@@ -150,7 +146,6 @@ struct Node {
         std::string resetKind; // "async", "sync"
         bool resetActiveLow = false;
         std::string clockSignal;
-        bool clockActiveLow = false;
         std::string resetSignal;
         bool isProcedural = false;
         bool inferred = false;
@@ -310,10 +305,6 @@ public:
     DesignExtractor(vpiHandle design);
     json extract(const std::string& targetModule = "");
     std::string workspace_root;
-    // No default here: callers must set these explicitly. main() supplies the
-    // package.json-matching defaults (see main.cpp); tests configure their own.
-    std::vector<std::string> clock_signal_names;
-    std::vector<std::string> reset_signal_names;
 
 private:
     void processModule(vpiHandle module_handle);
