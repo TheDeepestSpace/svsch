@@ -330,16 +330,38 @@ index 5570b9f..b3a8323 100644
              }
              await use();
 diff --git a/node_modules/vscode-test-playwright/dist/vscodeHandle.js b/node_modules/vscode-test-playwright/dist/vscodeHandle.js
-index 7c12088..dee0634 100644
+index 7c12088..fcd0925 100644
 --- a/node_modules/vscode-test-playwright/dist/vscodeHandle.js
 +++ b/node_modules/vscode-test-playwright/dist/vscodeHandle.js
-@@ -115,7 +115,7 @@ class VSCodeEvaluator {
+@@ -115,8 +115,8 @@ class VSCodeEvaluator {
      async _sendAndWaitWithTrace(op, data) {
          if (!this._page)
              return await this._sendAndWait(op, data);
 -        const { monotonicTime, createGuid } = require('playwright-core/lib/utils');
-+        const { iso: { monotonicTime }, utils: { createGuid } } = require('playwright-core/lib/coreBundle');
 -        const tracing = this._page.context().tracing;
++        const { iso: { monotonicTime }, utils: { createGuid } } = require('playwright-core/lib/coreBundle');
 +        const tracing = this._page.browserContext.tracing;
          const frame = this._page.mainFrame();
          const metadata = {
+             id: `vscodecall@${data.id ?? createGuid()}`,
+@@ -132,7 +132,10 @@ class VSCodeEvaluator {
+             params: { op, data },
+             log: [],
+         };
+-        await tracing.onBeforeCall(frame, metadata);
++        // Playwright 1.63 changed onBeforeCall/onAfterCall to take a Progress-shaped
++        // object (destructured as `{ metadata }`) as the first argument instead of
++        // `metadata` directly; the sdkObject (frame) moved to the second argument.
++        await tracing.onBeforeCall({ metadata }, frame);
+         let error, result;
+         try {
+             result = await this._sendAndWait(op, data);
+@@ -143,7 +146,7 @@ class VSCodeEvaluator {
+             throw e;
+         }
+         finally {
+-            await tracing.onAfterCall(frame, { ...metadata, endTime: monotonicTime(), error, result });
++            await tracing.onAfterCall({ metadata: { ...metadata, endTime: monotonicTime(), error, result } }, frame);
+         }
+     }
+ }

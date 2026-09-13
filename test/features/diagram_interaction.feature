@@ -245,6 +245,38 @@ Feature: Diagram Interaction
     Then I should see 2 cut net labels named "clk"
     And I should see 2 cut net labels named "clr"
 
+  Scenario: A compound event expression with no configured clock/reset name is not auto-cut
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic a, input logic b, input logic c, input logic d, output logic q);
+        always_ff @(posedge a or posedge b or negedge c) begin
+          q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should not see cut net labels named "a"
+    And I should not see cut net labels named "b"
+    And I should not see cut net labels named "c"
+
+  Scenario: Configuring a clock name in a compound event expression only auto-cuts that signal
+    Given I configure clock and reset signal names using this setting:
+      """
+      "svsch.clockSignalNames": ["b"]
+      """
+    And I have a file "top.sv" in my workspace:
+      """
+      module top(input logic a, input logic b, input logic c, input logic d, output logic q);
+        always_ff @(posedge a or posedge b or negedge c) begin
+          q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should see 2 cut net labels named "b"
+    And I should not see cut net labels named "a"
+    And I should not see cut net labels named "c"
+
   Scenario Outline: Resetting the layout reapplies both automatic cut heuristics
     Given I have a file "top.sv" in my workspace:
       """
@@ -1066,6 +1098,77 @@ Feature: Diagram Interaction
     Then the "Expand" button should not be visible
     When I collapse the expanded instance "u1"
     Then I should see an instance node "u1" of module "leaf"
+
+  # Callable counterpart to "Expanding an instance in place" above (issue
+  # #335, revised in PR #336 review): unlike an instance, a function/task
+  # call site has no standalone module of its own to navigate to — its body
+  # can read/write signals from its enclosing module's scope directly,
+  # without those ever being formal arguments, so it isn't a self-contained
+  # diagram double-click could hand off to (see PR #336 discussion). Expand
+  # (toolbar button, same trigger and mechanism instance expansion uses)
+  # unfolds the call's own body in place read-only instead; double-click is
+  # a no-op for these kinds (see "Double-clicking..." below).
+  Scenario: Expanding a function call in place, and Collapse restores it
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic [7:0] a, input logic [7:0] b, output logic [7:0] y);
+        function automatic [7:0] foo(input [7:0] lhs, input [7:0] rhs);
+          foo = lhs + rhs;
+        endfunction
+
+        assign y = foo(a, b);
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "foo"
+    Then the "Expand" button should be visible
+    When I click the "Expand" button
+    Then I should see a boundary port node named "lhs"
+    And I should see a boundary port node named "rhs"
+    And I should see a dimmed function call node "foo"
+    When I collapse the expanded function call "foo"
+    Then I should not see a boundary port node named "lhs"
+    And I should see a function call node "foo"
+
+  Scenario: Expanding a task call in place, and Collapse restores it
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic [7:0] a, output logic [7:0] y);
+        task automatic bump(input [7:0] value, output [7:0] result);
+          result = value + 1;
+        endtask
+
+        always_comb begin
+          bump(a, y);
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "bump"
+    Then the "Expand" button should be visible
+    When I click the "Expand" button
+    Then I should see a boundary port node named "value"
+    And I should see a boundary port node named "result"
+    And I should see a dimmed task call node "bump"
+    When I collapse the expanded task call "bump"
+    Then I should not see a boundary port node named "value"
+    And I should see a task call node "bump"
+
+  Scenario: Double-clicking a function call or task call block does nothing
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic [7:0] a, input logic [7:0] b, output logic [7:0] y);
+        function automatic [7:0] foo(input [7:0] lhs, input [7:0] rhs);
+          foo = lhs + rhs;
+        endfunction
+
+        assign y = foo(a, b);
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I double-click on the function call node "foo"
+    Then I should not see a boundary port node named "lhs"
+    And I should see a function call node "foo"
 
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip

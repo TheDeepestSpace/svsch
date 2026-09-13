@@ -83,6 +83,10 @@ struct NodePort {
     bool isArrayNode = false;
     std::string arrayDimension;
     int arraySize = 0;
+    // Set on a register's clock port and any other event-control signal (e.g.
+    // a compound `always_ff @(posedge a or negedge b)` sensitivity list) to
+    // render the dynamic-input chevron, with a bobble added for 'negedge'.
+    std::string eventEdge;
 };
 
 struct StructField {
@@ -136,12 +140,17 @@ struct Node {
     std::string label;
     std::string instanceOf; // For instances
     std::string moduleName; // For instances (target module for navigation)
+    std::string functionName; // For function call-sites
+    std::string functionId; // Qualified function body key (<module>.<function>)
+    std::string taskName; // For task call-sites
+    std::string taskId; // Qualified task body key (<module>.<task>)
     struct {
         std::string expression;
         std::string operation;
         std::string resetKind; // "async", "sync"
         bool resetActiveLow = false;
         std::string clockSignal;
+        bool clockActiveLow = false;
         std::string resetSignal;
         bool isProcedural = false;
         bool inferred = false;
@@ -245,6 +254,9 @@ struct EnumMemberInfo {
 
 struct Module {
     std::string name;
+    std::string callableKind; // Empty for modules; otherwise "function" or "task"
+    std::string callableName;
+    std::string parentModule;
     std::vector<ParameterDecl> parameters;
     std::vector<Port> ports;
     std::vector<Node> nodes;
@@ -305,6 +317,11 @@ public:
 
 private:
     void processModule(vpiHandle module_handle);
+    void collectTaskFunctions(vpiHandle module_handle, const std::string& module_name);
+    void processCallableDeclaration(vpiHandle callable_handle, const std::string& module_name);
+    std::string promoteFunctionCallExpr(vpiHandle call_handle, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
+    void processTaskCall(vpiHandle call_handle, Module& mod, bool is_procedural = true);
+    std::string getCallableWidth(vpiHandle handle);
     void collectModuleParameters(vpiHandle module_handle, Module& mod);
     void processGenerateRegions(vpiHandle module_handle, Module& mod);
     void walkGenerateRegionTree(vpiHandle handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth = 0);
@@ -459,6 +476,7 @@ private:
     int source_depth_ = 0;
     vpiHandle design_;
     std::vector<Module> modules_;
+    std::vector<Module> callables_;
     std::map<std::string, InterfaceType> interfaceTypes_;
     std::set<std::string> processing_modules_;
     int node_id_counter_ = 0;
