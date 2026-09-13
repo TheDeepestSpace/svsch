@@ -99,12 +99,21 @@ export function parseFeatureFile(featureFile: string): LiveScenario[] {
   return scenarios;
 }
 
+// Mirrors the recursive `test/features/**/*.feature` glob used by the actual
+// BDD runner (test/bdd/playwright.config.ts) — feature files can live in
+// subdirectories (e.g. test/features/diagram_interaction/*.feature).
 function listFeatureFiles(featuresDir: string): string[] {
   if (!fs.existsSync(featuresDir)) return [];
-  return fs
-    .readdirSync(featuresDir)
-    .filter((f) => f.endsWith('.feature'))
-    .map((f) => path.join(featuresDir, f));
+  const results: string[] = [];
+  for (const entry of fs.readdirSync(featuresDir, { withFileTypes: true })) {
+    const fullPath = path.join(featuresDir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listFeatureFiles(fullPath));
+    } else if (entry.name.endsWith('.feature')) {
+      results.push(fullPath);
+    }
+  }
+  return results;
 }
 
 export interface BddOrphan {
