@@ -465,11 +465,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, comparator, zext, mux]
-      selectedText: |
-        case (sel)
-              2'b00: y = (a < b);
-              default: y = 8'h00;
-            endcase
+      selectedText: "2'b00: y = (a < b);"
 
   - id: inverter-expression
     title: Bitwise Inversion

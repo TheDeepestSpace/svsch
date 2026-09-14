@@ -230,18 +230,20 @@ cases:
       - kind: unknown
         label: initial
 
-  # The zero-extend nodes share one source span with the whole case
-  # statement, so sibling arm nodes light up alongside them — only the
-  # zext presence is pinned here.
+  # Each arm's zext node is scoped to just that arm's own source (not the
+  # whole case statement), so selecting inside one arm highlights only its
+  # own gate + zext + the mux, not the sibling arms' zext nodes/edges.
   - id: zext-case-arm
     module: alu_case_arms
     file: fixtures/alu_case_arms.sv
     select:
       - "3'b101:  result = (a && b);" # ideal
       - "3'b101:  result = (a && b)" # missing trailing ";"
-    exclusive: false
     expect:
+      - kind: gate
       - kind: zext
+      - kind: mux
+        label: case alu_op
 
   # A net that's a pure pass-through alias (no gate/comb/register of its own)
   # is folded into the edge it sits on — its `wire` declaration carries no
