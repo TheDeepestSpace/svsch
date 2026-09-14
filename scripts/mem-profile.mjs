@@ -215,6 +215,20 @@ function gitAuthed(githubToken, args, opts = {}) {
   });
 }
 
+// Concurrent master-push runs can race to push to gh-pages (the per-job
+// concurrency group only protects against the same job re-running for the
+// same ref, not against other refs/metrics — see #449), so this retries
+// generously with exponential backoff + jitter, mirroring
+// ci-duration.mjs's fetchGitHubJson.
+const MAX_PUBLISH_ATTEMPTS = 25;
+
+// Same capped-exponential-backoff-plus-jitter shape as ci-duration.mjs's
+// publishBackoffMs, duplicated rather than shared for the same reason the
+// publish* functions themselves are (see this function's header comment).
+function publishBackoffMs(attempt) {
+  return Math.min(2 ** attempt * 250, 15_000) + Math.random() * 500;
+}
+
 // Merges `freshEntries` into gh-pages's persisted mem-profile history,
 // regenerates the trend chart/viewer from the merged result, and pushes both
 // in one commit — same shape and same retry-on-losing-push-race behavior as
@@ -231,7 +245,7 @@ export async function publishMemProfileHistory({ freshEntries, githubToken, desc
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-mem-profile-'));
   let worktreeAdded = false;
   try {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
       try {
         gitAuthed(githubToken, ['fetch', '--depth=1', 'origin', 'gh-pages']);
         if (worktreeAdded) {
@@ -241,9 +255,10 @@ export async function publishMemProfileHistory({ freshEntries, githubToken, desc
         git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
         worktreeAdded = true;
       } catch (err) {
-        if (attempt === 3) throw err;
+        if (attempt === MAX_PUBLISH_ATTEMPTS) throw err;
         // Transient network failure, or someone else's push race, fetching
         // or checking out gh-pages — refetch and retry.
+        await new Promise((resolve) => setTimeout(resolve, publishBackoffMs(attempt)));
         continue;
       }
 
@@ -289,8 +304,9 @@ export async function publishMemProfileHistory({ freshEntries, githubToken, desc
         console.log(`${message}.`);
         return;
       } catch (err) {
-        if (attempt === 3) throw err;
+        if (attempt === MAX_PUBLISH_ATTEMPTS) throw err;
         // Someone else pushed to gh-pages first — refetch and retry.
+        await new Promise((resolve) => setTimeout(resolve, publishBackoffMs(attempt)));
       }
     }
   } finally {

@@ -15,13 +15,14 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     concurrency:
-      # Shared across every job/workflow that pushes to gh-pages (see
-      # ci.yml's merge_visual_reports, ci-duration.yml) so pushes are
-      # serialized repo-wide instead of racing this job's own ad-hoc
-      # retry loop against theirs (#380).
-      group: gh-pages-publish
-      cancel-in-progress: false
-      queue: max
+      # Scoped to this job + triggering PR (falling back to a shared key for
+      # the schedule/workflow_dispatch full-repo sweep, which isn't tied to
+      # any one PR) so only a re-run of this same cleanup cancels its own
+      # stale in-flight run — not ci.yml's or ci-duration.yml's now
+      # per-job/per-ref gh-pages groups (#449). This job's own ad-hoc
+      # retry loop below still handles push races against those.
+      group: gh-pages-cleanup-videos-${{ github.event.pull_request.number || 'scheduled' }}
+      cancel-in-progress: true
     steps:
       - name: Checkout gh-pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -80,10 +81,23 @@ jobs:
             git commit -m "Remove video galleries for closed PRs"
             attempt=1
             while ! git push origin HEAD:gh-pages; do
-              if [ "$attempt" -ge 3 ]; then
+              if [ "$attempt" -ge 25 ]; then
                 echo "Failed to update gh-pages after ${attempt} attempts" >&2
                 exit 1
               fi
+              # Same capped-exponential-backoff-plus-jitter shape as the
+              # .mjs publishers' publishBackoffMs (#450): min(2^attempt*250,
+              # 15000)ms + 0-500ms jitter, so simultaneous pushers don't
+              # retry in lockstep. Needed now that the shared gh-pages lock
+              # has been split into per-job groups (#449), so this push can
+              # race against other publishers instead of always queuing
+              # behind them.
+              backoff_ms=$(( 2 ** attempt * 250 ))
+              if [ "$backoff_ms" -gt 15000 ]; then
+                backoff_ms=15000
+              fi
+              backoff_ms=$(( backoff_ms + RANDOM % 500 ))
+              sleep "$(printf '%d.%03d' $((backoff_ms / 1000)) $((backoff_ms % 1000)))"
               attempt=$((attempt + 1))
               git fetch origin gh-pages
               git rebase origin/gh-pages

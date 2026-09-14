@@ -178,6 +178,19 @@ export async function fetchCompletedRuns({
   return runs;
 }
 
+// Concurrent PR/master runs across the whole repo can race to push to
+// gh-pages (the per-job concurrency group only protects against the same
+// job re-running for the same ref, not against other refs/metrics — see
+// #449), so this retries generously with exponential backoff + jitter,
+// mirroring fetchGitHubJson above.
+const MAX_PUBLISH_ATTEMPTS = 25;
+
+// Same capped-exponential-backoff-plus-jitter shape as fetchGitHubJson
+// above, just keyed by attempt number instead of a fixed maxAttempts.
+function publishBackoffMs(attempt) {
+  return Math.min(2 ** attempt * 250, 15_000) + Math.random() * 500;
+}
+
 // Merges `freshEntries` into gh-pages's persisted CI-duration history,
 // regenerates the trend chart/viewer from the merged result, and pushes
 // both in one commit — shared by the live-capture workflow (one entry at a
@@ -194,7 +207,7 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-ci-duration-'));
   let worktreeAdded = false;
   try {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
       try {
         gitAuthed(githubToken, ['fetch', '--depth=1', 'origin', 'gh-pages']);
         if (worktreeAdded) {
@@ -204,9 +217,10 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
         git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
         worktreeAdded = true;
       } catch (err) {
-        if (attempt === 3) throw err;
+        if (attempt === MAX_PUBLISH_ATTEMPTS) throw err;
         // Transient network failure, or someone else's push race, fetching
         // or checking out gh-pages — refetch and retry.
+        await new Promise((resolve) => setTimeout(resolve, publishBackoffMs(attempt)));
         continue;
       }
 
@@ -252,8 +266,9 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
         console.log(`${message}.`);
         return;
       } catch (err) {
-        if (attempt === 3) throw err;
+        if (attempt === MAX_PUBLISH_ATTEMPTS) throw err;
         // Someone else pushed to gh-pages first — refetch and retry.
+        await new Promise((resolve) => setTimeout(resolve, publishBackoffMs(attempt)));
       }
     }
   } finally {

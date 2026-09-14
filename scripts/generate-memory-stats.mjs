@@ -80,16 +80,23 @@ const categoryResults = CATEGORIES.map((category) => {
   return { category, shards, worst, baselineBytes, deltaPct };
 });
 
+// Concurrent PR runs across the whole repo can race to push to gh-pages
+// (the per-job concurrency group only protects against the same job
+// re-running for the same PR, not against other PRs/metrics — see #449), so
+// this retries generously with exponential backoff + jitter, mirroring
+// ci-duration.mjs's fetchGitHubJson.
+const MAX_PUBLISH_ATTEMPTS = 25;
+
 // Publishes the raw per-shard/leg timeseries + the self-contained HTML
 // report + this PR's trend-chart preview to gh-pages
 // (dev/mem-profile/pr-<N>/), replacing whatever that PR published last time
 // (so shards/legs removed since — e.g. a shard count change — don't linger).
 // Same worktree-commit-push-with-retry shape as generate-coverage-stats.mjs's
 // publishReport / generate-benchmark-stats.mjs's publishFiles.
-function publishReport(filesByRelativePath) {
+async function publishReport(filesByRelativePath) {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-mem-profile-'));
   try {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
       try {
         gitAuthed(['fetch', '--depth=1', 'origin', 'gh-pages']);
         if (attempt > 1) {
@@ -127,11 +134,17 @@ function publishReport(filesByRelativePath) {
         gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
         return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
       } catch (err) {
-        if (attempt === 3) throw err;
-        // Retry transient fetch failures and concurrent push races.
+        if (attempt === MAX_PUBLISH_ATTEMPTS) throw err;
+        // Retry transient fetch failures and concurrent push races, backing
+        // off exponentially (capped) with jitter so simultaneous pushers
+        // don't retry in lockstep.
+        const backoffMs = Math.min(2 ** attempt * 250, 15_000) + Math.random() * 500;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
-    throw new Error('Failed to publish memory profiling report after 3 attempts');
+    throw new Error(
+      `Failed to publish memory profiling report after ${MAX_PUBLISH_ATTEMPTS} attempts`,
+    );
   } finally {
     try {
       git(['worktree', 'remove', '--force', worktreeDir]);
@@ -233,7 +246,7 @@ try {
   );
   filesByRelativePath.set('index.html', renderIndexHtml());
 
-  const commitSha = publishReport(filesByRelativePath);
+  const commitSha = await publishReport(filesByRelativePath);
   const trendUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${commitSha}/dev/mem-profile/pr-${PR_NUMBER}/trend.svg`;
   const reportUrl = `https://${owner.toLowerCase()}.github.io/${repo}/dev/mem-profile/pr-${PR_NUMBER}/index.html`;
 
