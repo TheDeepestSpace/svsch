@@ -1720,16 +1720,17 @@ function DiagramApp(): React.ReactElement {
   }, [nodes, view]);
 
   // Equivalent to marquee-selecting every block and clicking the floating
-  // selection toolbar's "Auto Layout" — releases every real block (net-cut
-  // labels excluded, same filter the selection toolbar applies) for one ELK
-  // pass using current positions as placement hints.
+  // selection toolbar's "Auto Layout" — releases every real block for one ELK
+  // pass using current positions as placement hints. Net-cut labels ride
+  // along too (same as the selection toolbar releasing a block's dangling
+  // ends with it, see handleClick below): every label is attached to some
+  // block, and "All" releases every block, so a manually-dragged cut end
+  // must not stay fixed wherever it was last left.
   const autoLayoutAll = useCallback(() => {
     if (!view) {
       return;
     }
-    const releasedIds = new Set(
-      nodes.filter((node) => node.data.node.kind !== 'netLabel').map((node) => node.id),
-    );
+    const releasedIds = new Set(nodes.map((node) => node.id));
     const positioned = buildRelayoutPositionedNodes(nodes, releasedIds);
     vscode.postMessage({
       type: 'relayoutSelection',

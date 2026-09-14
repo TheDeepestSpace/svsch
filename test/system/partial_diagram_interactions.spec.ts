@@ -177,6 +177,49 @@ async function findCutLabelIdAttachedTo(
   }, blockId);
 }
 
+// Reads a node's React Flow (flow-space) position rather than its on-screen
+// bounding box, so a comparison across a drag + relayout isn't muddied by
+// the viewport's own pan/zoom.
+async function partialNodePosition(
+  webview: FrameLocator,
+  nodeId: string,
+): Promise<{ x: number; y: number }> {
+  const position = await webview.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNode?.(id);
+    return node ? { x: node.position.x, y: node.position.y } : null;
+  }, nodeId);
+  if (!position) {
+    throw new Error(`Could not read position for node ${nodeId}`);
+  }
+  return position;
+}
+
+// Drags a node by a fixed pixel offset in screen space (mirrors
+// dragSystemNodeByGridCells in diagram.spec.ts, adapted to a raw pixel delta
+// since a net-cut label isn't grid-snapped).
+async function dragSystemNodeBy(
+  workbox: Page,
+  webview: FrameLocator,
+  nodeId: string,
+  dx: number,
+  dy: number,
+): Promise<void> {
+  const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
+  const box = await node.boundingBox();
+  if (!box) {
+    throw new Error(`Could not get node box for ${nodeId}`);
+  }
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+
+  await workbox.mouse.move(startX, startY);
+  await workbox.mouse.down();
+  await workbox.mouse.move(startX + dx / 2, startY + dy / 2, { steps: 8 });
+  await workbox.mouse.move(startX + dx, startY + dy, { steps: 8 });
+  await workbox.mouse.up();
+}
+
 // Mirrors waitForViewportToSettle in partial_diagram_nodes.spec.ts: waits for
 // React Flow's viewport transform to hold steady before a screenshot, so a
 // still-animating pan/zoom from the preceding action doesn't get captured
@@ -584,11 +627,16 @@ test.describe('Partial diagram interaction parity', () => {
   // in the partial diagram" — by the time it clicks the button, zero cut ends
   // remain, so it never actually exercises one surviving the relayout. This
   // case adds two blocks without their driving/driven ports (so both ends of
-  // their nets render as cut ends — no drag gesture needed to set that up,
-  // unlike most of the still-unported cases below), runs Auto Layout All on
-  // the whole pane, and confirms a cut label doesn't land on top of the other
-  // block afterward — the exact shape of the bug this case was written for
-  // (issue #408 follow-up).
+  // their nets render as cut ends structurally, no drag needed just to create
+  // them), then explicitly drags one cut end away from its natural position
+  // before running Auto Layout All on the whole pane. Two things are checked
+  // afterward: the dragged end must actually move off the spot it was left
+  // at — Auto Layout All releases every real block, and a net-cut label rides
+  // along with the block it's attached to (same as the floating selection
+  // toolbar's "Auto Layout"), so a manually-placed end must not stay pinned
+  // there — and neither cut label may land on top of the other block, the
+  // exact shape of the bug this case was originally written for (issue #408
+  // follow-up).
   const AUTO_LAYOUT_ALL_TITLE =
     'Auto Layout All re-places every block using current positions as hints';
   test(AUTO_LAYOUT_ALL_TITLE, async ({ workbox, evaluateInVSCode }) => {
@@ -629,6 +677,29 @@ test.describe('Partial diagram interaction parity', () => {
       throw new Error('Instances "u1"/"u2" did not render in the partial pane');
     }
 
+    const u1LabelId = await findCutLabelIdAttachedTo(partialWebview, u1Id);
+    const u2LabelId = await findCutLabelIdAttachedTo(partialWebview, u2Id);
+    if (!u1LabelId || !u2LabelId) {
+      throw new Error('Expected a cut net label attached to both "u1" and "u2"');
+    }
+
+    // Drag u1's cut end well away from where it's dynamically tracking its
+    // port — this both fixes it (see onNodeDragStop in main.tsx) and gives
+    // Auto Layout All something to prove it actually released: a fixed net
+    // label that's just left wherever it was dropped would otherwise pass
+    // the "before"/"after" screenshots below unnoticed.
+    const positionBeforeDrag = await partialNodePosition(partialWebview, u1LabelId);
+    await dragSystemNodeBy(workbox, partialWebview, u1LabelId, -160, -120);
+    await waitForViewportToSettle(partialWebview);
+    const draggedPosition = await partialNodePosition(partialWebview, u1LabelId);
+    expect(
+      Math.hypot(
+        draggedPosition.x - positionBeforeDrag.x,
+        draggedPosition.y - positionBeforeDrag.y,
+      ),
+      'dragging the cut end should have moved it',
+    ).toBeGreaterThan(20);
+
     await screenshotPartialStep(
       workbox,
       partialWebview,
@@ -649,17 +720,24 @@ test.describe('Partial diagram interaction parity', () => {
       'partial-diagram-interaction-auto-layout-all-cut-ends-02-after.png',
     );
 
-    // The regression this case guards: buildPartialViewModel used to
+    // The dragged end must not be left hanging where it was manually moved
+    // to — Auto Layout All is expected to release it along with u1 and place
+    // it back against u1's port, same as it would if it had never been
+    // dragged at all.
+    const positionAfterLayout = await partialNodePosition(partialWebview, u1LabelId);
+    expect(
+      Math.hypot(
+        positionAfterLayout.x - draggedPosition.x,
+        positionAfterLayout.y - draggedPosition.y,
+      ),
+      'Auto Layout All should have moved the dragged cut end off its manually-placed position',
+    ).toBeGreaterThan(20);
+
+    // The regression this case also guards: buildPartialViewModel used to
     // synthesize cut-end labels only after the tied-wire routing pass had
     // already finished, so a released block landing wherever ELK repacked it
     // could park right on top of a cut label with no obstacle-avoidance
     // aware of it. Check both blocks' cut ends against the other block.
-    const u1LabelId = await findCutLabelIdAttachedTo(partialWebview, u1Id);
-    const u2LabelId = await findCutLabelIdAttachedTo(partialWebview, u2Id);
-    if (!u1LabelId || !u2LabelId) {
-      throw new Error('Expected a cut net label attached to both "u1" and "u2"');
-    }
-
     const u1LabelBox = await partialWebview
       .locator(`.react-flow__node[data-id="${u1LabelId}"]`)
       .boundingBox();
