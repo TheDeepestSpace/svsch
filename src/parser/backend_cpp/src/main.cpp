@@ -69,6 +69,8 @@ int main(int argc, char** argv) {
 
     svsch::DesignExtractor extractor(designs[0]);
     extractor.workspace_root = workspaceRoot;
+    extractor.clock_signal_names = {"clk", "clock"};
+    extractor.reset_signal_names = {"rst", "reset"};
     json output = extractor.extract(targetModule);
 
     std::cout << output.dump(2) << std::endl;

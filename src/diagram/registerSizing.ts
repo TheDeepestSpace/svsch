@@ -11,9 +11,7 @@ function registerVisibleInputRows(node: DiagramNode): number {
       port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
   );
   const dPort = inputs.find((port) => port.name === 'D') ?? inputs[0];
-  const clockPort =
-    inputs.find((port) => port.name === clockSignal) ??
-    inputs.find((port) => port.name !== 'D' && port.name !== resetSignal);
+  const clockPort = clockSignal ? inputs.find((port) => port.name === clockSignal) : undefined;
   const resetPort = resetSignal ? inputs.find((port) => port.name === resetSignal) : undefined;
   const rvPort = inputs.find((port) => port.name === 'RV');
   const reservedPortIds = new Set(
