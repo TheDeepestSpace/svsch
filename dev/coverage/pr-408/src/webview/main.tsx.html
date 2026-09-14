@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/1198</span>
+                <span class='fraction'>0/1195</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/281</span>
+                <span class='fraction'>0/280</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/1026</span>
+                <span class='fraction'>0/1023</span>
             </div>
         
             
@@ -3284,7 +3284,8 @@
 <a name='L3219'></a><a href='#L3219'>3219</a>
 <a name='L3220'></a><a href='#L3220'>3220</a>
 <a name='L3221'></a><a href='#L3221'>3221</a>
-<a name='L3222'></a><a href='#L3222'>3222</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L3222'></a><a href='#L3222'>3222</a>
+<a name='L3223'></a><a href='#L3223'>3223</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -5009,13 +5010,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -5313,11 +5315,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -6496,7 +6498,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -8227,16 +8229,17 @@ function <span class="fstat-no" title="function not covered" >DiagramApp(): Reac
   }, [nodes, view]);
 &nbsp;
   // Equivalent to marquee-selecting every block and clicking the floating
-  // selection toolbar's "Auto Layout" — releases every real block (net-cut
-  // labels excluded, same filter the selection toolbar applies) for one ELK
-  // pass using current positions as placement hints.
+  // selection toolbar's "Auto Layout" — releases every real block for one ELK
+  // pass using current positions as placement hints. Net-cut labels ride
+  // along too (same as the selection toolbar releasing a block's dangling
+  // ends with it, see handleClick below): every label is attached to some
+  // block, and "All" releases every block, so a manually-dragged cut end
+  // must not stay fixed wherever it was last left.
   const autoLayoutAll = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >    if (!view) {</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
     }
-    const releasedIds = <span class="cstat-no" title="statement not covered" >new Set(</span>
-      nodes.<span class="fstat-no" title="function not covered" >filter((n</span>ode) =&gt; <span class="cstat-no" title="statement not covered" >node.data.node.kind !== 'netLabel')</span>.<span class="fstat-no" title="function not covered" >map((n</span>ode) =&gt; <span class="cstat-no" title="statement not covered" >node.id)</span>,
-    );
+    const releasedIds = <span class="cstat-no" title="statement not covered" >new Set(nodes.<span class="fstat-no" title="function not covered" >map((n</span>ode) =&gt; <span class="cstat-no" title="statement not covered" >node.id)</span>);</span>
     const positioned = <span class="cstat-no" title="statement not covered" >buildRelayoutPositionedNodes(nodes, releasedIds);</span>
 <span class="cstat-no" title="statement not covered" >    vscode.postMessage({</span>
       type: 'relayoutSelection',
@@ -8537,7 +8540,7 @@ function <span class="fstat-no" title="function not covered" >applyNodeResizeDra
   const dx = <span class="cstat-no" title="statement not covered" >snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));</span>
   const dy = <span class="cstat-no" title="statement not covered" >snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));</span>
   const { position, width, height } = <span class="cstat-no" title="statement not covered" >resizeNodeBounds(drag, dx, dy);</span>
-  const grid = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize;</span>
+  const grid = diagramSizing.gridSize;
 &nbsp;
   const nodes = <span class="cstat-no" title="statement not covered" >drag.startNodes.<span class="fstat-no" title="function not covered" >map((n</span>ode) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (node.id !== drag.nodeId) <span class="cstat-no" title="statement not covered" >return node;</span></span>
@@ -9717,7 +9720,7 @@ function <span class="fstat-no" title="function not covered" >snapDelta(v</span>
 function <span class="fstat-no" title="function not covered" >snapRegionBounds(</span>
   bounds: PositionedGenerateRegion['bounds'],
 ): PositionedGenerateRegion['bounds'] {
-  const grid = <span class="cstat-no" title="statement not covered" >diagramSizing.gridSize;</span>
+  const grid = diagramSizing.gridSize;
   const x = <span class="cstat-no" title="statement not covered" >Math.round(bounds.x / grid) * grid;</span>
   const y = <span class="cstat-no" title="statement not covered" >Math.round(bounds.y / grid) * grid;</span>
   const width = <span class="cstat-no" title="statement not covered" >Math.max(grid * 8, Math.round(bounds.width / grid) * grid);</span>
@@ -9733,7 +9736,7 @@ function <span class="fstat-no" title="function not covered" >snapRegionBounds(<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-13T05:07:06.883Z
+                at 2026-09-14T04:35:56.417Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
