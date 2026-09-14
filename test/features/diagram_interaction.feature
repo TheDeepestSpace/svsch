@@ -214,6 +214,11 @@ Feature: Diagram Interaction
     And I should not see cut net labels named "rst_n"
 
   Scenario: A synchronous reset outside the default reset signal names is not auto-cut
+    # "clr" isn't on the reset name list, so it's never classified as a
+    # reset signal at all -- it ends up as the plain select line of the
+    # if/else mux generated for "q", never wired to a reset port in the
+    # first place. This is "not recognized as reset", not "recognized as
+    # reset but excluded from cutting", so of course nothing gets cut.
     Given I have a file "top.sv" in my workspace:
       """
       module top(input logic clk, input logic clr, input logic d, output logic q);
