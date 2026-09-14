@@ -210,6 +210,37 @@ cases:
       - kind: instance
         label: u_inner
 
+  # Every generate arm gets its own region + its own copy of the instances
+  # declared inside it (dimmed unless it's the arm selected by the current
+  # parameters) — sibling arms coexist in the same graph. Unlike the
+  # case-statement zext node fixed above (zext-case-arm), each arm's
+  # instance source is naturally just its own instantiation statement, never
+  # the whole generate/case statement, so selecting inside one arm has never
+  # been able to bleed into a sibling's instance. The generate region/arm
+  # boundary itself carries no highlight of its own yet: selection-to-node
+  # highlighting only indexes `module.nodes` (diagramPanel.ts's
+  # rebuildSourceRangeIndexes), not `module.generateRegions`, so these
+  # target the instance nested inside the arm rather than the arm/region
+  # node.
+  - id: generate-if-arm-instance
+    module: generate_arm_intrusion
+    file: fixtures/generate_arm_intrusion.sv
+    select: "generate_arm_intrusion_leaf u_arm (\n          .a(b),\n          .y(w)\n      );"
+    expect:
+      # Generate-owned instances get their label scoped with the arm's
+      # block label (g_arm.u_arm, not plain u_arm) to disambiguate same-named
+      # instances across sibling arms.
+      - kind: instance
+        label: g_arm.u_arm
+
+  - id: generate-case-arm-instance
+    module: generate_case_regions
+    file: fixtures/generate_case_regions.sv
+    select: 'generate_case_leaf u_case_1(.a(b), .y(w));'
+    expect:
+      - kind: instance
+        label: g_case_1.u_case_1
+
   - id: loop-for-statement
     module: loop_logic
     file: fixtures/loop_logic.sv
