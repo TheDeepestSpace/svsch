@@ -892,10 +892,10 @@ A case arm whose driving signal is narrower than the mux's resolved output width
   output logic [7:0] y
 );
   always_comb begin
-    <mark>case (sel)
-      2&#39;b00: y = (a &lt; b);
+    case (sel)
+      <mark>2&#39;b00: y = (a &lt; b);</mark>
       default: y = 8&#39;h00;
-    endcase</mark>
+    endcase
   end
 endmodule
 </code></pre>

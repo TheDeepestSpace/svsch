@@ -1965,7 +1965,12 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
                 int branch_bits = std::max(1, bitSizeFromWidth(branch_natural_width));
                 int target_bits = std::max(1, bitSizeFromWidth(target_width));
                 if (target_bits > branch_bits) {
-                    std::string zext_signal = ensureZextNode(mod, branch_val.signal, branch_natural_width, target_width, stmt);
+                    // Scope the zext node to this arm's own item, not the whole
+                    // case statement — otherwise every arm needing zero-extension
+                    // shares one source span, so selecting inside any one of them
+                    // highlights all of them (and every zext-to-mux edge) instead
+                    // of just the one actually selected.
+                    std::string zext_signal = ensureZextNode(mod, branch_val.signal, branch_natural_width, target_width, item);
                     refreshNodeOutputWidths();
                     branch_val.signal = zext_signal;
                     branch_val.width = target_width;
