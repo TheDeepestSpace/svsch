@@ -2072,11 +2072,11 @@ export function elkNodeForDiagramNode(
         (candidate) => candidate.name === 'R' || candidate.name === resetSignal,
       );
       const rvPort = inputs.find((candidate) => candidate.name === 'RV');
-      const clockPort =
-        inputs.find((candidate) => candidate.name === clockSignal) ??
-        inputs.find(
-          (candidate) => candidate !== dPort && candidate !== resetPort && candidate !== rvPort,
-        );
+      // No positional fallback here: an unmatched signal must not be guessed
+      // into the clock role, or its port would be laid out on the clock row
+      // while RegisterNodeSvg (which has no such fallback) draws its chevron
+      // one row down in the extra-input stack -- misaligning the wire.
+      const clockPort = inputs.find((candidate) => candidate.name === clockSignal);
       const isReset = port === resetPort;
       const isClock = port === clockPort;
       const isRv = port === rvPort;

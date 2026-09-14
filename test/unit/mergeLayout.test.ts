@@ -38,6 +38,7 @@ import {
   nodePortCenterOffset,
 } from '../../src/diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
+import { registerExtraInputPortTop } from '../../src/diagram/registerGeometry';
 import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { DesignGraph, DiagramEdge, DiagramNode, PositionedNode } from '../../src/ir/types';
 import { LayoutStore, type SavedLayout } from '../../src/storage/layoutStore';
@@ -1203,7 +1204,9 @@ describe('layout merge', () => {
   it('stacks unmatched compound event-control ports at distinct rows', () => {
     // A register whose compound `always_ff` sensitivity list has no clock/reset name
     // match has no clock/reset port at all -- every event-control signal (a, b, c)
-    // must still get its own row so wires don't overlap at the same anchor point.
+    // must still get its own row, at the same y RegisterNodeSvg's
+    // registerExtraInputPortTop draws its chevron, or the wire and the glyph it's
+    // meant to land on drift apart (no fallback must sneak "a" into the clock row).
     const register: DiagramNode = {
       id: 'register',
       kind: 'register',
@@ -1221,9 +1224,12 @@ describe('layout merge', () => {
     const bPort = geometry.ports.find((port) => port.id === 'register:b');
     const cPort = geometry.ports.find((port) => port.id === 'register:c');
 
-    const positions = [aPort?.y, bPort?.y, cPort?.y];
-    expect(positions.every((y) => y !== undefined)).toBe(true);
-    expect(new Set(positions).size).toBe(3);
+    const grid = diagramSizing.gridSize;
+    const expectedY = (index: number) =>
+      registerExtraInputPortTop(index, geometry.height, false) + grid / 2;
+    expect(aPort?.y).toBe(expectedY(0));
+    expect(bPort?.y).toBe(expectedY(1));
+    expect(cPort?.y).toBe(expectedY(2));
   });
 
   it('adds obstacle margins to route-only ELK geometry without moving port anchors', () => {
