@@ -836,6 +836,9 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.svsch-register-reset-port')).not.toBeVisible();
     await expect(page.locator('[data-node-kind="register"] >> text=b')).toBeVisible();
     await expect(page.locator('[data-node-kind="register"] >> text=c')).toBeVisible();
+    // None of a/b/c should be auto-cut either -- there's no configured clock/reset
+    // name to justify treating any of them as control signals.
+    await expect(page.locator('[data-node-kind="netLabel"]')).toHaveCount(0);
 
     await expectGraphAndScreenshot(page, 'register-compound-event-unmatched-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-kind="register"]'),

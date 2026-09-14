@@ -227,20 +227,6 @@ Feature: Diagram Interaction
     Then I should see 2 cut net labels named "clk"
     And I should not see cut net labels named "clr"
 
-  Scenario: A compound event expression with no configured clock/reset name is not auto-cut
-    Given I have a file "top.sv" in my workspace:
-      """
-      module top(input logic a, input logic b, input logic c, input logic d, output logic q);
-        always_ff @(posedge a or posedge b or negedge c) begin
-          q <= d;
-        end
-      endmodule
-      """
-    When I open the "top" module in SVSCH
-    Then I should not see cut net labels named "a"
-    And I should not see cut net labels named "b"
-    And I should not see cut net labels named "c"
-
   Scenario Outline: Resetting the layout reapplies both automatic cut heuristics
     Given I have a file "top.sv" in my workspace:
       """
