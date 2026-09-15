@@ -55,7 +55,11 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     // see the comment there. System's suite is much smaller (5 tests x 3
     // versions), so keeping every CI video is cheap here too.
     vscodeVideo: {
-      mode: process.env.CI ? 'on' : 'retain-on-failure',
+      // SVSCH_LOCAL_NO_VIDEO opts out of recording entirely, same as
+      // test/bdd/playwright.config.ts: in some headless containers (no GPU,
+      // software GL) the Electron screencast prevents the workbench window
+      // from ever loading, so no test can run with video.
+      mode: process.env.CI ? 'on' : process.env.SVSCH_LOCAL_NO_VIDEO ? 'off' : 'retain-on-failure',
       size: { width: 640, height: 460 },
     },
   },
