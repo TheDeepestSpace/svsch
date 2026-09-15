@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { PARTIAL_INTERACTION_CASES } from './partial_diagram_interactions.cases';
-import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
+import { baselineThresholdFor } from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // "Does this diagram_interaction.feature behavior still hold inside a
@@ -265,6 +265,18 @@ async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
 // Screenshots a stable, fully-rendered state of the partial pane at an
 // important regression-testing checkpoint (mirrors the toHaveScreenshot call
 // in partial_diagram_nodes.spec.ts's loop).
+//
+// maxDiffPixels is resolved per snapshot *name* via baselineThresholdFor
+// (the same policy scripts/check-snapshot-updates.ts gates baseline updates
+// with), not a single constant shared across every call site — this
+// function backs both the auto-layout-*visibility* case (genuinely noisy:
+// floating-toolbar text antialiasing, see partialDiagramAutoLayoutVisibility's
+// own comment) and the auto-layout-all-cut-ends case, which has no such
+// noise source. Reusing the visibility case's 6000px tolerance for the
+// latter let a stale, transiently-mis-scaled 1.122.1 baseline (issue #408
+// review thread) go undetected for weeks: real content moving to a
+// different scale only trips ~5000 border/text pixels once most of the
+// canvas is identical background, comfortably inside that budget.
 async function screenshotPartialStep(
   workbox: Page,
   partialWebview: FrameLocator,
@@ -273,9 +285,10 @@ async function screenshotPartialStep(
   await waitForViewportToSettle(partialWebview);
   await dismissSystemNotifications(workbox);
   await workbox.waitForTimeout(300);
-  await expect(workbox).toHaveScreenshot(name, {
-    maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system.partialDiagramAutoLayoutVisibility,
-  });
+  const policy = baselineThresholdFor(
+    `test/system/__screenshots__/x/partial_diagram_interactions.spec.ts-snapshots/${name}`,
+  );
+  await expect(workbox).toHaveScreenshot(name, { maxDiffPixels: policy?.maxDiffPixels ?? 20 });
 }
 
 // Mirrors clickSystemNode in partial_diagram_nodes.spec.ts.

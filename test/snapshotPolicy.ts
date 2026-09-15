@@ -37,6 +37,22 @@ export const SNAPSHOT_THRESHOLDS = {
       // this tolerance is kept as-is until CI history confirms the fix holds
       // there too, at which point it can drop back to the suite default.
       partialDiagramAutoLayoutVisibility: 6000,
+      // partial-diagram-interaction-auto-layout-all-cut-ends-{01,02} used to
+      // share partialDiagramAutoLayoutVisibility's 6000px budget via a single
+      // hardcoded threshold in screenshotPartialStep. That masked a real bug
+      // for weeks (issue #408 review thread): the 1.122.1 "after" baseline
+      // was stuck at roughly half scale (a stale capture, not a live
+      // zoom regression — src/webview/main.tsx's camera never actually
+      // moves for this scenario), yet the wrong-scale diff against the
+      // correct render is only ~5000px once most of the canvas is shared
+      // background — comfortably inside 6000. This budget only needs to
+      // cover ordinary antialiasing plus the "before" shot's manual
+      // drag-drop landing spot (observed ~1960px, not exactly
+      // reproducible pixel-for-pixel across fonts/GPUs); it must stay well
+      // under the ~5000px a real half-scale regression produces. Matches
+      // cutOutBlockStubMove's headroom for the same kind of floating-label
+      // antialiasing/font-metric variance.
+      autoLayoutAllCutEnds: 500,
     },
   },
   pixelmatch: {
@@ -124,6 +140,13 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
       )
     ) {
       maxDiffPixels = SNAPSHOT_THRESHOLDS.playwright.system.partialDiagramAutoLayoutVisibility;
+    } else if (
+      isPlaywrightSnapshotNamed(
+        normalizedPath,
+        'partial-diagram-interaction-auto-layout-all-cut-ends',
+      )
+    ) {
+      maxDiffPixels = SNAPSHOT_THRESHOLDS.playwright.system.autoLayoutAllCutEnds;
     }
     return {
       suite: 'system',
