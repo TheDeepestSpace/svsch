@@ -670,6 +670,11 @@ svg.react-flow__connectionline {
   --vscode-inputValidation-warningBorder: #b89500;
   --svsch-error-highlight: color-mix(in srgb, var(--vscode-errorForeground, #ff3b30) 88%, #ff3b30);
   --svsch-error-highlight-fill: color-mix(in srgb, var(--svsch-error-highlight) 9%, transparent);
+  /* Not --vscode-charts-orange: unlike the other charts colors (fixed hex
+     defaults), VS Code defines charts.orange as an alias of the editor
+     find-match highlight, so themes that customize find-match (e.g. Abyss's
+     #eeeeee44) silently turn it non-orange — see PR #408's ALU border thread. */
+  --svsch-alu-orange: #d18616;
 }
 
 * {
@@ -1420,8 +1425,8 @@ text {
 }
 
 .alu-skin .node-skin-body {
-  fill: color-mix(in srgb, var(--vscode-charts-orange) 14%, var(--vscode-editor-background));
-  stroke: var(--vscode-charts-orange);
+  fill: color-mix(in srgb, var(--svsch-alu-orange) 14%, var(--vscode-editor-background));
+  stroke: var(--svsch-alu-orange);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
@@ -2114,8 +2119,8 @@ text {
 }
 .hdl-node-alu .svsch-node-shape,
 .svsch-node-shape.hdl-node-alu {
-  fill: color-mix(in srgb, var(--vscode-charts-orange) 14%, var(--vscode-editor-background));
-  stroke: var(--vscode-charts-orange);
+  fill: color-mix(in srgb, var(--svsch-alu-orange) 14%, var(--vscode-editor-background));
+  stroke: var(--svsch-alu-orange);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
@@ -2582,6 +2587,7 @@ path.port-skin-body.port-skin-harness {
   --svsch-interface-bg-edge: #595959;
   --svsch-mux-fill: #322a38;
   --svsch-alu-fill: #372d1d;
+  --svsch-alu-orange: #d18616;
   --svsch-interface-fill: #212c39;
   --svsch-interface-stroke: #73aaeb;
   --svsch-interface-port-fill: #253f5d;

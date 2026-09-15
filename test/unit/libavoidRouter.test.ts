@@ -1,12 +1,13 @@
 import { AvoidLib } from 'libavoid-js';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DiagramEdge, PositionedNode } from '../../src/ir/types';
 import {
   routeDiagramWithLibavoid,
   setLibavoidRuntimeForTests,
   type RoutingLeadPoint,
 } from '../../src/layout/libavoidRouter';
+import { renderedLeadPoint } from '../../src/layout/mergeLayout';
 import { simplifyOrthogonalRoute } from '../../src/layout/orthogonalRouteSimplifier';
 
 beforeAll(async () => {
@@ -89,6 +90,112 @@ describe('libavoid production router', () => {
     expect(route.length).toBeGreaterThanOrEqual(4);
     expect(route[1].y).toBe(route[0].y);
     expect(route.at(-2)!.y).toBe(route.at(-1)!.y);
+  });
+
+  // Regression for the FSM-rebuild partial-diagram scene (PR #408 review):
+  // the IDLE cut label sits one grid row below the register's D pin, so its
+  // obstacle margin used to swallow the pin and make it unreachable —
+  // libavoid degraded the connector to a straight line into the shape
+  // centre, the whole net was rejected, and the rendered fallback route ran
+  // straight through the latch and register bodies.
+  it('keeps a pin routable when a cut label margin reaches its port row', async () => {
+    const cutLabel = (
+      id: string,
+      text: string,
+      x: number,
+      y: number,
+      role: 'source' | 'sink',
+      handleSide: 'left' | 'right' | 'top' | 'bottom',
+    ): PositionedNode => ({
+      id,
+      kind: 'netLabel',
+      label: text,
+      ports: [{ id: 'cut', name: 'cut', direction: role === 'source' ? 'input' : 'output' }],
+      metadata: { cutNet: { netKey: id, role, align: 'start', handleSide } },
+      position: { x, y },
+    });
+    const nodes: PositionedNode[] = [
+      cutLabel('lbl-idle', 'IDLE', 24, 96, 'sink', 'right'),
+      cutLabel('lbl-net2-sink', 'NET_2', 24, 240, 'sink', 'right'),
+      cutLabel('lbl-net2-src', 'NET_2', 816, 360, 'source', 'left'),
+      cutLabel('lbl-net3-sink', 'NET_3', 528, 360, 'sink', 'right'),
+      cutLabel('lbl-clk', 'clk', -72, 72, 'sink', 'right'),
+      cutLabel('lbl-nse', 'next_state_en', 648, 264, 'sink', 'bottom'),
+      cutLabel('lbl-rstn', 'rst_n', 168, 168, 'sink', 'right'),
+      cutLabel('lbl-r-src', 'r', 312, 48, 'source', 'left'),
+      {
+        id: 'latch',
+        kind: 'latch',
+        label: 'next_r',
+        width: '[1:0]',
+        ports: [
+          { id: 'd', name: 'D', direction: 'input' },
+          { id: 'q', name: 'Q', direction: 'output' },
+        ],
+        position: { x: 144, y: 216 },
+      },
+      {
+        id: 'mux',
+        kind: 'mux',
+        label: 'if next_state_en',
+        ports: [
+          { id: 'sel', name: 's', direction: 'input' },
+          { id: 'in:true', name: 'true', direction: 'input', width: '[1:0]' },
+          { id: 'in:false', name: 'false', direction: 'input', width: '[1:0]' },
+          { id: 'out', name: 'out', direction: 'output', width: '[1:0]' },
+        ],
+        position: { x: 648, y: 336 },
+      },
+      {
+        id: 'reg',
+        kind: 'register',
+        label: 'r',
+        typeName: 'state_t',
+        metadata: { clockSignal: 'clk', resetSignal: 'rst_n', resetActiveLow: true },
+        ports: [
+          { id: 'd', name: 'D', direction: 'input' },
+          { id: 'rv', name: 'RV', direction: 'input' },
+          { id: 'q', name: 'Q', direction: 'output' },
+          { id: 'clk', name: 'clk', direction: 'input' },
+          { id: 'rst_n', name: 'rst_n', direction: 'input' },
+        ],
+        position: { x: 144, y: 24 },
+      },
+    ];
+    const edges: DiagramEdge[] = [
+      { id: 'latch-mux', source: 'latch', sourcePort: 'q', target: 'mux', targetPort: 'in:false' },
+      { id: 'latch-reg', source: 'latch', sourcePort: 'q', target: 'reg', targetPort: 'd' },
+    ];
+    const nodesById = new Map<string, PositionedNode>(nodes.map((item) => [item.id, item]));
+    const positions = new Map(nodes.map((item) => [item.id, item.position]));
+
+    const result = await routeDiagramWithLibavoid(nodes, edges, (nodeId, portId, lead, role) =>
+      renderedLeadPoint(nodeId, portId, nodesById, positions, lead, role),
+    );
+
+    expect([...result.rejectedNets]).toEqual([]);
+    for (const edge of edges) {
+      const route = result.routes.get(edge.id)!;
+      expect(routeIsOrthogonal(route)).toBe(true);
+      for (const body of ['latch', 'mux', 'reg']) {
+        const target = nodesById.get(body)!;
+        const size = resolvedNodeDimensions(target);
+        const intersects = route.slice(1).some((point, index) => {
+          const previous = route[index];
+          const minX = Math.min(previous.x, point.x);
+          const maxX = Math.max(previous.x, point.x);
+          const minY = Math.min(previous.y, point.y);
+          const maxY = Math.max(previous.y, point.y);
+          return (
+            maxX > target.position.x &&
+            minX < target.position.x + size.width &&
+            maxY > target.position.y &&
+            minY < target.position.y + size.height
+          );
+        });
+        expect(intersects, `${edge.id} crosses ${body}`).toBe(false);
+      }
+    }
   });
 });
 

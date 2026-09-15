@@ -21,6 +21,11 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
+  // Playwright's default testMatch also picks up `*.test.ts` files, which
+  // collides with vitest-only files living alongside the specs here (e.g.
+  // partial_diagram_interactions.coverage.test.ts) — restrict to `*.spec.ts`
+  // so those stay vitest-only.
+  testMatch: '**/*.spec.ts',
   // Playwright's default (<rootDir>/test-results, flat per-test) doesn't
   // match the CI upload glob (test-results/system/**) that the video
   // gallery job reads from — keep everything (videos, traces) nested here.
@@ -33,7 +38,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     toHaveScreenshot: {
       // Repeated full-window renders differed by at most 119 pixels. Keep a
       // small buffer for Electron anti-aliasing without masking UI changes.
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system.default,
     },
   },
   use: {
@@ -50,7 +55,11 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     // see the comment there. System's suite is much smaller (5 tests x 3
     // versions), so keeping every CI video is cheap here too.
     vscodeVideo: {
-      mode: process.env.CI ? 'on' : 'retain-on-failure',
+      // SVSCH_LOCAL_NO_VIDEO opts out of recording entirely, same as
+      // test/bdd/playwright.config.ts: in some headless containers (no GPU,
+      // software GL) the Electron screencast prevents the workbench window
+      // from ever loading, so no test can run with video.
+      mode: process.env.CI ? 'on' : process.env.SVSCH_LOCAL_NO_VIDEO ? 'off' : 'retain-on-failure',
       size: { width: 640, height: 460 },
     },
   },

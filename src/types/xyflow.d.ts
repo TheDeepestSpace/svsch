@@ -65,6 +65,7 @@ declare module '@xyflow/react' {
   export const ViewportPortal: React.FC<{ children: React.ReactNode }>;
 
   export function useReactFlow(): any;
+  export function useStoreApi(): { getState(): any };
   export function useStore<T = unknown>(
     selector: (state: any) => T,
     equalityFn?: (a: T, b: T) => boolean,

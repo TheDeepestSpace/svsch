@@ -78,6 +78,10 @@ export function themeCss(themeName: SvgThemeName): string {
     // Node fills / strokes derived from chart colours
     `  --svsch-mux-fill: ${mix(t.chartsPurple, 0.12, bg)};`,
     `  --svsch-alu-fill: ${mix(t.chartsOrange, 0.14, bg)};`,
+    // diagram.css pins this to a literal because VS Code's charts.orange
+    // aliases the find-match highlight (see the :root comment there); the CLI
+    // controls its own palette, so restore the per-theme orange here.
+    `  --svsch-alu-orange: ${t.chartsOrange};`,
     `  --svsch-interface-fill: ${mix(t.chartsBlue, 0.12, bg)};`,
     `  --svsch-interface-stroke: ${mix(t.chartsBlue, 0.6, fg)};`,
     `  --svsch-interface-port-fill: ${mix(t.chartsBlue, 0.28, bg)};`,
