@@ -2571,6 +2571,7 @@ path.port-skin-body.port-skin-harness {
   --svsch-interface-bg-edge: #595959;
   --svsch-mux-fill: #322a38;
   --svsch-alu-fill: #372d1d;
+  --svsch-alu-orange: #d18616;
   --svsch-interface-fill: #212c39;
   --svsch-interface-stroke: #73aaeb;
   --svsch-interface-port-fill: #253f5d;
